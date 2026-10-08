@@ -1,0 +1,18 @@
+{
+  "name": "El Cartel Studio · Candidatos",
+  "short_name": "Candidatos",
+  "description": "Gestión de candidatos de El Cartel Studio",
+  "start_url": "/rrhh.html?embedded=1",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFDA03",
+  "theme_color": "#FFDA03",
+  "icons": [
+    {
+      "src": "/api/candidates-icon-3d.js",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
