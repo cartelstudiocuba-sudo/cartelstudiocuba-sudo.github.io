@@ -2958,10 +2958,10 @@ function openTrainingSupportEditor(type){
  if(type==='presentation'){const doc=trainingPresentationDocumentData();title.textContent='Editar · Presentación';modal.dataset.presentationSlide='0';form.innerHTML=trainingPresentationEditorForm(doc)}
  else if(type==='guide'){const doc=trainingGuideDocumentData();title.textContent='Editar · Guía del capacitador';modal.dataset.guidePage='0';form.innerHTML=trainingGuideEditorForm(doc)}
  else{const doc=trainingVideoDocumentData();title.textContent='Editar · Video de onboarding';form.innerHTML=trainingVideoEditorForm(doc)}
- form.oninput=()=>refreshTrainingEditorPreview();
+ form.oninput=()=>{clearTimeout(window.trainingEditorPreviewTimer);window.trainingEditorPreviewTimer=setTimeout(()=>refreshTrainingEditorPreview(),600)};
  modal.classList.add('open');document.body.classList.add('protocol-preview-open');requestAnimationFrame(()=>refreshTrainingEditorPreview())
 }
-function closeTrainingSupportEditor(){const modal=document.getElementById('trainingEditorModal');if(modal)modal.classList.remove('open');document.body.classList.remove('protocol-preview-open')}
+function closeTrainingSupportEditor(){clearTimeout(window.trainingEditorPreviewTimer);const modal=document.getElementById('trainingEditorModal');if(modal)modal.classList.remove('open');document.body.classList.remove('protocol-preview-open')}
 async function saveTrainingSupportEditor(){
  const modal=document.getElementById('trainingEditorModal'),type=modal?.dataset.type,draft=trainingEditorCurrentDraft();if(!type||!draft)return;
  const cfg=trainingMasterData(),current=role.work_content&&typeof role.work_content==='object'?role.work_content:{};
