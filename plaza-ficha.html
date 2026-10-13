@@ -2680,7 +2680,7 @@ function trainingGuideChapterPlan(m){
  }
 }
 function trainingGuideDocumentData(){
- const ov=trainingSupportOverride('guide'),mods=trainingSupportModules('guide'),useSaved=Number(ov.guide_version||0)>=2,saved=useSaved&&ov.modules&&typeof ov.modules==='object'?ov.modules:{};
+ const ov=trainingSupportOverride('guide'),mods=trainingSupportModules('guide'),useSaved=Number(ov.guide_version||0)>=2,saved=useSaved&&Array.isArray(ov.modules)?Object.fromEntries(ov.modules.map(m=>[String(m.id||''),m])):useSaved&&ov.modules&&typeof ov.modules==='object'?ov.modules:{};
  const defaultSetup={
   title:'Antes de comenzar la capacitación',
   intro:'Esta capacitación debe realizarse como una sesión guiada. La presentación acompaña la explicación del capacitador, pero no la sustituye: tu función es contextualizar, poner ejemplos, comprobar la comprensión y detenerte cuando exista una duda importante.',
@@ -4357,6 +4357,8 @@ function trainingSourceSnapshotPayload(type){
 }
 function trainingCurrentSourceHash(type){return trainingSimpleHash(trainingStableSerialize(trainingSourceSnapshotPayload(type)))}
 function trainingDurationEstimate(){
+ const saved=trainingSupportOverride('guide').setup?.duration;
+ if(String(saved||'').trim())return String(saved).trim();
  let min=0,max=0;
  trainingSupportModules('guide').forEach(m=>{
   const text=String(trainingGuideChapterPlan(m).duration||''),nums=(text.match(/\d+/g)||[]).map(Number);
@@ -4542,7 +4544,7 @@ function editProtocol(id){protocolExpandedIds.add(id);protocolEditingId=id;refre
 function cancelProtocolEdit(){protocolEditingId=null;refreshProtocols()}
 async function persistProtocols(items){const current=role.work_content&&typeof role.work_content==='object'?role.work_content:{};const{data,error}=await sb.from('hr_roles').update({work_content:{...current,protocol_blocks:items},updated_at:new Date().toISOString()}).eq('id',role.id).select().single();if(error){alert('No se pudieron guardar los protocolos: '+error.message);return false}role=data;return true}
 function readProtocolImagesFromEditor(index,fallback){const box=document.getElementById('protocol-images-'+index);if(!box)return fallback||[];return [...box.querySelectorAll('.protocol-image-edit-card')].map(row=>{const stepRaw=row.querySelector('.protocol-image-step-input')?.value||'';return {id:row.dataset.imageId,path:row.dataset.path,caption:(row.querySelector('.protocol-image-caption-input')?.value||'').trim(),type:row.querySelector('.protocol-image-type')?.value||'reference',step:stepRaw?Number(stepRaw):null}}).filter(x=>x.path)}
-async function saveProtocol(id,index){const title=(document.getElementById('protocol-title-'+index)?.value||'').trim(),objective=(document.getElementById('protocol-objective-'+index)?.value||'').trim(),steps=(document.getElementById('protocol-steps-'+index)?.value||'').split(/\n+/).map(x=>x.replace(/^\s*(?:\d+[.)-]?|[-•*])\s*/,'').trim()).filter(Boolean),closure=(document.getElementById('protocol-closure-'+index)?.value||'').trim();if(!title){alert('Escribe un nombre para el protocolo.');return}if(!steps.length){alert('Añade al menos un paso al protocolo.');return}const items=protocolItems(),i=items.findIndex(x=>x.id===id);if(i<0)return;const images=readProtocolImagesFromEditor(index,items[i].images);items[i]={id,title,objective,steps,closure,images};if(await persistProtocols(items)){protocolExpandedIds.add(id);protocolEditingId=null;refreshProtocols()}}
+async function saveProtocol(id,index){const title=(document.getElementById('protocol-title-'+index)?.value||'').trim(),objective=(document.getElementById('protocol-objective-'+index)?.value||'').trim(),steps=(document.getElementById('protocol-steps-'+index)?.value||'').split(/\n+/).map(x=>x.replace(/^\s*(?:\d+[.)-](?:\s+|$)|[-•*]\s*)/,'').trim()).filter(Boolean),closure=(document.getElementById('protocol-closure-'+index)?.value||'').trim();if(!title){alert('Escribe un nombre para el protocolo.');return}if(!steps.length){alert('Añade al menos un paso al protocolo.');return}const items=protocolItems(),i=items.findIndex(x=>x.id===id);if(i<0)return;const images=readProtocolImagesFromEditor(index,items[i].images);items[i]={id,title,objective,steps,closure,images};if(await persistProtocols(items)){protocolExpandedIds.add(id);protocolEditingId=null;refreshProtocols()}}
 async function deleteProtocol(id){const items=protocolItems(),item=items.find(x=>x.id===id);if(!item)return;if(!confirm('¿Eliminar el protocolo "'+(item.title||'seleccionado')+'"?'))return;const next=items.filter(x=>x.id!==id);if(await persistProtocols(next)){const paths=(item.images||[]).map(x=>x.path).filter(Boolean);if(paths.length)await sb.storage.from('hr-role-protocol-images').remove(paths);if(protocolEditingId===id)protocolEditingId=null;refreshProtocols()}}
 async function moveProtocol(id,delta){const items=protocolItems(),from=items.findIndex(x=>x.id===id),to=from+delta;if(from<0||to<0||to>=items.length)return;[items[from],items[to]]=[items[to],items[from]];if(await persistProtocols(items))refreshProtocols()}
 async function addProtocol(){const items=protocolItems(),id='protocol-'+Date.now();items.push({id,title:'Nuevo protocolo',objective:'',steps:[''],closure:'',images:[]});if(await persistProtocols(items)){protocolExpandedIds.add(id);protocolEditingId=id;refreshProtocols()}}
