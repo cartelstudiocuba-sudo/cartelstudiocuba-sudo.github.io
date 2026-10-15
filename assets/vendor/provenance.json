@@ -1,0 +1,6 @@
+{
+  "source": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js",
+  "version": "2.117.3",
+  "sha256": "36d1ad9948fdbba9c3d696e27050f70aafce88981938b6a814a6ad8abdf171ba",
+  "reason": "same version resolved by both production @2 CDNs at audit; no ESM upgrade"
+}

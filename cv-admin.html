@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administrar CV · El Cartel Studio</title>
+<!doctype html><html lang="es"><head><script src="/assets/loading-runtime.js?v=723f286a6d4a"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administrar CV · El Cartel Studio</title>
 <style>body{font:16px system-ui;background:#111;color:#eee;margin:0}main{max-width:650px;margin:40px auto;padding:24px}a{color:#ffda03}label{display:block;margin-top:20px}input,button{box-sizing:border-box;width:100%;padding:13px;border-radius:9px;margin-top:8px;font:inherit}button{background:#ffda03;border:0;font-weight:700}button:disabled{opacity:.5}#message{white-space:pre-wrap;padding:15px;background:#242424;border-radius:10px;margin-top:20px}dialog{max-width:520px;border-radius:15px}dialog p{overflow-wrap:anywhere}.danger{background:#9c2020;color:white}.secondary{background:#ddd;color:#111}</style>
 </head><body><main><a href="/rrhh.html">← Recursos Humanos</a><h1>Administrar un CV</h1><p>Elimina únicamente el archivo seleccionado. La candidatura y sus demás documentos se conservan.</p><div id="message" role="status" aria-live="polite">Comprobando acceso administrativo…</div>
 <form id="selectForm"><label for="path">Ruta exacta del CV</label><input id="path" required placeholder="cv/identificador-del-archivo.pdf"><label for="candidate">Identificador de la candidatura</label><input id="candidate" placeholder="Dejar vacío solo si no está asociado"><button id="inspect" disabled>Revisar archivo seleccionado</button></form>
@@ -7,7 +7,7 @@
 </main><script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm';
 const U='https://jhumvctocphyiwhszeaz.supabase.co',K='sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn';
-const sb=createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storage:window.localStorage}});
+const sb=CartelLoad.wrap(createClient(U,K,{global:{fetch:CartelLoad.fetch},auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storage:window.localStorage}}));
 const element=id=>document.getElementById(id);let selected=null,busy=false,admin=false;
 function message(text){element('message').textContent=text}
 function reset(){selected=null;element('selection').hidden=true;element('prepareDelete').disabled=true}
