@@ -1120,6 +1120,8 @@
 .training-workmode-card{border:1px solid #e0e4e8;background:#fff;border-radius:13px;padding:12px 13px;min-height:83px;box-shadow:0 2px 8px rgba(20,24,29,.03)}
 .training-workmode-card small{display:block;font-size:7.2px;line-height:1.2;font-weight:950;letter-spacing:.07em;text-transform:uppercase;color:#7a838d;margin-bottom:7px}
 .training-workmode-card b{display:block;font-size:11px;line-height:1.28;color:#20252a;overflow-wrap:anywhere}
+.training-variable-income ul{margin:7px 0 0;padding-left:13px;font-size:8.5px;line-height:1.4;color:#47515c;overflow-wrap:anywhere}
+.training-variable-income li+li{margin-top:6px}
 .training-workmode-card:first-child{background:#ffda03;border-color:#e2c100}
 .training-workmode-card:first-child small,.training-workmode-card:first-child b{color:#17191d}
 .training-workmode-footer{position:absolute;right:4.5%;bottom:2.3%;font-size:7px;font-weight:850}
@@ -3018,6 +3020,14 @@ function trainingWelcomeCardHtml(item,index){
  return '<article class="training-welcome-card"><div class="training-welcome-icon '+(index%2===0?'yellow':'soft')+'">'+trainingWelcomeIcon(index)+'</div><div><h3>'+e(title)+'</h3><p>'+e(text)+'</p></div></article>'
 }
 
+function trainingVariableIncomeCard(value){
+ // The editor stores [] for no income; null/missing means it has not been configured.
+ const configured=Array.isArray(value);
+ const rows=configured?value.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)&&['concept','type','value','basis'].some(k=>String(x[k]??'').trim())):[];
+ const label=!configured||value.length&&!rows.length?'Pendiente de definir':rows.length?'Posibilidad de ingresos adicionales':'No contempla ingresos variables';
+ return '<article class="training-workmode-card training-variable-income" data-training-dynamic="variable_income"><small>Ingresos variables</small><b>'+e(label)+'</b>'+
+  (rows.length?'<ul>'+rows.map(x=>'<li>'+['concept','type','value','basis'].map(k=>String(x[k]??'').trim()).filter(Boolean).map(e).join(' · ')+'</li>').join('')+'</ul>':'')+'</article>'
+}
 function trainingPresentationSlug(value){
  return String(value||'slide').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,72)||'slide'
 }
@@ -3078,6 +3088,7 @@ function trainingPresentationPrepareEditableText(slide){
   const base=trainingPresentationSlug(el.tagName.toLowerCase()+'-'+(ownClass||parentClass));
   slotCounts[base]=(slotCounts[base]||0)+1;
   const slot=base+'-'+String(slotCounts[base]).padStart(2,'0');
+  if(el.closest('[data-training-dynamic]'))return;
   el.dataset.trainingTextSlot=slot;
   const tag=el.tagName.toLowerCase();
   el.dataset.trainingTextKind=/^h[1-3]$/.test(tag)?'Título':tag==='p'||tag==='li'?'Texto':tag==='b'||tag==='strong'?'Encabezado':tag==='small'?'Etiqueta':'Texto'
@@ -3102,6 +3113,7 @@ function trainingPresentationApplyOverrides(root,overrides){
  slides.forEach((slide,index)=>{
   const key=slide.dataset.trainingSlideKey||'',map=data[key]&&typeof data[key]==='object'?data[key]:{};
   slide.querySelectorAll('[data-training-text-slot]').forEach(el=>{
+   if(el.closest('[data-training-dynamic]'))return;
    const slot=el.dataset.trainingTextSlot;
    if(Object.prototype.hasOwnProperty.call(map,slot))el.textContent=String(map[slot]??'')
   });
@@ -3380,8 +3392,7 @@ function paginateTrainingPresentation(root,slideOverrides=null){
   else if(/remot|distancia/.test(modalityLower))modalitySummary='La plaza desarrolla la mayor parte de sus funciones a distancia, manteniendo disponibilidad para las coordinaciones y actividades presenciales que excepcionalmente sean necesarias.';
   else if(/presencial/.test(modalityLower))modalitySummary='La plaza desarrolla sus funciones principalmente de manera presencial, de acuerdo con la jornada, los horarios y las necesidades operativas definidas para el cargo.';
   else modalitySummary=modalityValue?'La organización del trabajo responde a la modalidad '+modalityValue.toLowerCase()+', de acuerdo con la jornada y las necesidades operativas definidas para esta plaza.':'La modalidad de trabajo se organiza de acuerdo con la jornada y las necesidades operativas definidas para esta plaza.';
-  const variableIncomeRows=Array.isArray(role.variable_income)?role.variable_income.filter(x=>x&&typeof x==='object'):[];
-  const variableIncomeLabel=variableIncomeRows.length?'Sí · '+variableIncomeRows.length+' concepto'+(variableIncomeRows.length===1?'':'s'):'No';
+  const variableIncomeCard=trainingVariableIncomeCard(role.variable_income);
   const workModeItems=[
    ['Modalidad',modalityValue||'Por definir'],
    ['Dedicación',String(role.employment_type||'').trim()||'Por definir'],
@@ -3389,11 +3400,11 @@ function paginateTrainingPresentation(root,slideOverrides=null){
    ['Horario',String(role.schedule||'').trim()||'Por definir'],
    ['Frecuencia de pago',String(role.payment_frequency||'').trim()||'Por definir'],
    ['Forma de pago',String(role.payment_method||'').trim()||'Por definir'],
-   ['Ingresos variables',variableIncomeLabel],
+   ['Ingresos variables',null],
    ['Período de adiestramiento',String(role.training_period||'').trim()||'Por definir']
   ];
   const workModeSlide=document.createElement('section');workModeSlide.className='training-slide training-workmode-slide';
-  workModeSlide.innerHTML='<div class="training-workmode-inner"><div class="training-workmode-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><h2>Modalidad de trabajo</h2><div class="training-workmode-role">'+e(roleName)+'</div><div class="training-workmode-accent"></div><p class="training-workmode-summary">'+e(modalitySummary)+'</p><div class="training-workmode-grid">'+workModeItems.map(item=>'<article class="training-workmode-card"><small>'+e(item[0])+'</small><b>'+e(item[1])+'</b></article>').join('')+'</div></div><div class="training-workmode-footer">El Cartel Studio · '+e(roleName)+'</div>';
+  workModeSlide.innerHTML='<div class="training-workmode-inner"><div class="training-workmode-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><h2>Modalidad de trabajo</h2><div class="training-workmode-role">'+e(roleName)+'</div><div class="training-workmode-accent"></div><p class="training-workmode-summary">'+e(modalitySummary)+'</p><div class="training-workmode-grid">'+workModeItems.map(item=>item[0]==='Ingresos variables'?variableIncomeCard:'<article class="training-workmode-card"><small>'+e(item[0])+'</small><b>'+e(item[1])+'</b></article>').join('')+'</div></div><div class="training-workmode-footer">El Cartel Studio · '+e(roleName)+'</div>';
   deck.insertBefore(workModeSlide,source);
 
   const managerName=String(role.direct_manager||'tu jefe directo').trim()||'tu jefe directo';
