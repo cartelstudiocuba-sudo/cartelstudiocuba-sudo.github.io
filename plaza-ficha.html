@@ -2241,6 +2241,15 @@
 .training-expectations-slide .training-expectation-card h3{font-size:10px!important;line-height:1.2!important;overflow-wrap:anywhere;white-space:pre-wrap}
 .training-expectations-slide .training-expectation-card p{font-size:9px!important;line-height:1.4!important;display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:pre-wrap;overflow-wrap:anywhere}
 .training-expectations-slide .training-expectation-card>div:last-child{min-width:0}
+</style><style>
+.training-purpose-functions-slide .training-purpose-inner{padding:5% 5.2% 6%;height:100%}
+.training-purpose-functions-slide .training-purpose-functions-panel{flex:none;padding:18px 20px;background:#fff;border-color:#111}
+.training-purpose-functions-slide .training-purpose-functions-head h3{font-size:24px!important;color:#111}
+.training-purpose-functions-slide .training-purpose-functions-list{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.training-purpose-functions-slide .training-purpose-function-point{grid-template-columns:36px minmax(0,1fr);gap:14px;padding-bottom:12px;break-inside:avoid}
+.training-purpose-functions-slide .training-purpose-function-num{width:32px;height:32px;font-size:14px;background:#ffda03;color:#111}
+.training-purpose-functions-slide .training-purpose-function-copy b{font-size:22px;line-height:1.25;color:#111;white-space:pre-wrap;overflow-wrap:anywhere}
+.training-purpose-functions-slide .training-purpose-function-copy span{display:block;font-size:20px;line-height:1.4;color:#111;white-space:pre-wrap;overflow-wrap:anywhere;overflow:visible;-webkit-line-clamp:unset}
 </style></head><body><div class="wrap"><div class="top"><div class="brand">CARTEL GESTIÓN · RRHH</div><a class="back back-premium" href="/plazas.html"><span class="back-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path><path d="M9.5 12H20"></path></svg></span><span class="back-copy"><small>Regresar</small><b>Volver a plazas</b></span></a></div><section id="hero" class="hero"></section><div class="editable-area-head"><div class="editable-area-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h4l10.5-10.5-4-4L4 15.5z"></path><path d="m13.5 6 4 4"></path></svg></div><div><small>ÁREA DE TRABAJO</small><b>Secciones editables de la plaza</b><span>Selecciona una pestaña para consultar o modificar su contenido.</span></div></div><div class="tabs" id="tabs"></div><section id="panel" class="panel"></section></div><script>const U='https://jhumvctocphyiwhszeaz.supabase.co',K='sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',MAIL='cartelstudiocuba@gmail.com',sb=CartelLoad.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});let role=null,cycles=[],roleDocs=[],roleHistory=[],roles=[],agencyPolicies=[],agencyInstitutional=[],agencyDiscipline=[],agencyContractData=[],agencyContractClauses=[],agencyEvaluationParams=[],active='',prototypeDocSelection=new Set(),contractActiveDoc=null,contractActiveBlock=null,contractEditingBlock=null,recruitmentActiveSection=null,definitionActiveSection=null,historyFilter='all',historyPeriod='all',historyActor='all',contractLogoUrls={};const id=new URLSearchParams(location.search).get('id'),e=s=>String(s??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const tabs=['Definición de la plaza','Convocatoria','Contratación','Capacitación','Protocolos','Evaluación','Documentación','Historial'];async function boot(){
  CartelLoad.setReadOnly(true);
  const sessionResult=CartelLoad.required(await sb.auth.getSession());const session=sessionResult.data.session;
@@ -3549,48 +3558,49 @@ function paginateTrainingPresentation(root,slideOverrides=null){
    if(parts.length===1&&raw.length>520)parts=raw.split(/(?<=[.!?;])\s+/).map(x=>x.trim()).filter(Boolean);
    return parts.map(text=>({title:'',text}))
   });
-  const numberedFunctionPoints=functionPoints.map((point,index)=>({...point,n:index+1}));
-  const functionRowsHtml=points=>points.map(point=>'<div class="training-purpose-function-point"><span class="training-purpose-function-num">'+String(point.n).padStart(2,'0')+'</span><div class="training-purpose-function-copy">'+(point.title?'<b>'+e(point.title)+'</b>':'')+'<span>'+e(point.text)+'</span></div></div>').join('');
-  const makeFunctionsPage=(points,extraClass='',continuation=false)=>{
-   const slide=document.createElement('section');slide.className='training-slide training-purpose-slide training-purpose-functions-slide'+extraClass;
-   slide.innerHTML='<div class="training-purpose-inner"><div class="training-purpose-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><article class="training-purpose-functions-panel"><div class="training-purpose-functions-head"><div class="training-purpose-icon">'+functionIcon+'</div><h3>Funciones y responsabilidades'+(continuation?' · Continuación':'')+'</h3></div><div class="training-purpose-functions-list">'+functionRowsHtml(points)+'</div></article></div><div class="training-purpose-footer">El Cartel Studio · '+e(roleName)+'</div>';
+const numberedFunctionPoints=functionPoints.map((point,index)=>({...point,n:index+1}));
+  const functionRowsHtml=points=>points.map(point=>'<div class="training-purpose-function-point"><span class="training-purpose-function-num">'+String(point.n).padStart(2,'0')+'</span><div class="training-purpose-function-copy">'+(point.title?'<b>'+e(point.title)+(point.continuation?' · Continuación':'')+'</b>':'')+'<span>'+e(point.text)+'</span></div></div>').join('');
+  const makeFunctionsPage=(continuation=false)=>{
+   const slide=document.createElement('section');slide.className='training-slide training-purpose-slide training-purpose-functions-slide';
+   slide.setAttribute('data-training-dynamic','functions');
+   slide.innerHTML='<div class="training-purpose-inner"><div class="training-purpose-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><article class="training-purpose-functions-panel"><div class="training-purpose-functions-head"><div class="training-purpose-icon">'+functionIcon+'</div><h3>Funciones y responsabilidades'+(continuation?' · Continuación':'')+'</h3></div><div class="training-purpose-functions-list"></div></article></div><div class="training-purpose-footer">El Cartel Studio · '+e(roleName)+'</div>';
    deck.insertBefore(slide,source);return slide
   };
   const functionsFit=slide=>{
-   const panel=slide.querySelector('.training-purpose-functions-panel'),footer=slide.querySelector('.training-purpose-footer'),sr=slide.getBoundingClientRect(),pr=panel?.getBoundingClientRect(),fr=footer?.getBoundingClientRect();
-   const safeBottom=fr?fr.top-12:sr.bottom-48;
-   return !!panel&&!!pr&&pr.bottom<=safeBottom
+   const list=slide.querySelector('.training-purpose-functions-list');
+   const footer=slide.querySelector('.training-purpose-footer');
+   const bottom=Math.min(footer.getBoundingClientRect().top-20,slide.getBoundingClientRect().bottom-48);
+   return [...list.children].every(node=>node.getBoundingClientRect().bottom<=bottom&&node.scrollWidth<=node.clientWidth+1)
   };
-  let functionSlides=[];
-  if(numberedFunctionPoints.length){
-   let slide=makeFunctionsPage(numberedFunctionPoints);
-   if(!functionsFit(slide)){slide.classList.add('dense')}
-   if(!functionsFit(slide)){slide.classList.remove('dense');slide.classList.add('very-dense')}
-   if(!functionsFit(slide)){slide.classList.add('fit-compact')}
-   if(functionsFit(slide)){
-    functionSlides=[slide]
-   }else{
-    slide.remove();
-    let remaining=[...numberedFunctionPoints],pageIndex=0;
-    while(remaining.length){
-     const page=makeFunctionsPage([], ' very-dense fit-compact',pageIndex>0);
-     const list=page.querySelector('.training-purpose-functions-list');
-     let accepted=[];
-     for(const point of remaining){
-      const trial=[...accepted,point];
-      list.innerHTML=functionRowsHtml(trial);
-      if(functionsFit(page))accepted.push(point);else break
-     }
-     if(!accepted.length){
-      accepted=[remaining[0]];
-      list.innerHTML=functionRowsHtml(accepted)
-     }else{
-      list.innerHTML=functionRowsHtml(accepted)
-     }
-     functionSlides.push(page);
-     remaining=remaining.slice(accepted.length);
-     pageIndex++
+  // Keep whole sections and paragraphs when they fit. Split only an oversized
+  // section, at paragraph/sentence/word boundaries, without dropping characters.
+  const functionSlides=[];
+  let functionPage=null,accepted=[];
+  const render=points=>{functionPage.querySelector('.training-purpose-functions-list').innerHTML=functionRowsHtml(points)};
+  const newFunctionPage=()=>{functionPage=makeFunctionsPage(functionSlides.length>0);functionSlides.push(functionPage);accepted=[]};
+  for(const point of numberedFunctionPoints){
+   let rest=point.text,continuation=false;
+   while(rest.length){
+    if(!functionPage)newFunctionPage();
+    const entry={...point,text:rest,continuation};
+    render([...accepted,entry]);
+    if(functionsFit(functionPage)){accepted.push(entry);break}
+    if(accepted.length){render(accepted);newFunctionPage();continue}
+    let low=0,high=rest.length;
+    while(low<high){
+     const mid=Math.ceil((low+high)/2);render([{...entry,text:rest.slice(0,mid)}]);
+     if(functionsFit(functionPage))low=mid;else high=mid-1
     }
+    if(!low)throw new Error('No hay espacio para el encabezado de funciones: '+point.title);
+    let cut=low;
+    for(const boundary of [/\n\s*\n/g,/[.!?;]\s+/g,/\s+/g]){
+     let match,last=0;const prefix=rest.slice(0,low);
+     while((match=boundary.exec(prefix)))last=match.index+match[0].length;
+     if(last>0){cut=last;break}
+    }
+    render([{...entry,text:rest.slice(0,cut)}]);
+    rest=rest.slice(cut);continuation=true;
+    if(rest.length)newFunctionPage()
    }
   }
 
