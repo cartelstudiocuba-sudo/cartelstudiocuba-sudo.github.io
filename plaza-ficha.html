@@ -2233,6 +2233,13 @@
 .role-completion-summary small,
 .role-completion-chip small{color:#edf0f2!important}
 .role-hero-kicker{color:#f0f2f4!important}
+</style><style>
+.training-expectations-slide .training-expectation-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));flex:1;min-height:0}
+.training-expectations-slide .training-learning-inner{height:100%;min-height:0}
+.training-expectations-slide .training-expectation-card{min-height:0;overflow:visible;padding:10px;gap:8px}
+.training-expectations-slide .training-expectation-card h3{font-size:10px!important;line-height:1.2!important;overflow-wrap:anywhere;white-space:pre-wrap}
+.training-expectations-slide .training-expectation-card p{font-size:9px!important;line-height:1.4!important;display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:pre-wrap;overflow-wrap:anywhere}
+.training-expectations-slide .training-expectation-card>div:last-child{min-width:0}
 </style></head><body><div class="wrap"><div class="top"><div class="brand">CARTEL GESTIÓN · RRHH</div><a class="back back-premium" href="/plazas.html"><span class="back-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path><path d="M9.5 12H20"></path></svg></span><span class="back-copy"><small>Regresar</small><b>Volver a plazas</b></span></a></div><section id="hero" class="hero"></section><div class="editable-area-head"><div class="editable-area-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h4l10.5-10.5-4-4L4 15.5z"></path><path d="m13.5 6 4 4"></path></svg></div><div><small>ÁREA DE TRABAJO</small><b>Secciones editables de la plaza</b><span>Selecciona una pestaña para consultar o modificar su contenido.</span></div></div><div class="tabs" id="tabs"></div><section id="panel" class="panel"></section></div><script>const U='https://jhumvctocphyiwhszeaz.supabase.co',K='sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',MAIL='cartelstudiocuba@gmail.com',sb=CartelLoad.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});let role=null,cycles=[],roleDocs=[],roleHistory=[],roles=[],agencyPolicies=[],agencyInstitutional=[],agencyDiscipline=[],agencyContractData=[],agencyContractClauses=[],agencyEvaluationParams=[],active='',prototypeDocSelection=new Set(),contractActiveDoc=null,contractActiveBlock=null,contractEditingBlock=null,recruitmentActiveSection=null,definitionActiveSection=null,historyFilter='all',historyPeriod='all',historyActor='all',contractLogoUrls={};const id=new URLSearchParams(location.search).get('id'),e=s=>String(s??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const tabs=['Definición de la plaza','Convocatoria','Contratación','Capacitación','Protocolos','Evaluación','Documentación','Historial'];async function boot(){
  CartelLoad.setReadOnly(true);
  const sessionResult=CartelLoad.required(await sb.auth.getSession());const session=sessionResult.data.session;
@@ -3028,6 +3035,15 @@ function trainingVariableIncomeCard(value){
  return '<article class="training-workmode-card training-variable-income" data-training-dynamic="variable_income"><small>Ingresos variables</small><b>'+e(label)+'</b>'+
   (rows.length?'<ul>'+rows.map(x=>'<li>'+['concept','type','value','basis'].map(k=>String(x[k]??'').trim()).filter(Boolean).map(e).join(' · ')+'</li>').join('')+'</ul>':'')+'</article>'
 }
+function trainingExpectationEntries(criteria,specific){
+ const text=v=>typeof v==='string'?v.trim():'';
+ const rows=(Array.isArray(criteria)?criteria:[]).filter(x=>x&&text(x.name));
+ // Keep each evaluation indicator paired with its own description. Never infer by keywords.
+ if(rows.length)return rows.map(row=>[text(row.name),text(row.desc)||'Descripción pendiente de definir en Evaluación.']);
+ const entries=(Array.isArray(specific)?specific:[]).filter(x=>x&&text(x.title)&&text(x.text)&&!['purpose','result'].includes(x.bucket));
+ return entries.length?entries.map(x=>[text(x.title),text(x.text)]):[['Expectativas de la plaza','Pendiente de definir en Evaluación y responsabilidades de esta plaza.']];
+}
+
 function trainingPresentationSlug(value){
  return String(value||'slide').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,72)||'slide'
 }
@@ -3420,70 +3436,44 @@ function paginateTrainingPresentation(root,slideOverrides=null){
   cycleSlide.innerHTML='<div class="training-learning-inner"><div class="training-learning-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><h2>Así funciona tu trabajo</h2><div class="training-learning-role">'+e(roleName)+'</div><div class="training-learning-accent"></div><p class="training-learning-intro">Usa este ciclo como guía mental para organizar cualquier gestión, desde que recibes una necesidad hasta que queda realmente cerrada.</p><div class="training-learning-grid">'+cycleSteps.map((x,i)=>'<article class="training-learning-card '+(i===5?'highlight':'')+'"><div class="training-learning-card-num">'+String(i+1).padStart(2,'0')+'</div><h3>'+e(x[0])+'</h3><p>'+e(x[1])+'</p></article>').join('')+'</div></div><div class="training-learning-footer">El Cartel Studio · '+e(roleName)+'</div>';
   deck.insertBefore(cycleSlide,source);
 
-  const expectationSources=items.filter(x=>!['purpose','result'].includes(x.bucket)&&String(x.text||'').trim());
-  const expectationEval=evaluationMaster(),expectationProtocols=protocolItems();
-  const expectationProfiles=[
-   {title:'Inventarios y abastecimiento',re:/inventario|almac[eé]n|abastec|existencia|insumo|entrada|salida|stock/i},
-   {title:'Prevención y mantenimiento',re:/manten|preventiv|reparaci|infraestructura|climatiz|generador|inversor|bater[ií]a|eco ?flow|panel solar/i},
-   {title:'Control y trazabilidad',re:/excel|registro|document|archivo|control administrativo|trazabil|base de datos|reporte|historial/i},
-   {title:'Tecnología y continuidad operativa',re:/internet|red(?:es)?|nas|dropbox|mikrotik|inform[aá]tic|servidor|switch|router|tecnolog|respaldo energ/i},
-   {title:'Criterio para resolver y escalar',re:/incidenc|diagn[oó]stic|resolver|resoluci[oó]n|autonom|escalar|prioridad|imprevisto|problema/i},
-   {title:'Coordinación y seguimiento',re:/coordina|seguim|proveedor|tercero|personal de apoyo|subordin|pendiente|supervis/i},
-   {title:'Seguridad y confidencialidad',re:/seguridad|acceso|credencial|confid|discre|llave|alarma|c[aá]mara|informaci[oó]n sensible/i},
-   {title:'Calidad y cierre del resultado',re:/calidad|verifica|revisi[oó]n|entrega|resultado|cierre|est[aá]ndar|detalle/i},
-   {title:'Organización y planificación',re:/organiz|planific|plan de trabajo|rutina|agenda|cronograma|prioriz|calendario/i},
-   {title:'Atención y servicio profesional',re:/atenci[oó]n|servicio|artista|cliente|casting|hospitalidad|cortes[ií]a/i},
-   {title:'Gestión ejecutiva y diligencias',re:/diligencia|tr[aá]mite|agenda|reuni[oó]n|recordatorio|gesti[oó]n personal|gesti[oó]n ejecutiva/i},
-   {title:'Producción y operación de rodaje',re:/rodaje|set|producci[oó]n audiovisual|llamado|plan de rodaje|grabaci[oó]n|c[aá]mara|gaffer/i},
-   {title:'Creatividad y criterio visual',re:/creativ|concepto|diseñ|branding|gr[aá]fic|visual|arte|guion|composici[oó]n/i},
-   {title:'Comunicación y trabajo en equipo',re:/comunic|whatsapp|equipo|colabor|reporta|informa|coordinaci[oó]n entre [aá]reas/i},
-   {title:'Disciplina y cumplimiento',re:/puntual|asistencia|uniforme|presencia|norma|protocolo|cumplimiento|responsabilidad/i}
-  ];
-  const expectationEvalRows=Array.isArray(expectationEval?.criteria)?expectationEval.criteria:[];
-  const expectationProtocolText=expectationProtocols.map(p=>[p.title,p.objective,...(p.steps||[]),p.closure].filter(Boolean).join(' ')).join(' ');
-  const expectationCandidates=expectationProfiles.map(profile=>{
-   const matches=expectationSources.filter(item=>profile.re.test([item.title,item.text].filter(Boolean).join(' ')));
-   const evalMatches=expectationEvalRows.filter(row=>profile.re.test([row.name,row.desc].filter(Boolean).join(' ')));
-   const protocolHit=profile.re.test(expectationProtocolText);
-   const score=matches.length*5+evalMatches.reduce((sum,row)=>sum+Math.max(1,Number(row.weight||0))/5,0)+(protocolHit?2:0);
-   const sourceText=matches.slice(0,2).map(x=>String(x.text||'')).join(' ');
-   const evalText=evalMatches.slice(0,1).map(x=>String(x.desc||'')).join(' ');
-   const text=trainingPresentationSentenceSummary(sourceText||evalText,205);
-   return {title:profile.title,text,score}
-  }).filter(x=>x.score>0&&x.text).sort((a,b)=>b.score-a.score);
-
-  const expectations=[];
-  const expectationSeen=new Set();
-  expectationCandidates.forEach(x=>{
-   if(expectations.length>=6)return;
-   const key=x.title.toLowerCase();
-   if(expectationSeen.has(key))return;
-   expectationSeen.add(key);expectations.push([x.title,x.text])
-  });
-  if(expectations.length<6){
-   const fallback=[...expectationSources]
-    .sort((a,b)=>{
-     const score=item=>expectationEvalRows.reduce((sum,row)=>{
-      const hay=[row.name,row.desc].filter(Boolean).join(' ').toLowerCase(),title=String(item.title||'').toLowerCase();
-      const words=title.split(/[^a-záéíóúñ0-9]+/i).filter(w=>w.length>4);
-      return sum+(words.some(w=>hay.includes(w))?Number(row.weight||0):0)
-     },0);
-     return score(b)-score(a)
-    });
-   for(const item of fallback){
-    if(expectations.length>=6)break;
-    const title=String(item.title||'').trim(),text=trainingPresentationSentenceSummary(String(item.text||''),205);
-    if(!title||!text)continue;
-    const key=title.toLowerCase();
-    if(expectationSeen.has(key))continue;
-    expectationSeen.add(key);expectations.push([title,text])
-   }
+  const expectationEval=evaluationMaster();
+  const expectations=trainingExpectationEntries(expectationEval.criteria,items);
+  const expectationSlides=[];
+  // Six cards per page, with measured continuations instead of shortened descriptions.
+  const pending=expectations.map((entry,index)=>({title:entry[0].length>100?'Indicador '+(index+1):entry[0],text:entry[0].length>100?entry[0]+'\n'+entry[1]:entry[1],number:index+1}));
+  while(pending.length){
+   const batch=pending.splice(0,6),page=document.createElement('section');
+   page.className='training-slide training-learning-slide training-expectations-slide';
+   page.setAttribute('data-training-dynamic','expectations');
+   page.innerHTML='<div class="training-learning-inner"><div class="training-learning-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><h2>Qué se espera de ti'+(expectationSlides.length?' · Continuación':'')+'</h2><div class="training-learning-role">'+e(roleName)+'</div><div class="training-learning-accent"></div><p class="training-learning-intro">Indicadores de Evaluación y responsabilidades de esta plaza.</p><div class="training-expectation-grid"></div></div><div class="training-learning-footer">El Cartel Studio · '+e(roleName)+'</div>';
+   deck.insertBefore(page,source);
+   const grid=page.querySelector('.training-expectation-grid'),continuations=[];
+   batch.forEach(entry=>{
+    const card=document.createElement('article');card.className='training-expectation-card';
+    card.innerHTML='<div class="training-expectation-icon">'+String(entry.number).padStart(2,'0')+'</div><div><h3>'+e(entry.title)+'</h3><p></p></div>';
+    grid.appendChild(card);
+   });
+   // Fill the last page's grid without inventing additional expectations.
+   for(let n=batch.length;n<6;n++){const blank=document.createElement('div');blank.setAttribute('aria-hidden','true');grid.appendChild(blank)}
+   batch.forEach((entry,index)=>{
+    const card=grid.children[index],body=card.querySelector('p'),heading=card.querySelector('h3');
+    // Very long names continue as content too, retaining every character.
+    const fits=()=>body.getBoundingClientRect().bottom<=card.getBoundingClientRect().bottom-10;
+    body.textContent=entry.text;
+    if(!fits()){
+     let lo=0,hi=entry.text.length;
+     while(lo<hi){const mid=Math.ceil((lo+hi)/2);body.textContent=entry.text.slice(0,mid);if(fits())lo=mid;else hi=mid-1}
+     let cut=lo;
+     const boundary=entry.text.lastIndexOf(' ',cut);if(boundary>cut/2)cut=boundary+1;
+     if(!cut){heading.textContent=String(entry.number).padStart(2,'0');entry.text=entry.title+'\n'+entry.text;cut=Math.min(80,entry.text.length)}
+     body.textContent=entry.text.slice(0,cut);
+     if(cut<entry.text.length)continuations.push({...entry,title:'Indicador '+entry.number+' · Continuación',text:entry.text.slice(cut)});
+    }
+   });
+   pending.unshift(...continuations);
+   expectationSlides.push(page);
   }
-  if(!expectations.length)expectations.push(['Cumplimiento de la plaza',trainingPresentationSentenceSummary(String(role.description||''),205)||'Desarrolla las funciones de la plaza con responsabilidad, organización y apego a los estándares de El Cartel Studio.']);
-
-  const expectationSlide=document.createElement('section');expectationSlide.className='training-slide training-learning-slide';
-  expectationSlide.innerHTML='<div class="training-learning-inner"><div class="training-learning-kicker">CAPÍTULO '+String(chapter).padStart(2,'0')+'</div><h2>Qué se espera de ti</h2><div class="training-learning-role">'+e(roleName)+'</div><div class="training-learning-accent"></div><p class="training-learning-intro">Estas son las conductas y resultados que más sostienen el desempeño de esta plaza, de acuerdo con sus responsabilidades y criterios de evaluación.</p><div class="training-expectation-grid">'+expectations.slice(0,6).map((x,i)=>'<article class="training-expectation-card"><div class="training-expectation-icon">'+String(i+1).padStart(2,'0')+'</div><div><h3>'+e(x[0])+'</h3><p>'+e(x[1])+'</p></div></article>').join('')+'</div></div><div class="training-learning-footer">El Cartel Studio · '+e(roleName)+'</div>';
-  deck.insertBefore(expectationSlide,source);
+  const expectationSlide=expectationSlides[0];
 
   const protocolContext=protocolItems().map(p=>[p.title,p.objective,...(p.steps||[]),p.closure].filter(Boolean).join(' ')).join(' ');
   const errorSourceItems=items.filter(x=>String(x.text||'').trim());
@@ -3540,7 +3530,7 @@ function paginateTrainingPresentation(root,slideOverrides=null){
   deck.insertBefore(errorsSlide,source);
 
   const remainingItems=items.filter(item=>item!==purposeItem&&item!==objectiveItem);
-  if(!remainingItems.length)return [missionSlide,workModeSlide,cycleSlide,expectationSlide,errorsSlide];
+  if(!remainingItems.length)return [missionSlide,workModeSlide,cycleSlide,...expectationSlides,errorsSlide];
 
   const buckets={functions:[],work:[],tools:[],result:[]};
   remainingItems.forEach(item=>{
@@ -3608,7 +3598,7 @@ function paginateTrainingPresentation(root,slideOverrides=null){
    {key:'tools',title:'Herramientas y recursos',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>'},
    {key:'result',title:'Resultado esperado',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V6M16 20V12M22 20V3"></path><path d="m3 9 6-4 6 4 7-7"></path></svg>'}
   ].filter(card=>buckets[card.key].length).map(card=>({...card,items:buckets[card.key]}));
-  if(!defs.length)return [missionSlide,workModeSlide,...functionSlides,cycleSlide,expectationSlide,errorsSlide];
+  if(!defs.length)return [missionSlide,workModeSlide,...functionSlides,cycleSlide,...expectationSlides,errorsSlide];
 
   const maxCardChars=Math.max(0,...defs.map(card=>card.items.reduce((a,x)=>a+String(x.title||'').length+String(x.text||'').length,0)));
   const baseClass=maxCardChars>4200?' very-long':maxCardChars>2800?' long':'';
@@ -3666,7 +3656,7 @@ function paginateTrainingPresentation(root,slideOverrides=null){
   };
   let pages=pack(false);
   if(pages.length>2){pages.forEach(p=>p.remove());pages=pack(true)}
-  return [missionSlide,workModeSlide,...functionSlides,cycleSlide,expectationSlide,errorsSlide,...pages]
+  return [missionSlide,workModeSlide,...functionSlides,cycleSlide,...expectationSlides,errorsSlide,...pages]
  };
  const makeProtocolSlides=(chapter)=>{
   const sourceProtocols=protocolItems().filter(p=>String(p.title||p.objective||(p.steps||[]).join(' ')||p.closure).trim());
@@ -6168,4 +6158,3 @@ function historyRowsHtml(rows){return rows.map(r=>'<div><b>'+e(r.label)+'</b><sp
 async function loadRoleHistoryDetail(details,eventId){if(!details.open||details.dataset.loaded==='1'||historyDetailFlights.has(eventId))return;const box=details.querySelector('.role-history-changes');box.textContent='Cargando cambios…';const promise=(async()=>{try{const result=await CartelLoad.read('history_detail',()=>sb.from('hr_role_history').select('id,before_data,after_data').eq('role_id',role.id).eq('id',eventId).single());const item=roleHistory.find(x=>x.id===eventId);if(item)Object.assign(item,result.data);const rows=historyChangeRows(result.data);box.innerHTML=rows.length?historyRowsHtml(rows):'Este evento no contiene cambios detallados.';details.dataset.loaded='1';}catch(_){box.textContent='No se pudieron cargar los cambios. Cierra y vuelve a abrir para reintentar.';}finally{historyDetailFlights.delete(eventId);}})();historyDetailFlights.set(eventId,promise);return promise;}
 // CARTEL_HISTORY_LAZY_END
 CartelLoad.run("boot",boot);</script></body></html>
-
