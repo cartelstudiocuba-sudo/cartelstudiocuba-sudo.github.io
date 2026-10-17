@@ -2154,7 +2154,7 @@
 .training-fixed-canvas .training-presentation-source{display:none}
 .training-fixed-canvas{overflow:hidden}
 .training-pdf-stage.presentation{width:1040px}
-</style></head><body><div class="wrap"><div class="top"><div class="brand">CARTEL GESTIÓN · RRHH</div><a class="back back-premium" href="/plazas.html"><span class="back-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path><path d="M9.5 12H20"></path></svg></span><span class="back-copy"><small>Regresar</small><b>Volver a plazas</b></span></a></div><section id="hero" class="hero"></section><div class="editable-area-head"><div class="editable-area-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h4l10.5-10.5-4-4L4 15.5z"></path><path d="m13.5 6 4 4"></path></svg></div><div><small>ÁREA DE TRABAJO</small><b>Secciones editables de la plaza</b><span>Selecciona una pestaña para consultar o modificar su contenido.</span></div></div><div class="tabs" id="tabs"></div><section id="panel" class="panel"></section></div><script>const U='https://jhumvctocphyiwhszeaz.supabase.co',K='sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',MAIL='cartelstudiocuba@gmail.com',sb=CartelLoad.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});let role=null,cycles=[],roleDocs=[],roleHistory=[],roles=[],agencyPolicies=[],agencyInstitutional=[],agencyDiscipline=[],agencyContractData=[],agencyContractClauses=[],agencyEvaluationParams=[],active='',prototypeDocSelection=new Set(),contractActiveDoc=null,contractActiveBlock=null,contractEditingBlock=null,recruitmentActiveSection=null,definitionActiveSection=null,historyFilter='all',historyPeriod='all',historyActor='all',contractLogoUrls={};const id=new URLSearchParams(location.search).get('id'),e=s=>String(s??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const tabs=['Definición de la plaza','Convocatoria','Contratación','Capacitación','Protocolos','Evaluación','Documentación','Historial'];async function boot(){
+</style><style>.contract-picker-actions{min-width:0;display:grid;gap:6px}.contract-picker-actions>button{width:100%}.contract-share-dialog{max-width:480px;width:calc(100% - 32px);border:1px solid #ddd;border-radius:16px;padding:22px;font:inherit}.contract-share-dialog::backdrop{background:#0008}.contract-share-dialog p{overflow-wrap:anywhere;line-height:1.5}.contract-share-dialog .btn{margin:5px}</style></head><body><div class="wrap"><div class="top"><div class="brand">CARTEL GESTIÓN · RRHH</div><a class="back back-premium" href="/plazas.html"><span class="back-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path><path d="M9.5 12H20"></path></svg></span><span class="back-copy"><small>Regresar</small><b>Volver a plazas</b></span></a></div><section id="hero" class="hero"></section><div class="editable-area-head"><div class="editable-area-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h4l10.5-10.5-4-4L4 15.5z"></path><path d="m13.5 6 4 4"></path></svg></div><div><small>ÁREA DE TRABAJO</small><b>Secciones editables de la plaza</b><span>Selecciona una pestaña para consultar o modificar su contenido.</span></div></div><div class="tabs" id="tabs"></div><section id="panel" class="panel"></section></div><script>const U='https://jhumvctocphyiwhszeaz.supabase.co',K='sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',MAIL='cartelstudiocuba@gmail.com',sb=CartelLoad.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});let role=null,cycles=[],roleDocs=[],roleHistory=[],roles=[],agencyPolicies=[],agencyInstitutional=[],agencyDiscipline=[],agencyContractData=[],agencyContractClauses=[],agencyEvaluationParams=[],active='',prototypeDocSelection=new Set(),contractActiveDoc=null,contractActiveBlock=null,contractEditingBlock=null,recruitmentActiveSection=null,definitionActiveSection=null,historyFilter='all',historyPeriod='all',historyActor='all',contractLogoUrls={};const id=new URLSearchParams(location.search).get('id'),e=s=>String(s??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const tabs=['Definición de la plaza','Convocatoria','Contratación','Capacitación','Protocolos','Evaluación','Documentación','Historial'];async function boot(){
  CartelLoad.setReadOnly(true);
  const sessionResult=CartelLoad.required(await sb.auth.getSession());const session=sessionResult.data.session;
  if(!session||String(session.user.email||'').toLowerCase()!==MAIL){location.href='/rrhh.html';return}
@@ -5766,6 +5766,12 @@ function openContractDocumentPicker(mode){
  }else{
   body.innerHTML=groups.map(group=>'<section class="contract-picker-family contract-picker-family-'+e(group.familyKey)+'"><div class="contract-picker-family-head"><span>'+contractFamilyIcon(group.familyKey)+'</span><div><b>'+e(group.title)+'</b><small>'+group.documents.length+' '+(group.documents.length===1?'documento activo':'documentos activos')+'</small></div></div><div class="contract-picker-docs">'+group.documents.map(item=>'<button type="button" onclick="selectContractDocumentAction(\''+e(item.familyKey)+'\',\''+e(item.docKey)+'\')"><span class="contract-picker-doc-icon">▤</span><span><b>'+e(item.title)+'</b><small>'+e(item.subtitle||'Documento contractual')+'</small></span><i>›</i></button>').join('')+'</div></section>').join('')
  }
+ if(mode==='pdf')body.querySelectorAll('.contract-picker-docs > button').forEach((pdfButton,index)=>{
+  const item=groups.flatMap(group=>group.documents)[index],actions=document.createElement('div');actions.className='contract-picker-actions';
+  pdfButton.replaceWith(actions);actions.appendChild(pdfButton);
+  const share=document.createElement('button');share.type='button';share.textContent='Enviar por WhatsApp';
+  share.onclick=()=>exportPickedContractPdf(item.familyKey,item.docKey,true);actions.appendChild(share);
+ });
  modal.classList.add('open');
  document.body.classList.add('contract-picker-open')
 }
@@ -5806,26 +5812,58 @@ function closePickedContractPreview(){
  if(modal)modal.classList.remove('open');
  document.body.classList.remove('protocol-preview-open')
 }
-async function exportPickedContractPdf(familyKey,docKey){
+let contractPdfBusy=false;
+async function exportPickedContractPdf(familyKey,docKey,share=false){
+ if(contractPdfBusy)return;
  const doc=activeContractDocument(familyKey,docKey);if(!doc)return;
  if(!window.html2canvas||!window.jspdf?.jsPDF){alert('No se cargó el generador de PDF.');return}
+ contractPdfBusy=true;
+ let stage;
+ try{
  await ensureContractPresentationLogo(doc);await ensureContractWatermarkLogo(doc);
- let stage=document.getElementById('pickedContractPdfStage');
+ stage=document.getElementById('pickedContractPdfStage');
  if(!stage){stage=document.createElement('div');stage.id='pickedContractPdfStage';stage.className='picked-contract-pdf-stage';document.body.appendChild(stage)}
  stage.innerHTML='';buildContractPreviewPages(doc,stage);
- const pages=[...stage.querySelectorAll('.contract-paper-page')];if(!pages.length)return;
- try{
+ const pages=[...stage.querySelectorAll('.contract-paper-page')];if(!pages.length)throw new Error('El documento no contiene páginas.');
   const{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'letter',compress:true});
   for(let i=0;i<pages.length;i++){
    if(i)pdf.addPage('letter','portrait');
    const canvas=await html2canvas(pages[i],{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
    pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,215.9,279.4,undefined,'FAST')
   }
-  pdf.save(contractPdfFilename(doc));
+  if(share)showContractSharePdf(pdf.output('blob'),contractPdfFilename(doc));
+  else pdf.save(contractPdfFilename(doc));
   await logRoleHistoryEvent('Contratación','pdf_generated','PDF contractual generado','Se generó “'+(doc.title||'Documento contractual')+'”.',{document_key:doc.key||'',document_title:doc.title||'',family_key:familyKey})
  }catch(err){alert('No se pudo generar el PDF: '+(err?.message||err))}
- finally{stage.innerHTML=''}
+ finally{if(stage)stage.innerHTML='';contractPdfBusy=false}
 }
+
+function showContractSharePdf(blob,filename){
+ const dialog=document.createElement('dialog');dialog.className='contract-share-dialog';
+ const title=document.createElement('h3');title.textContent='Enviar por WhatsApp';
+ const message=document.createElement('p');message.textContent='PDF preparado: '+filename;
+ const action=document.createElement('button');action.className='btn primary';action.type='button';
+ const cancel=document.createElement('button');cancel.className='btn';cancel.type='button';cancel.textContent='Cerrar';
+ const file=new File([blob],filename,{type:'application/pdf'});
+ let compatible=false;try{compatible=!!(navigator.share&&navigator.canShare?.({files:[file]}))}catch(_){}
+ action.textContent=compatible?'Elegir aplicación':'Descargar PDF y abrir WhatsApp';
+ const hint=document.createElement('p');hint.textContent=compatible?'Selecciona WhatsApp en el selector de aplicaciones. Abrirlo no confirma el envío.':'El PDF se descargará. Adjunta el archivo manualmente en WhatsApp antes de enviarlo.';
+ cancel.onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();
+ action.onclick=async()=>{
+  action.disabled=true;
+  try{
+   if(compatible){await navigator.share({files:[file]});message.textContent='Selector cerrado. Comprueba el envío en WhatsApp.'}
+   else{
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    const target=window.open('https://wa.me/?text='+encodeURIComponent('Te comparto un documento contractual en PDF. El archivo se adjunta manualmente desde la descarga.'),'_blank','noopener,noreferrer');
+    message.textContent='PDF descargado. Adjunta el archivo manualmente en WhatsApp. Si no se abrió, permite las ventanas emergentes y vuelve a intentarlo.';
+   }
+  }catch(err){message.textContent=err?.name==='AbortError'?'Se canceló la selección. Puedes volver a intentarlo.':'No se pudo compartir el PDF. Puedes volver a intentarlo o usar Exportar PDF.'}
+  finally{action.disabled=false}
+ };
+ dialog.append(title,message,hint,action,cancel);document.body.appendChild(dialog);dialog.showModal();
+}
+
 function renderContract(){const data=contractTemplates(),doc=contractActiveDoc?contractFindDoc(data,contractActiveDoc):null;return '<div class="section-head contract-section-head"><div><h2 style="margin:0">Contratación</h2><small>Plantillas maestras que utilizará Documentación para generar los documentos de cada trabajador.</small></div><div class="contract-header-actions"><div class="contract-document-actions"><button class="protocol-head-btn protocol-preview-primary" onclick="openContractDocumentPicker(\'preview\')"><span class="protocol-head-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span><div><b>Vista previa</b><small>Seleccionar documento</small></div></button><button class="protocol-head-btn protocol-pdf-primary" onclick="openContractDocumentPicker(\'pdf\')"><span class="protocol-head-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2.5h8l4 4V21.5H6z"></path><path d="M14 2.5v4h4"></path><path d="M8.5 15.5h7M8.5 12.5h7"></path></svg></span><div><b>Exportar PDF</b><small>Seleccionar documento</small></div></button></div><div class="contract-master-shortcuts"><a class="contract-master-shortcut contract-master-data" href="/nomencladores.html?cat=datos_contractuales_empresa"><span class="contract-master-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg></span><span><b>Datos contractuales</b><small>Empresa y representación</small></span><i>›</i></a><a class="contract-master-shortcut contract-master-clauses" href="/nomencladores.html?cat=clausulas_contractuales"><span class="contract-master-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10M7 20h10M12 4v16"></path><path d="M4 8h6l-3 5zM14 8h6l-3 5z"></path></svg></span><span><b>Cláusulas maestras</b><small>Textos base del sistema</small></span><i>›</i></a></div></div></div><div class="contract-family-grid">'+Object.entries(data).map(([key,fam])=>'<div class="contract-family-card contract-family-'+key+' '+(fam.applies?'on':'off')+'"><div class="contract-family-head"><div class="contract-family-title-wrap">'+contractFamilyIcon(key)+'<div class="contract-family-copy"><b>'+e(fam.title)+'</b><small>'+(fam.applies?'Aplica a esta plaza':'No aplica a esta plaza')+'</small></div></div><label class="contract-switch"><input type="checkbox" '+(fam.applies?'checked':'')+' onchange="toggleContractFamily(\''+key+'\',this.checked)"><span></span></label></div><div class="contract-family-docs">'+fam.documents.map(d=>'<button class="'+(d.key===contractActiveDoc?'active':'')+'" onclick="openContractDocument(\''+d.key+'\')" '+(!fam.applies?'disabled':'')+'><span class="contract-doc-icon">▤</span><span><b>'+e(d.title)+'</b><small>'+e(d.subtitle||'')+'</small></span><span class="contract-doc-chevron">›</span></button>').join('')+'</div></div>').join('')+'</div>'+(doc?renderContractWorkspace(doc):'<div class="contract-empty-selection"><span>Selecciona uno de los documentos de arriba para abrir su plantilla.</span></div>')}
 function contractSourceChanged(sel){const ta=document.getElementById('contractBlockText'),label=document.getElementById('contractTextLabelText'),help=document.getElementById('contractEditHelp'),inh=document.getElementById('contractWorkspaceInherited'),title=document.getElementById('contractBlockTitle')?.value||'',custom=sel.value==='custom',block={source:sel.value,title,text:''};if(ta){ta.readOnly=false;ta.value=custom?'':contractBaseRenderedText(block)}if(label)label.textContent=custom?'Texto de la cláusula':'Texto contractual';if(help)help.textContent=custom?'Este texto pertenece únicamente a esta plantilla.':'Este es el texto real que aparecerá en el documento. Si lo modificas, el cambio se guardará solo para esta plaza.';if(inh)inh.innerHTML=contractWorkspaceSourceFields(block);refreshContractInlinePreview()}
 function toggleContractOverrideEditor(on){const ta=document.getElementById('contractBlockText'),src=document.getElementById('contractBlockSource')?.value||'custom',label=document.getElementById('contractTextLabelText'),help=document.getElementById('contractEditHelp');if(!ta||src==='custom')return;ta.readOnly=!on;if(on){ta.value=ta.value||contractInheritedContent(src,{});if(label)label.textContent='Versión personalizada para esta plaza';if(help)help.textContent='Esta modificación solo afecta esta plaza. La fuente original no cambia.'}else{ta.value=contractInheritedContent(src,{});if(label)label.textContent='Texto heredado';if(help)help.textContent='Activa “Personalizar para esta plaza” para modificar el texto sin tocar la fuente original.'}refreshContractInlinePreview()}
