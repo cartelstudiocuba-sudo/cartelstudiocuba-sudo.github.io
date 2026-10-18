@@ -1,7 +1,7 @@
 {
   "name": "Insumos · El Cartel Studio",
   "short_name": "Insumos",
-  "start_url": "/inventario-insumos.html",
+  "start_url": "/inventario-insumos.html?app=20261018",
   "scope": "/inventario-insumos.html",
   "display": "standalone",
   "background_color": "#0758ed",
