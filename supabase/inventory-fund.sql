@@ -50,7 +50,7 @@ begin
  if new.kind='entry' and opening_date is null then raise exception 'Registre primero el saldo inicial real del fondo'; end if;
  if new.kind='entry' and new.occurred_on<(select max(occurred_on) from public.inventory_fund_ledger) then raise exception 'Una compra del fondo no puede preceder al último movimiento de caja'; end if;
  if opening_date is not null and new.occurred_on<opening_date then raise exception 'La operación precede al inicio del fondo'; end if;
- if new.kind='entry' and new.quantity*new.unit_cost>(select coalesce(sum(amount),0) from public.inventory_fund_ledger) then raise exception 'Saldo del fondo insuficiente'; end if;
+ if new.kind='entry' and round(new.quantity*new.unit_cost,2)>(select coalesce(sum(amount),0) from public.inventory_fund_ledger) then raise exception 'Saldo del fondo insuficiente'; end if;
  return new;
 end $$;
 create trigger a_inventory_cup_guard before insert on public.inventory_movements for each row execute function public.inventory_cup_guard();
@@ -60,7 +60,7 @@ begin
  if auth.uid() is null or not public.inventory_has_access('write') then raise exception 'Acceso no autorizado' using errcode='42501'; end if;
  if new.kind='entry' then
  insert into public.inventory_fund_ledger(id,occurred_on,kind,amount,movement_id,actor_id,actor_name,reference,payment_method,reason,request_payload)
- values(new.id,new.occurred_on,'purchase',-new.quantity*new.unit_cost,new.id,auth.uid(),studio_access_private.inventory_actor_name(),coalesce(nullif(new.notes,''),new.id::text),'Fondo de Insumos','Compra desde el fondo',coalesce(new.request_payload,'{}'));
+ values(new.id,new.occurred_on,'purchase',-round(new.quantity*new.unit_cost,2),new.id,auth.uid(),studio_access_private.inventory_actor_name(),coalesce(nullif(new.notes,''),new.id::text),'Fondo de Insumos','Compra desde el fondo',coalesce(new.request_payload,'{}'));
  end if;
  return new;
 end $$;
@@ -88,19 +88,19 @@ begin
  if d<(select max(occurred_on) from public.inventory_fund_ledger) then raise exception 'La fecha de caja no puede preceder al último movimiento; registre la corrección en la fecha actual'; end if;
  if k='opening' then
  if od is not null then raise exception 'El fondo ya tiene saldo inicial'; end if;
- if a is null or a<0 or a>='Infinity'::numeric then raise exception 'Saldo inicial no válido'; end if;
+ if a is null or a<0 or a>='Infinity'::numeric or a<>round(a,2) then raise exception 'Saldo inicial no válido'; end if;
  -- Opening is available cash AFTER historical purchases; no historical row is rewritten.
  if payload->>'baseline' is distinct from 'available_after_historical_purchases' then raise exception 'Confirme el criterio del saldo inicial'; end if;
  elsif od is null then raise exception 'Registre primero el saldo inicial';
  elsif d<od then raise exception 'La operación precede al inicio del fondo';
  end if;
  if k='reimbursement' then
- if a is null or a<=0 or a>='Infinity'::numeric then raise exception 'Importe no válido'; end if;
+ if a is null or a<=0 or a>='Infinity'::numeric or a<>round(a,2) then raise exception 'Importe no válido'; end if;
  select * into strict e from public.inventory_economic_movements where id=(payload->>'economic_movement_id')::uuid for update;
  if e.currency<>'CUP' then raise exception 'No se pueden mezclar monedas'; end if;
  if d<e.occurred_on then raise exception 'El reintegro precede al consumo'; end if;
  select coalesce(sum(l.amount),0) into paid from public.inventory_fund_ledger l left join public.inventory_fund_ledger original on original.id=l.reverses_id where l.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id) or original.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id);
- if a>e.quantity*e.unit_cost-paid then raise exception 'El reintegro supera el pendiente'; end if;
+ if a>round(e.quantity*e.unit_cost,2)-paid then raise exception 'El reintegro supera el pendiente'; end if;
  if nullif(trim(payload->>'delivered_by'),'') is null or nullif(trim(payload->>'received_by'),'') is null then raise exception 'Indique quién entrega y quién recibe'; end if;
  insert into public.inventory_cash_reimbursements(id,received_on,economic_movement_id,amount,currency,delivered_by,received_by,receipt_reference,recorded_by,payment_method,request_payload)
  values(request_id,d,e.id,a,'CUP',payload->>'delivered_by',payload->>'received_by',payload->>'reference',auth.uid(),payload->>'payment_method',payload);
@@ -111,7 +111,7 @@ begin
  a=-target.amount;
  elsif k='adjustment' then
  if not coalesce(studio_access_private.is_owner(),false) then raise exception 'Solo el propietario puede ajustar' using errcode='42501'; end if;
- if a is null or a=0 or a<='-Infinity'::numeric or a>='Infinity'::numeric then raise exception 'Importe no válido'; end if;
+ if a is null or a=0 or a<='-Infinity'::numeric or a>='Infinity'::numeric or a<>round(a,2) then raise exception 'Importe no válido'; end if;
  elsif k<>'opening' then raise exception 'Operación no válida'; end if;
  if a<0 and a+(select coalesce(sum(amount),0) from public.inventory_fund_ledger)<0 then raise exception 'Saldo insuficiente para corregir'; end if;
  insert into public.inventory_fund_ledger(id,occurred_on,kind,amount,reimbursement_id,reverses_id,actor_id,actor_name,reference,payment_method,reason,request_payload)
@@ -137,7 +137,7 @@ begin
  'purchases',coalesce((select jsonb_agg(m order by m.occurred_on,m.id) from public.inventory_movements m join public.inventory_products p on p.id=m.product_id where m.kind='entry' and coalesce(m.currency,p.currency)='CUP' and m.occurred_on between start_date and end_date),'[]'),
  'consumption',coalesce((select jsonb_agg(e order by occurred_on,id) from public.inventory_economic_movements e where currency='CUP' and occurred_on between start_date and end_date),'[]'),
  'receivables',coalesce((select jsonb_agg(t order by occurred_on,id) from (
- select e.*, e.quantity*e.unit_cost-coalesce((select sum(l.amount) from public.inventory_fund_ledger l left join public.inventory_fund_ledger original on original.id=l.reverses_id where l.occurred_on<=end_date and (l.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id) or original.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id))),0) pending
+ select e.*, round(e.quantity*e.unit_cost,2)-coalesce((select sum(l.amount) from public.inventory_fund_ledger l left join public.inventory_fund_ledger original on original.id=l.reverses_id where l.occurred_on<=end_date and (l.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id) or original.reimbursement_id in(select id from public.inventory_cash_reimbursements where economic_movement_id=e.id))),0) pending
  from public.inventory_economic_movements e where e.currency='CUP' and e.occurred_on<=end_date)t),'[]')) into result;
  return result;
 end $$;
