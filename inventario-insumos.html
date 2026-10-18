@@ -422,14 +422,14 @@ finally{saving=false;field('product-editor-save').disabled=false}
  const input=document.getElementById('move-supplier'),list=document.getElementById('supplier-autocomplete-list');
  const phone=document.getElementById('supplier-phone'),address=document.getElementById('supplier-address');
  const toggle=document.getElementById('supplier-dropdown-toggle');
- let providers=[],lastLoaded=0,loading=null,selected=-1;
+ let providers=[],lastLoaded=0,loading=null,selected=-1,loadError=null;
  const normalize=v=>String(v||'').trim().toLocaleLowerCase('es');
  function hide(){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false');selected=-1}
  async function loadProviders(force=false){
-  if(!force&&Date.now()-lastLoaded<30000)return;
+  if(!force&&!loadError&&Date.now()-lastLoaded<30000)return;
   if(loading)return loading;
   loading=(async()=>{
-   const sb=window.inventorySupabaseClient;if(!sb)return;
+   const sb=window.inventorySupabaseClient;if(!sb)throw Error('La conexión al inventario todavía no está disponible.');
    const records=[];for(let page=0;page<50;page++){
     const {data,error}=await sb.from('inventory_movements').select('supplier,created_at').eq('kind','entry').order('created_at',{ascending:false}).range(page*1000,(page+1)*1000-1);
     if(error)throw error;records.push(...(data||[]));if(!data||data.length<1000)break;if(page===49)throw Error('El directorio supera el límite de consulta. No se mostrarán datos incompletos.');
@@ -442,11 +442,12 @@ finally{saving=false;field('product-editor-save').disabled=false}
     if(!existing)byName.set(key,{name:String(p.name).trim(),phone:String(p.phone||'').trim(),address:String(p.address||'').trim()});
     else{if(!existing.phone&&p.phone)existing.phone=String(p.phone).trim();if(!existing.address&&p.address)existing.address=String(p.address).trim()}
    }
-   providers=[...byName.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'));lastLoaded=Date.now();
-  })().finally(()=>{loading=null});return loading;
+   providers=[...byName.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'));lastLoaded=Date.now();loadError=null;
+  })().catch(e=>{loadError=e;providers=[];throw e}).finally(()=>{loading=null});return loading;
  }
  function choose(p){input.value=p.name;phone.value=p.phone;address.value=p.address;hide();input.dispatchEvent(new Event('change',{bubbles:true}))}
  function render(){
+  if(loadError){showLoadError();return}
   const q=normalize(input.value),matches=providers.filter(p=>normalize(p.name).includes(q)).slice(0,30);
   list.replaceChildren();selected=-1;
   for(const p of matches){const b=document.createElement('button');b.type='button';b.setAttribute('role','option');const title=document.createElement('strong');title.textContent=p.name;const meta=document.createElement('small');meta.textContent=[p.phone,p.address].filter(Boolean).join(' · ')||'Proveedor registrado';b.append(title,meta);b.addEventListener('mousedown',e=>e.preventDefault());b.addEventListener('click',()=>choose(p));list.append(b)}
@@ -454,8 +455,9 @@ finally{saving=false;field('product-editor-save').disabled=false}
   if(!q&&!matches.length){hide();return}
   list.hidden=false;input.setAttribute('aria-expanded','true');toggle.setAttribute('aria-expanded','true');
  }
- input.addEventListener('focus',async()=>{try{await loadProviders();if(document.activeElement===input)render()}catch(e){console.warn('No se pudo consultar el directorio de proveedores',e)}});
- toggle.addEventListener('click',async()=>{if(!list.hidden){hide();return}input.value='';try{await loadProviders(true);render()}catch(e){console.warn('No se pudieron cargar los proveedores',e);list.replaceChildren();const p=document.createElement('p');p.textContent='No se pudieron cargar los proveedores. Inténtalo nuevamente.';list.append(p);list.hidden=false;toggle.setAttribute('aria-expanded','true')}});
+ function showLoadError(){list.replaceChildren();const p=document.createElement('p');p.textContent='No se pudo consultar el directorio. Puedes escribir los datos manualmente o reintentar. '+(loadError?.message||'');const retry=document.createElement('button');retry.type='button';retry.className='btn';retry.textContent='Reintentar consulta';retry.addEventListener('click',async()=>{retry.disabled=true;try{await loadProviders(true);render()}catch(e){showLoadError()}});list.append(p,retry);list.hidden=false;input.setAttribute('aria-expanded','true');toggle.setAttribute('aria-expanded','true')}
+ input.addEventListener('focus',async()=>{try{await loadProviders();if(document.activeElement===input)render()}catch(e){console.warn('No se pudo consultar el directorio de proveedores',e);if(document.activeElement===input)showLoadError()}});
+ toggle.addEventListener('click',async()=>{if(!list.hidden){hide();return}try{await loadProviders(true);render()}catch(e){console.warn('No se pudieron cargar los proveedores',e);showLoadError()}});
  input.addEventListener('input',()=>{selected=-1;const typed=normalize(input.value);if(!providers.some(p=>normalize(p.name)===typed)){phone.value='';address.value='';}render()});
  input.addEventListener('keydown',e=>{
   if(e.key==='Escape'){hide();return}
