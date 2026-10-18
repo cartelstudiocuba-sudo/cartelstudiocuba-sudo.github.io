@@ -133,6 +133,7 @@ begin
  'opening_date',(select occurred_on from public.inventory_fund_ledger where kind='opening'),
  'balance_before',(select coalesce(sum(amount),0) from public.inventory_fund_ledger where occurred_on<start_date),
  'balance_end',(select coalesce(sum(amount),0) from public.inventory_fund_ledger where occurred_on<=end_date),
+ 'reimbursed_net',(select coalesce(sum(l.amount),0) from public.inventory_fund_ledger l left join public.inventory_fund_ledger original on original.id=l.reverses_id where l.occurred_on between start_date and end_date and (l.kind='reimbursement' or original.kind='reimbursement')),
  'ledger',coalesce((select jsonb_agg(l order by occurred_on,id) from public.inventory_fund_ledger l where occurred_on between start_date and end_date),'[]'),
  'purchases',coalesce((select jsonb_agg(m order by m.occurred_on,m.id) from public.inventory_movements m join public.inventory_products p on p.id=m.product_id where m.kind='entry' and coalesce(m.currency,p.currency)='CUP' and m.occurred_on between start_date and end_date),'[]'),
  'consumption',coalesce((select jsonb_agg(e order by occurred_on,id) from public.inventory_economic_movements e where currency='CUP' and occurred_on between start_date and end_date),'[]'),
