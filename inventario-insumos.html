@@ -20,6 +20,12 @@ function selectedProduct(){return inventoryProducts.find(p=>p.id===productSelect
 function updateValue(){const p=selectedProduct();byId('econ-total').textContent=p?((Number(byId('move-qty').value)||0)*Number(p.unit_cost)).toFixed(2)+' '+p.currency:'Selecciona un producto';}
 productSelect.onchange=updateValue;byId('move-qty').addEventListener('input',updateValue);
 async function loadInventory(){
+ const access=await sb.rpc('inventory_has_access',{operation:'read'});if(access.error)throw access.error;
+ const write=await sb.rpc('inventory_has_access',{operation:'write'});if(write.error)throw write.error;
+ byId('new').disabled=!write.data;byId('out').disabled=!write.data;
+ byId('new').title=write.data?'':'Tu perfil no permite registrar movimientos';byId('out').title=byId('new').title;
+ if(!access.data)throw Error('Tu cuenta no tiene acceso a Insumos. Solicita la asignación de un perfil al propietario.');
+
  const results=await Promise.all([sb.from('inventory_products').select('*').order('name'),sb.from('inventory_movements').select('*').order('created_at',{ascending:false}).limit(100),sb.from('inventory_economic_movements').select('*').order('created_at',{ascending:false})]);
  for(const r of results)if(r.error)throw r.error;
  inventoryProducts=results[0].data;inventoryEconomic=results[2].data;
