@@ -175,6 +175,12 @@ form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;
    pendingRequest.uploaded=true;
   }
   payload.photo_path=pendingRequest.path;
+ }else if(usesPhoto&&pendingRequest.path){
+  const {data,error}=await sb.auth.getUser();if(error||!data.user)throw Error('Inicia sesión para recuperar la fotografía pendiente.');
+  if(!pendingRequest.path.startsWith(data.user.id+'/'))throw Error('La fotografía pendiente no pertenece a esta cuenta.');
+  const existing=await sb.storage.from(photoBucket).download(pendingRequest.path);
+  if(existing.error)throw Error('La fotografía anterior no se pudo verificar. Vuelve a seleccionarla antes de guardar.');
+  payload.photo_path=pendingRequest.path;
  }
  byId('form-message').textContent='Confirmando movimiento…';
  const receiptRequestId=pendingRequest.id;const receiptData=movementType==='out'&&byId('delivery-receipt-enabled').checked?{id:receiptRequestId,date:payload.occurred_on,name:payload.name||byId('existing-product').value,quantity:payload.quantity,unit:payload.unit||'',area:payload.receiving_area,person:payload.received_by,project:payload.project_reference,kind:payload.allocation_type,reason:payload.consumption_reason,notes:payload.notes,unitCost:Number(selectedProduct()?.unit_cost||0),currency:selectedProduct()?.currency||'CUP',stock:Number(selectedProduct()?.stock||0)}:null;
