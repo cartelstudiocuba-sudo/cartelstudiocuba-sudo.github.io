@@ -430,14 +430,14 @@ finally{saving=false;field('product-editor-save').disabled=false}
   if(loading)return loading;
   loading=(async()=>{
    const sb=window.inventorySupabaseClient;if(!sb)return;
-   const records=[];for(let page=0;page<10;page++){
+   const records=[];for(let page=0;page<50;page++){
     const {data,error}=await sb.from('inventory_movements').select('supplier,created_at').eq('kind','entry').order('created_at',{ascending:false}).range(page*1000,(page+1)*1000-1);
-    if(error)throw error;records.push(...(data||[]));if(!data||data.length<1000)break;
+    if(error)throw error;records.push(...(data||[]));if(!data||data.length<1000)break;if(page===49)throw Error('El directorio supera el límite de consulta. No se mostrarán datos incompletos.');
    }
    const byName=new Map();
    for(const row of records){
     let p=row.supplier;if(typeof p==='string'){try{p=JSON.parse(p)}catch{continue}}
-    if(!p||typeof p!=='object'||!String(p.name||'').trim())continue;
+    if(!p||typeof p!=='object'||Array.isArray(p)||!String(p.name||'').trim())continue;
     const key=normalize(p.name);const existing=byName.get(key);
     if(!existing)byName.set(key,{name:String(p.name).trim(),phone:String(p.phone||'').trim(),address:String(p.address||'').trim()});
     else{if(!existing.phone&&p.phone)existing.phone=String(p.phone).trim();if(!existing.address&&p.address)existing.address=String(p.address).trim()}
