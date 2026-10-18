@@ -322,7 +322,7 @@ const sb=window.inventorySupabaseClient;if(!sb)throw Error('La conexiÃ³n no estÃ
 const args={p_product_id:currentId,p_name:field('edit-product-name').value,p_category:field('edit-product-category').value,p_unit:field('edit-product-unit').value,p_description:field('edit-product-description').value,p_minimum_stock:Number(field('edit-product-minimum').value)};
 const {error}=await sb.rpc('inventory_update_product_details',args);if(error)throw error;
 const p=(window.inventoryProductsForMovements||[]).find(p=>p.id===currentId);if(p)Object.assign(p,{name:args.p_name.trim(),category:args.p_category,unit:args.p_unit.trim(),description:args.p_description,minimum_stock:args.p_minimum_stock});
-if(typeof window.refreshInventorySafely==='function')await window.refreshInventorySafely();close();
+if(typeof window.refreshInventorySafely==='function')await window.refreshInventorySafely();modal.hidden=true;currentId=null;
 }catch(err){field('product-editor-message').textContent='No se pudo guardar: '+err.message}
 finally{saving=false;field('product-editor-save').disabled=false}
 };
