@@ -1,0 +1,71 @@
+begin;
+select set_config('request.jwt.claims','{"sub":"aedb58e6-56ca-4308-9796-bb77070f649a","role":"authenticated"}',true);
+set local role authenticated;
+do $$
+declare opening uuid=gen_random_uuid(); buyid uuid=gen_random_uuid(); outid uuid=gen_random_uuid(); pid uuid; eid uuid; payment uuid=gen_random_uuid(); p jsonb; beforestock numeric;
+begin
+ if not public.inventory_has_access('write') or public.inventory_fund_can_approve() then raise exception 'Alejandro permissions'; end if;
+ p=jsonb_build_object('kind','opening','currency','CUP','occurred_on','2026-10-18','amount',1000,'reference','TEST','payment_method','Efectivo','reason','ROLLBACK ONLY','baseline','available_after_historical_purchases');
+ perform public.inventory_fund_record(opening,p);perform public.inventory_fund_record(opening,p);
+ if (select sum(amount) from public.inventory_fund_ledger)<>1000 then raise exception 'Opening duplicate/history discount'; end if;
+ begin perform public.inventory_fund_record(opening,p||'{"amount":1001}');raise exception 'REPLAY ACCEPTED';exception when raise_exception then if sqlerrm='REPLAY ACCEPTED' then raise;end if;end;
+ begin perform public.inventory_fund_record(gen_random_uuid(),p);raise exception 'SECOND OPENING ACCEPTED';exception when raise_exception then if sqlerrm='SECOND OPENING ACCEPTED' then raise;end if;end;
+ p=jsonb_build_object('kind','entry','name','ROLLBACK fund test','category','Otros','unit','Unidad','currency','CUP','quantity',10,'unit_cost',10,'occurred_on','2026-10-18');
+ perform public.inventory_record_movement(buyid,p);perform public.inventory_record_movement(buyid,p);
+ select product_id into pid from public.inventory_movements where id=buyid;
+ if (select sum(amount) from public.inventory_fund_ledger)<>900 then raise exception 'Purchase not deducted exactly once';end if;
+ perform public.inventory_record_movement(outid,jsonb_build_object('kind','out','product_id',pid,'quantity',4,'occurred_on','2026-10-18','allocation_type','project','project_reference','ROLLBACK PROJECT','receiving_area','Diseño','received_by','Test'));
+ select id into eid from public.inventory_economic_movements where source_movement_id=outid;
+ perform public.inventory_record_movement(gen_random_uuid(),p||jsonb_build_object('product_id',pid,'quantity',1,'unit_cost',20));
+ if (select quantity*unit_cost from public.inventory_economic_movements where id=eid)<>40 then raise exception 'Historical cost changed';end if;
+ select stock into beforestock from public.inventory_products where id=pid;
+ p=jsonb_build_object('kind','reimbursement','currency','CUP','occurred_on','2026-10-18','amount',15,'economic_movement_id',eid,'delivered_by','Test','received_by','Test','reference','TEST','payment_method','Transferencia','reason','ROLLBACK');
+ perform public.inventory_fund_record(payment,p);perform public.inventory_fund_record(payment,p);
+ if (select sum(amount) from public.inventory_fund_ledger)<>895 then raise exception 'Partial reimbursement balance';end if;
+ begin perform public.inventory_fund_record(gen_random_uuid(),p||'{"amount":26}');raise exception 'OVERPAY ACCEPTED';exception when raise_exception then if sqlerrm='OVERPAY ACCEPTED' then raise;end if;end;
+ perform public.inventory_fund_record(gen_random_uuid(),p||'{"amount":25}');
+ if (select stock from public.inventory_products where id=pid)<>beforestock then raise exception 'Reimbursement changed stock';end if;
+ if (select sum(amount) from public.inventory_fund_ledger)<>920 then raise exception 'Full reimbursement balance';end if;
+ begin perform public.inventory_fund_record(gen_random_uuid(),p||'{"currency":"USD"}');raise exception 'USD ACCEPTED';exception when raise_exception then if sqlerrm='USD ACCEPTED' then raise;end if;end;
+ begin perform public.inventory_record_movement(gen_random_uuid(),jsonb_build_object('kind','entry','product_id',pid,'currency','CUP','quantity',999,'unit_cost',100,'occurred_on','2026-10-18'));raise exception 'OVERDRAFT ACCEPTED';exception when raise_exception then if sqlerrm='OVERDRAFT ACCEPTED' then raise;end if;end;
+ begin perform public.inventory_close_week(gen_random_uuid(),'{"start":"2026-10-12","end":"2026-10-18","currency":"CUP","action":"approve","reason":"TEST"}');raise exception 'ALEJANDRO APPROVED';exception when insufficient_privilege then null;end;
+ perform public.inventory_close_week(gen_random_uuid(),'{"start":"2026-10-12","end":"2026-10-18","currency":"CUP","action":"draft","reason":"TEST"}');
+ begin insert into public.inventory_fund_ledger(id,occurred_on,kind,amount,actor_id,actor_name,reference,payment_method,reason,request_payload)values(gen_random_uuid(),current_date,'adjustment',999,auth.uid(),'x','x','x','x','{}');raise exception 'DIRECT WRITE ACCEPTED';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+select set_config('request.jwt.claims','{"sub":"6418ad20-d0e8-49c0-8d9a-e1da3daf71b6","role":"authenticated"}',true);
+set local role authenticated;
+do $$
+declare snap jsonb; p jsonb; cid uuid; rid uuid; beforebalance numeric;
+begin
+ if not public.inventory_fund_can_approve() then raise exception 'Owner cannot approve';end if;
+ snap=public.inventory_fund_report('2026-10-12','2026-10-18');
+ cid=public.inventory_close_week(gen_random_uuid(),jsonb_build_object('start','2026-10-12','end','2026-10-18','currency','CUP','action','approve','reason','TEST approval','snapshot',snap));
+ begin perform public.inventory_fund_record(gen_random_uuid(),'{"kind":"adjustment","currency":"CUP","occurred_on":"2026-10-18","amount":10,"reference":"TEST","payment_method":"Efectivo","reason":"TEST"}');raise exception 'CLOSED DATE ACCEPTED';exception when raise_exception then if sqlerrm='CLOSED DATE ACCEPTED' then raise;end if;end;
+ perform public.inventory_close_week(gen_random_uuid(),'{"start":"2026-10-12","end":"2026-10-18","currency":"CUP","action":"reopen","reason":"TEST correction"}');
+ select id into rid from public.inventory_fund_ledger where kind='reimbursement' and amount=15;
+ select sum(amount) into beforebalance from public.inventory_fund_ledger;
+ p=jsonb_build_object('kind','reversal','currency','CUP','occurred_on','2026-10-18','reference','TEST reversal','payment_method','Transferencia','reason','TEST correction','reverses_id',rid);
+ perform public.inventory_fund_record(gen_random_uuid(),p);
+ if (select sum(amount) from public.inventory_fund_ledger)<>beforebalance-15 then raise exception 'Reversal balance';end if;
+ begin perform public.inventory_fund_record(gen_random_uuid(),p);raise exception 'DOUBLE REVERSAL ACCEPTED';exception when unique_violation then null;end;
+ begin perform public.inventory_close_week(gen_random_uuid(),jsonb_build_object('start','2026-10-12','end','2026-10-18','currency','CUP','action','approve','reason','TEST stale','snapshot',snap));raise exception 'STALE APPROVAL ACCEPTED';exception when raise_exception then if sqlerrm='STALE APPROVAL ACCEPTED' then raise;end if;end;
+ if (select count(*) from public.inventory_closure_events where closure_id=cid)<>3 then raise exception 'Closure audit missing';end if;
+end $$;
+reset role;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select system_auth_user_id from public.hr_employees where full_name ilike 'Melanie%' limit 1),'role','authenticated')::text,true);
+set local role authenticated;
+do $$ begin
+ if not public.inventory_has_access('read') or public.inventory_has_access('write') then raise exception 'Melanie permissions';end if;
+ perform public.inventory_fund_report('2026-10-12','2026-10-18');
+ begin perform public.inventory_fund_record(gen_random_uuid(),'{"kind":"opening","currency":"CUP"}');raise exception 'MELANIE WRITE ACCEPTED';exception when insufficient_privilege then null;end;
+ begin perform public.inventory_close_week(gen_random_uuid(),'{"action":"draft"}');raise exception 'MELANIE CLOSURE ACCEPTED';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+set local role anon;
+do $$ begin
+ begin perform public.inventory_fund_report('2026-10-12','2026-10-18');raise exception 'ANON READ ACCEPTED';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+select 'PASS: opening, historic purchase retained, atomic purchase, historical cost, partial/full reimbursements, no stock effects, UUID retries, overpayment, overdraft, CUP, owner approval, frozen dates, reopening, reversal audit, stale approval, Alejandro/Melanie/anonymous security; ROLLBACK' as result;
+rollback;
