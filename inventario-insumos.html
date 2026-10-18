@@ -457,7 +457,7 @@ finally{saving=false;field('product-editor-save').disabled=false}
  }
  input.addEventListener('focus',async()=>{try{await loadProviders();if(document.activeElement===input)render()}catch(e){console.warn('No se pudo consultar el directorio de proveedores',e)}});
  toggle.addEventListener('click',async()=>{if(!list.hidden){hide();return}input.value='';try{await loadProviders(true);render()}catch(e){console.warn('No se pudieron cargar los proveedores',e);list.replaceChildren();const p=document.createElement('p');p.textContent='No se pudieron cargar los proveedores. Inténtalo nuevamente.';list.append(p);list.hidden=false;toggle.setAttribute('aria-expanded','true')}});
- input.addEventListener('input',()=>{selected=-1;render()});
+ input.addEventListener('input',()=>{selected=-1;const typed=normalize(input.value);if(!providers.some(p=>normalize(p.name)===typed)){phone.value='';address.value='';}render()});
  input.addEventListener('keydown',e=>{
   if(e.key==='Escape'){hide();return}
   const items=[...list.querySelectorAll('button')];
