@@ -42,7 +42,7 @@ async function loadAccounts(){
     if(tab==='access')summary.innerHTML='<div class="access-info-card"><h3>Cuenta y seguridad</h3><p>Usuario: <strong>'+esc(u.username||'Sin nombre de usuario')+'</strong></p><p>Correo: '+esc(u.email||'No registrado')+'</p><p>Estado: '+esc(u.is_owner?'Propietario protegido':!u.id?'Cuenta Auth pendiente':u.blocked?'Cuenta bloqueada':u.confirmed?(u.enabled?'Habilitada':'Deshabilitada'):'Confirmación pendiente')+'</p><p class="muted">Las contraseñas no se muestran ni se almacenan en esta ficha. Las invitaciones disponibles están en Roles y permisos.</p></div>';
     if(tab==='views')summary.innerHTML='<div class="access-info-card"><h3>Vistas del usuario</h3><p>Las vistas se preparan por rol en el Editor de vistas.</p><p class="muted">Los borradores aún no están publicados ni vinculados a cuentas. No se ha asignado ninguna vista nueva desde esta ficha.</p><button class="btn" type="button" id="open-profile-views">Abrir Editor de vistas ↗</button></div>';
     if(tab==='activity')summary.innerHTML='<div class="access-info-card"><h3>Actividad y auditoría</h3><p class="muted">El historial de cambios de esta cuenta estará disponible cuando se conecte el registro de auditoría. No se muestran movimientos ficticios.</p></div>';
-    const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();document.querySelector('[data-tab="views"]')?.click()};
+    const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
    const close=()=>{card.style.display='none';list.insertBefore(card,list.firstChild);root.innerHTML='';document.body.style.overflow=''};
@@ -111,5 +111,14 @@ function initViewEditor(){
  el('view-reset').onclick=()=>{try{localStorage.removeItem(viewKey())}catch{}loadViewEditor()};
  loadViewEditor();
 }
+const accessSection=new URLSearchParams(location.search).get('section')||'users';
+if(new URLSearchParams(location.search).has('embedded'))document.body.classList.add('access-embedded');
+function showAccessSection(section){
+ const selected=['users','roles','views'].includes(section)?section:'users';
+ ['users','roles','views'].forEach(id=>el(id).classList.toggle('hidden',id!==selected));
+ const names={users:'Usuarios',roles:'Roles',views:'Editor de vistas'};
+ const title=document.querySelector('main>header h1');if(title)title.textContent=names[selected];
+ document.title=names[selected]+' · El Cartel Studio';
+}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles','views'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
-CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();el('gate').classList.add('hidden');el('app').classList.remove('hidden');}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
+CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
