@@ -70,5 +70,28 @@ function showRole(i){
  el('close-role').onclick=closeRoleModal;
 }
 async function loadPermissions(){const r=await sb.from('system_role_module_permissions').select('*');if(r.error)throw r.error;permissions=r.data||[];}
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
-CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();el('gate').classList.add('hidden');el('app').classList.remove('hidden');}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
+const viewDefaults={title:'Inventario de insumos',description:'Consulta de existencias y solicitudes',layout:'list',blocks:{search:true,filters:true,stock:true,request:false}};
+function viewKey(){return 'cartel-views-draft-v1-'+el('view-role').value}
+function viewConfig(){return {title:el('view-title').value,description:el('view-description').value,layout:el('view-layout').value,blocks:Object.fromEntries([...document.querySelectorAll('[data-view-block]')].map(x=>[x.dataset.viewBlock,x.checked]))}}
+function readViewDraft(){try{return JSON.parse(localStorage.getItem(viewKey()))}catch{return null}}
+function loadViewEditor(){
+ const role=roles.find(x=>x.id===el('view-role').value);
+ const saved=readViewDraft(),data=saved||{...viewDefaults,title:role?.title==='Gestor Comercial de Gráfica'?'Inventario de Gráfica':viewDefaults.title,blocks:{...viewDefaults.blocks,request:role?.title==='Gestor Comercial de Gráfica'}};
+ el('view-title').value=data.title||'';el('view-description').value=data.description||'';el('view-layout').value=data.layout||'list';
+ document.querySelectorAll('[data-view-block]').forEach(x=>x.checked=!!data.blocks?.[x.dataset.viewBlock]);el('view-message').textContent=saved?'Borrador guardado en este navegador.':'Configuración inicial sin publicar.';renderViewPreview();
+}
+function renderViewPreview(){
+ const v=viewConfig(),box=el('view-preview');box.classList.toggle('mobile',el('view-device').value==='mobile');
+ box.innerHTML='<h3>'+esc(v.title||'Mi vista')+'</h3><p>'+esc(v.description||'')+'</p>'+(v.blocks.search?'<div class="preview-control">⌕ Buscar insumos…</div>':'')+(v.blocks.filters?'<div class="preview-control">☷ Categorías y filtros</div>':'')+'<div class="'+(v.layout==='grid'?'preview-grid':'')+'">'+['Producto de ejemplo A','Producto de ejemplo B'].map((n,i)=>'<div class="preview-control"><strong>'+n+'</strong>'+(v.blocks.stock?'<p>Existencias de muestra: '+(i+2)*4+'</p>':'')+'</div>').join('')+'</div>'+(v.blocks.request?'<div class="preview-control preview-action">＋ Solicitar insumo</div>':'');
+}
+function initViewEditor(){
+ const select=el('view-role');select.innerHTML=roles.filter(r=>r.is_active).map(r=>'<option value="'+esc(r.id)+'">'+esc(r.title)+'</option>').join('');
+ select.onchange=loadViewEditor;
+ ['view-title','view-description','view-layout','view-device'].forEach(id=>el(id).addEventListener('input',renderViewPreview));
+ document.querySelectorAll('[data-view-block]').forEach(x=>x.addEventListener('change',renderViewPreview));
+ el('view-save').onclick=()=>{try{localStorage.setItem(viewKey(),JSON.stringify(viewConfig()));el('view-message').textContent='Borrador guardado en este navegador. No publicado.'}catch(e){el('view-message').textContent='No se pudo guardar el borrador: '+e.message}};
+ el('view-reset').onclick=()=>{try{localStorage.removeItem(viewKey())}catch{}loadViewEditor()};
+ loadViewEditor();
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles','views'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
+CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();el('gate').classList.add('hidden');el('app').classList.remove('hidden');}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
