@@ -167,13 +167,29 @@ async function autoCheckPendingInventoryMovement(){
   if(result.error||!result.data)return;
   const current=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');
   if(current?.id!==saved.id)return;
-  clearPersistedMovement();pendingRequest=null;
+  clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();
   const notice=document.querySelector('.inventory .notice');
   if(notice)notice.textContent='Se confirmó automáticamente el movimiento pendiente ('+String(saved.id).slice(0,8)+'). Ya puedes continuar.';
   try{await loadInventory()}catch(e){}
  }catch(e){}
 }
 autoCheckPendingInventoryMovement();
+const pendingRecoveryButton=document.createElement('button');
+pendingRecoveryButton.type='button';pendingRecoveryButton.className='btn';pendingRecoveryButton.textContent='Verificar solicitud pendiente';pendingRecoveryButton.hidden=true;
+const pendingRecoveryNotice=document.querySelector('.inventory .notice');
+if(pendingRecoveryNotice)pendingRecoveryNotice.after(pendingRecoveryButton);
+function syncPendingRecoveryButton(){
+ try{const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');pendingRecoveryButton.hidden=!saved?.submitted||!saved?.id}
+ catch(e){pendingRecoveryButton.hidden=true}
+}
+pendingRecoveryButton.addEventListener('click',async()=>{
+ let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
+ if(!saved?.submitted||!saved.id){syncPendingRecoveryButton();return}
+ showModal(saved.payload?.kind==='out'?'out':'entry');
+ await reconcilePendingInventoryMovement();
+ syncPendingRecoveryButton();
+});
+syncPendingRecoveryButton();
 async function reconcilePendingInventoryMovement(){
  const status=byId('form-message');
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
@@ -181,7 +197,7 @@ async function reconcilePendingInventoryMovement(){
  status.textContent='Consultando la solicitud '+String(saved.id).slice(0,8)+'…';
  const {data,error}=await sb.from('inventory_movements').select('id,kind,quantity,occurred_on').eq('id',saved.id).maybeSingle();
  if(error){status.textContent='No se pudo verificar el movimiento. No repitas la operación. Detalle: '+error.message;return}
- if(data){clearPersistedMovement();pendingRequest=null;status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){};return}
+ if(data){clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){};return}
  status.textContent='La solicitud todavía no aparece en el historial. Su ausencia NO confirma que haya fallado. Reintenta únicamente con el mismo identificador y los mismos datos, o solicita revisión antes de registrar una operación nueva.';
 }
 const reconcileButton=document.createElement('button');reconcileButton.type='button';reconcileButton.className='btn';reconcileButton.textContent='Verificar movimiento pendiente';reconcileButton.addEventListener('click',reconcilePendingInventoryMovement);byId('form-message').after(reconcileButton);
