@@ -1,0 +1,10 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../inventario-insumos.html'),'utf8');
+const ctx={};vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function sortInventoryProducts('),html.indexOf("byId('inventory-sort').addEventListener")),ctx);
+const products=[{id:'a',name:'Ácido',category:'Limpieza',stock:10,unit_cost:50,created_at:'2026-10-01',updated_at:'2026-10-10'},{id:'b',name:'Brocha',category:'Producción',stock:2,unit_cost:100,created_at:'2026-10-05',updated_at:'2026-10-18'},{id:'c',name:'Cinta',category:'Estudio',stock:0,unit_cost:25,created_at:'2026-10-15',updated_at:'2026-10-16'}];
+const ids=order=>Array.from(ctx.sortInventoryProducts(products,order),p=>p.id).join('');
+test('Default uses last modification, independently of creation and alphabetical order',()=>{assert.equal(ids(),'bca');assert.equal(ids('updated-asc'),'acb');assert.equal(ids('created-desc'),'cba');assert.equal(products[0].id,'a')});
+test('Name, category, stock and price orders use their selected direction',()=>{for(const [order,expected] of [['name-asc','abc'],['name-desc','cba'],['category-asc','cab'],['stock-asc','cba'],['stock-desc','abc'],['cost-asc','cab'],['cost-desc','bac']])assert.equal(ids(order),expected,order)});
+test('Missing dates fall back to creation; ties are deterministic and missing dates stay last',()=>{const p=[{id:'z',name:'Z'},{id:'b',name:'B',created_at:'2026-10-01'},{id:'a',name:'A',updated_at:'2026-10-01'}];for(const order of ['updated-desc','updated-asc'])assert.equal(Array.from(ctx.sortInventoryProducts(p,order),x=>x.id).join(''),'abz')});
+test('Selector lives inside inventory heading and renders only the filtered rows',()=>{assert.match(html,/<section class="panel inventory"><div class="heading">[\s\S]*?<select id="inventory-sort">/);assert.match(html,/const rows=sortInventoryProducts\(inventoryProducts\.filter\(/);assert.match(html,/inventory-sort'\)\.addEventListener\('change',\(\)=>renderInventory\(\)\)/)});
