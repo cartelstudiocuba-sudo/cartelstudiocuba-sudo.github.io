@@ -107,7 +107,14 @@ document.addEventListener('click',e=>{if(e.target!==productSelect&&!productSugge
 let draftType=null;
 function clearPhoto(){++photoRun;processingPhoto=false;photoBlob=null;['photo-camera','photo-gallery'].forEach(id=>byId(id).value='');byId('photo-preview').textContent='📷  Sin fotografía (opcional)';byId('photo-preview').title='';}
 byId('remove-photo').onclick=()=>{clearPhoto();byId('form-message').textContent='Foto omitida. Los demás datos se conservan; ya puedes guardar.';};
-const originalShowModal=showModal;showModal=function(type){if(savingMovement)return;if(draftType===type){modal.classList.add('open');return;}clearPhoto();originalShowModal(type);byId('delivery-receipt-options').classList.toggle('form-hide',type!=='out');byId('exit-summary').classList.toggle('form-hide',type!=='out');byId('delivery-receipt-enabled').checked=false;draftType=type;pendingRequest=null;byId('econ-project').required=type==='out'&&byId('econ-destination').value==='project';byId('econ-admin').required=false;byId('save-movement').disabled=false;byId('save-movement').style.opacity='1';byId('form-message').textContent='El movimiento y su imputación se guardan en una sola transacción.';productSelect.required=true;selectedProductId='';productSelect.value='';productSelect.setCustomValidity('');hideProductSuggestions();updateValue();};
+const originalShowModal=showModal;showModal=function(type){if(savingMovement)return;
+ try{const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');if(saved?.submitted&&saved.id){
+  const message='Existe una operación pendiente de confirmación (solicitud '+String(saved.id).slice(0,8)+'). Usa «Verificar solicitud pendiente» en la pantalla principal antes de preparar otra entrada o salida.';
+  const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent=message;
+  byId('form-message').textContent=message;
+  syncPendingRecoveryButton();return;
+ }}catch(e){byId('form-message').textContent='No se pudo verificar la solicitud pendiente. Recarga la página antes de continuar.';return}
+ if(draftType===type){modal.classList.add('open');return;}clearPhoto();originalShowModal(type);byId('delivery-receipt-options').classList.toggle('form-hide',type!=='out');byId('exit-summary').classList.toggle('form-hide',type!=='out');byId('delivery-receipt-enabled').checked=false;draftType=type;pendingRequest=null;byId('econ-project').required=type==='out'&&byId('econ-destination').value==='project';byId('econ-admin').required=false;byId('save-movement').disabled=false;byId('save-movement').style.opacity='1';byId('form-message').textContent='El movimiento y su imputación se guardan en una sola transacción.';productSelect.required=true;selectedProductId='';productSelect.value='';productSelect.setCustomValidity('');hideProductSuggestions();updateValue();};
 
 byId('existing-help').textContent='Selecciona el producto y su moneda. Las salidas usan el último costo de compra.';
 byId('entry-extra').querySelector('.form-help').textContent='Los datos del proveedor se conservan en el movimiento.';
