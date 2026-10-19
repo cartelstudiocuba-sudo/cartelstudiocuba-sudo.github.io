@@ -1,0 +1,8 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../inventario-insumos.html'),'utf8');
+const source=html.slice(html.indexOf('async function loadInventoryLastMovementActors('),html.indexOf('async function loadInventory(){'));
+function fixture(pages,error=null){const calls=[];const query={select(){return this},order(){return this},async range(a,b){calls.push([a,b]);return {data:pages[calls.length-1]||[],error}}};const ctx={sb:{from:()=>query}};vm.createContext(ctx);vm.runInContext(source,ctx);return {ctx,calls}}
+test('Keeps the latest recorded actor, including unnamed and legacy movements',async()=>{const f=fixture([[{product_id:'a',recorded_by_name:'Ana'},{product_id:'a',recorded_by_name:'Older'},{product_id:'b',recorded_by_name:null}]]);const actors=await f.ctx.loadInventoryLastMovementActors([{id:'a'},{id:'b'},{id:'c'}]);assert.equal(actors.get('a'),'Ana');assert.equal(actors.get('b'),'Sin nombre registrado');assert.equal(actors.has('c'),false)});
+test('Finds a product whose latest movement is beyond the first page',async()=>{const f=fixture([Array.from({length:1000},()=>({product_id:'a',recorded_by_name:'Ana'})),[{product_id:'b',recorded_by_name:'Julio'}]]);const actors=await f.ctx.loadInventoryLastMovementActors([{id:'a'},{id:'b'}]);assert.equal(actors.get('b'),'Julio');assert.equal(f.calls.length,2);assert.deepEqual(f.calls[1],[1000,1999])});
+test('Transport errors are not presented as an absence of movements',async()=>{const error=Error('offline'),f=fixture([],error);await assert.rejects(()=>f.ctx.loadInventoryLastMovementActors([{id:'a'}]),/offline/)});
