@@ -50,6 +50,17 @@ async function loadAccounts(){
        live.innerHTML='<h4>Datos originales de RRHH</h4>'+Object.entries({Nombre:data.full_name,Correo:data.email,WhatsApp:data.whatsapp,Plaza:data.role_title,Estado:data.status,Contratación:data.hired_at?.slice(0,10),Usuario:data.system_username,Acceso:data.system_access_enabled?'Habilitado':'Deshabilitado'}).map(([k,v])=>'<p><strong>'+esc(k)+':</strong> '+esc(v||'Sin registrar')+'</p>').join('');
       });
     }
+    if(tab==='views'){
+      const holder=summary.querySelector('.access-info-card');
+      const items=(u.roles||[]).map(g=>roles.find(r=>r.code===g.code)).filter(Boolean);
+      const section=document.createElement('div');section.className='profile-embedded-views';
+      section.innerHTML='<h4>Vistas por rol</h4>'+(items.length?items.map(r=>'<button type="button" class="btn" data-preview-role="'+esc(r.id)+'">'+esc(r.title)+'</button>').join(''):'<p>No hay roles asignados.</p>')+'<div class="profile-embedded-preview"></div>';
+      holder.appendChild(section);
+      section.querySelectorAll('[data-preview-role]').forEach(btn=>btn.onclick=()=>{
+       let v;try{v=JSON.parse(localStorage.getItem('cartel-views-draft-v1-'+btn.dataset.previewRole))}catch{}
+       section.querySelector('.profile-embedded-preview').innerHTML=v?'<h4>'+esc(v.title||'Sin título')+'</h4><p>'+esc(v.description||'')+'</p><p>Diseño: '+esc(v.layout||'list')+'</p><p>Componentes: '+Object.entries(v.blocks||{}).filter(([k,enabled])=>enabled).map(([k])=>esc(k)).join(', ')+'</p>':'<p>Este rol no tiene un borrador de vista en este navegador.</p>';
+      });
+    }
     const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
