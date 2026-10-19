@@ -1,3 +1,6 @@
+(function initializeInventoryFund(){
+// This module requires the legacy catalogue controls; the current UI has its own movement flow.
+if(!byId('currency-filter'))return;
 /* CUP-only operation. Historic currencies remain in storage, never converted. */
 byId('move-currency').innerHTML='<option>CUP</option>';
 byId('currency-filter').innerHTML='<option value="CUP">CUP</option>';
@@ -89,3 +92,5 @@ const retry=document.createElement('button');retry.className='btn';retry.textCon
 syncFundForm();
 // Reports load only when requested; they never block the inventory dashboard.
 window.refreshInventoryFund=async function(){try{await loadFund();byId('fund-message').textContent='';}catch(e){console.error('Error al cargar caja:',e);byId('fund-message').textContent='No se pudo cargar la caja: '+e.message;}};
+
+})();
