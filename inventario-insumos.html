@@ -212,8 +212,8 @@ pendingRecoveryButton.type='button';pendingRecoveryButton.className='btn';pendin
 const pendingRecoveryNotice=document.querySelector('.inventory .notice');
 if(pendingRecoveryNotice)pendingRecoveryNotice.after(pendingRecoveryButton);
 function syncPendingRecoveryButton(){
- try{const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');pendingRecoveryButton.hidden=!saved?.submitted||!saved?.id}
- catch(e){pendingRecoveryButton.hidden=true}
+ try{const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');pendingRecoveryButton.hidden=!saved?.submitted;pendingRecoveryButton.disabled=!!saved?.submitted&&!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(saved.id||''));pendingRecoveryButton.title=pendingRecoveryButton.disabled?'Identificador incompleto: solicita revisión del movimiento antes de continuar.':''}
+ catch(e){pendingRecoveryButton.hidden=false;pendingRecoveryButton.disabled=true;pendingRecoveryButton.title='No se puede leer la solicitud pendiente. No registres otro movimiento hasta revisar el historial.'}
 }
 pendingRecoveryButton.addEventListener('click',async()=>{
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
@@ -225,7 +225,8 @@ pendingRecoveryButton.addEventListener('click',async()=>{
 syncPendingRecoveryButton();
 async function reconcilePendingInventoryMovement(status=byId('form-message')){
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
- if(!saved?.id||!saved.submitted){status.textContent='No existe una solicitud enviada pendiente de confirmación.';return}
+ if(!saved?.submitted){status.textContent='No existe una solicitud enviada pendiente de confirmación.';return}
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(saved.id||''))){status.textContent='La solicitud pendiente no tiene un identificador válido. No registres otra operación; solicita una revisión del historial.';return}
  status.textContent='Consultando la solicitud '+String(saved.id).slice(0,8)+'…';
  const {data,error}=await lookupPendingMovement(saved.id);
  if(!data){let current;try{current=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}if(current?.id!==saved.id)return}
