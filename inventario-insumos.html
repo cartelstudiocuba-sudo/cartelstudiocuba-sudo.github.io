@@ -233,7 +233,17 @@ form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;
  }
  byId('form-message').textContent='Confirmando movimiento…';
  const receiptRequestId=pendingRequest.id;const receiptData=movementType==='out'&&byId('delivery-receipt-enabled').checked?{id:receiptRequestId,date:payload.occurred_on,name:payload.name||byId('existing-product').value,quantity:payload.quantity,unit:payload.unit||'',area:payload.receiving_area,person:payload.received_by,project:payload.project_reference,kind:payload.allocation_type,reason:payload.consumption_reason,notes:payload.notes,unitCost:Number(selectedProduct()?.unit_cost||0),currency:selectedProduct()?.currency||'CUP',stock:Number(selectedProduct()?.stock||0)}:null;
- pendingRequest.submitted=true;persistMovement(pendingRequest,payload);const {error}=await sb.rpc('inventory_record_movement',{request_id:pendingRequest.id,payload});if(error)throw error;clearPersistedMovement();pendingRequest=null;draftType=null;clearPhoto();closeModal();if(receiptData){storePendingReceipt(receiptData);try{await downloadDeliveryReceipt(receiptData);clearPendingReceipt()}catch(pdfError){alert('La salida se guardó correctamente. Puedes volver a descargar su comprobante sin registrar otra salida. Detalle: '+pdfError.message)}}try{await loadInventory();}catch(refreshError){document.querySelector('.notice').textContent='Movimiento guardado. No se pudo actualizar el listado: '+refreshError.message;}}
+ let rpcPayload=payload;
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');
+  if(saved?.submitted&&saved.id===pendingRequest.id&&saved.signature===signature&&saved.payload){
+   const original={...saved.payload},current={...payload};
+   delete original.photo_path;delete current.photo_path;
+   if(JSON.stringify(original)!==JSON.stringify(current))throw Error('Los datos de la solicitud pendiente cambiaron. No se enviará un movimiento distinto con el mismo identificador.');
+   rpcPayload=saved.payload;
+  }
+ }catch(e){if(e instanceof SyntaxError)throw Error('No se pudo leer la solicitud original. No repitas la operación; solicita una revisión.');throw e}
+ pendingRequest.submitted=true;persistMovement(pendingRequest,rpcPayload);const {error}=await sb.rpc('inventory_record_movement',{request_id:pendingRequest.id,payload:rpcPayload});if(error)throw error;clearPersistedMovement();pendingRequest=null;draftType=null;clearPhoto();closeModal();if(receiptData){storePendingReceipt(receiptData);try{await downloadDeliveryReceipt(receiptData);clearPendingReceipt()}catch(pdfError){alert('La salida se guardó correctamente. Puedes volver a descargar su comprobante sin registrar otra salida. Detalle: '+pdfError.message)}}try{await loadInventory();}catch(refreshError){document.querySelector('.notice').textContent='Movimiento guardado. No se pudo actualizar el listado: '+refreshError.message;}}
  catch(error){if(error.code&&/^(P0001|22|23|42)/.test(error.code)){if(pendingRequest)pendingRequest.submitted=false;pendingRequest=null;clearPersistedMovement();}byId('form-message').textContent=(pendingRequest&&pendingRequest.submitted?'No se recibió confirmación. NO registres otra operación: vuelve a pulsar Guardar con estos mismos datos para verificar el movimiento sin duplicarlo. Detalle: ':'No se pudo guardar el movimiento. Revisa los datos y vuelve a intentarlo. Detalle: ')+error.message;}
  finally{controls.forEach((c,i)=>c.disabled=disabledBefore[i]);savingMovement=false;byId('save-movement').disabled=false;}
 };
