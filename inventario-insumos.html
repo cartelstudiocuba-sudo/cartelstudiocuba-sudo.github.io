@@ -109,6 +109,7 @@ function clearPhoto(){++photoRun;processingPhoto=false;photoBlob=null;['photo-ca
 byId('remove-photo').onclick=()=>{clearPhoto();byId('form-message').textContent='Foto omitida. Los demás datos se conservan; ya puedes guardar.';};
 const originalShowModal=showModal;showModal=function(type){if(savingMovement)return;
  try{const saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');if(saved?.submitted&&saved.id){
+  if(draftType===type&&pendingRequest?.id===saved.id&&pendingRequest.signature===saved.signature){modal.classList.add('open');byId('form-message').textContent='Solicitud '+String(saved.id).slice(0,8)+' pendiente de confirmación. Puedes verificarla o reintentar Guardar con los mismos datos, sin generar un movimiento nuevo.';syncPendingRecoveryButton();return}
   const message='Existe una operación pendiente de confirmación (solicitud '+String(saved.id).slice(0,8)+'). Usa «Verificar solicitud pendiente» en la pantalla principal antes de preparar otra entrada o salida.';
   const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent=message;
   byId('form-message').textContent=message;
