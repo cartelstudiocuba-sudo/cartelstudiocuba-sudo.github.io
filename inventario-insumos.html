@@ -146,10 +146,13 @@ function updateInventoryCounters(){
  });
 }
 async function loadInventory(){
+ window.inventoryCanEditProducts=false;
  const access=await sb.rpc('inventory_has_access',{operation:'read'});if(access.error)throw access.error;
  const write=await sb.rpc('inventory_has_access',{operation:'write'});if(write.error)throw write.error;
  ['quick-new-entry','quick-new-exit'].forEach(id=>{const el=byId(id);if(el){el.disabled=!write.data;el.title=write.data?'':'Tu perfil no permite registrar movimientos';}});
  if(!access.data)throw Error('Tu cuenta no tiene acceso a Insumos. Solicita la asignación de un perfil al propietario.');
+ window.inventoryCanEditProducts=!!write.data;
+ window.dispatchEvent(new Event('inventory-access-updated'));
 
  const results=await Promise.all([sb.from('inventory_products').select('*').order('name'),sb.from('inventory_movements').select('*').order('created_at',{ascending:false}).limit(100),sb.from('inventory_economic_movements').select('*').order('created_at',{ascending:false})]);
  for(const r of results)if(r.error)throw r.error;
@@ -169,7 +172,7 @@ async function loadProductPhotos(){
  const images=[...document.querySelectorAll('img[data-inventory-photo]')];
  await Promise.all(images.map(async img=>{try{const {data,error}=await sb.storage.from(photoBucket).download(img.dataset.inventoryPhoto);if(error){img.alt='Foto no disponible';return;}if(!img.isConnected)return;const url=URL.createObjectURL(data);renderedPhotoUrls.push(url);img.src=url;}catch(e){img.alt='Foto temporalmente no disponible';console.warn('Foto no disponible:',e.message);}}));
 }
-function renderInventory(){updateInventoryCounters();renderedPhotoUrls.forEach(URL.revokeObjectURL);renderedPhotoUrls=[];const cat=document.querySelector('.category.selected')?.dataset.cat||'Todos',q=byId('search').value.trim().toLowerCase(),stock=window.activeStockFilter||'all';const supplier='',minQty='',minRule='all';const rows=inventoryProducts.filter(p=>(cat==='Todos'||p.category===cat)&&(stock==='all'||inventoryStockState(p)===stock)&&[p.name,p.description,p.category,p.brand,p.sku,p.code].some(v=>String(v||'').toLowerCase().includes(q))&&(!supplier||String(p.supplier_name||p.supplier||'').toLowerCase().includes(supplier))&&(minQty===''||Number(p.stock)>=Number(minQty))&&(minRule==='all'||(minRule==='yes'?Number(p.minimum_stock)>0:!Number(p.minimum_stock))));byId('inventory-results-count').textContent='Mostrando '+rows.length+' de '+inventoryProducts.length+' insumos';void 0;document.querySelector('.inventory tbody').innerHTML=rows.map(p=>'<tr><td>'+(p.photo_path?'<img data-inventory-photo="'+esc(p.photo_path)+'" alt="Foto del producto" style="width:64px;height:64px;object-fit:contain;vertical-align:middle;margin-right:10px">':'')+esc(p.name)+'</td><td><strong class="inventory-quantity">'+esc(p.stock)+' '+esc(p.unit)+'</strong></td><td>'+esc(p.category)+'</td><td>'+esc(p.stock)+' '+esc(p.unit)+'</td><td>'+esc(p.minimum_stock)+'</td><td>'+esc(p.location||'—')+'</td><td>'+esc(({available:'En stock',low:'Stock bajo',empty:'Sin stock'})[inventoryStockState(p)])+'</td><td>'+Number(p.unit_cost).toFixed(2)+' '+esc(p.currency)+'</td><td><button type="button" class="btn inventory-edit-product" data-product-id="'+esc(p.id)+'">Ver / Editar</button></td></tr>').join('')||'<tr><td colspan="9">Sin productos para este filtro.</td></tr>';loadProductPhotos().catch(e=>console.warn('Fotos de inventario no disponibles:',e.message));}
+function renderInventory(){updateInventoryCounters();renderedPhotoUrls.forEach(URL.revokeObjectURL);renderedPhotoUrls=[];const cat=document.querySelector('.category.selected')?.dataset.cat||'Todos',q=byId('search').value.trim().toLowerCase(),stock=window.activeStockFilter||'all';const supplier='',minQty='',minRule='all';const rows=inventoryProducts.filter(p=>(cat==='Todos'||p.category===cat)&&(stock==='all'||inventoryStockState(p)===stock)&&[p.name,p.description,p.category,p.brand,p.sku,p.code].some(v=>String(v||'').toLowerCase().includes(q))&&(!supplier||String(p.supplier_name||p.supplier||'').toLowerCase().includes(supplier))&&(minQty===''||Number(p.stock)>=Number(minQty))&&(minRule==='all'||(minRule==='yes'?Number(p.minimum_stock)>0:!Number(p.minimum_stock))));byId('inventory-results-count').textContent='Mostrando '+rows.length+' de '+inventoryProducts.length+' insumos';void 0;document.querySelector('.inventory tbody').innerHTML=rows.map(p=>'<tr><td>'+(p.photo_path?'<img data-inventory-photo="'+esc(p.photo_path)+'" alt="Foto del producto" style="width:64px;height:64px;object-fit:contain;vertical-align:middle;margin-right:10px">':'')+esc(p.name)+'</td><td><strong class="inventory-quantity">'+esc(p.stock)+' '+esc(p.unit)+'</strong></td><td>'+esc(p.category)+'</td><td>'+esc(p.stock)+' '+esc(p.unit)+'</td><td>'+esc(p.minimum_stock)+'</td><td>'+esc(p.location||'—')+'</td><td>'+esc(({available:'En stock',low:'Stock bajo',empty:'Sin stock'})[inventoryStockState(p)])+'</td><td>'+Number(p.unit_cost).toFixed(2)+' '+esc(p.currency)+'</td><td><button type="button" class="btn inventory-edit-product" data-product-id="'+esc(p.id)+'">'+(window.inventoryCanEditProducts?'Ver / Editar':'Ver ficha')+'</button></td></tr>').join('')||'<tr><td colspan="9">Sin productos para este filtro.</td></tr>';loadProductPhotos().catch(e=>console.warn('Fotos de inventario no disponibles:',e.message));}
 document.querySelectorAll('.stock-filter').forEach(b=>{const activate=()=>{window.activeStockFilter=b.dataset.stockFilter;document.querySelectorAll('.stock-filter').forEach(x=>{const selected=x===b;x.classList.toggle('selected',selected);x.setAttribute('aria-pressed',String(selected))});document.querySelectorAll('.category').forEach(x=>{const all=x.dataset.cat==='Todos';x.classList.toggle('selected',all);x.setAttribute('aria-pressed',String(all))});renderInventory();document.querySelector('.inventory').scrollIntoView({behavior:'smooth',block:'start'})};b.addEventListener('click',activate);b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate()}})});
 const inventoryPendingKey='cartel_inventory_pending_request_v1';
 const inventoryReceiptKey='cartel_inventory_receipt_retry_v1';
@@ -511,15 +514,25 @@ pdf.addEventListener('click',()=>{
 const modal=document.getElementById('inventory-product-editor'),form=document.getElementById('product-editor-form');
 let currentId=null,saving=false,preparedPhoto=null,photoRun=0,previewUrl=null;const photoPreview=fieldPlaceholder();function fieldPlaceholder(){return document.getElementById('edit-product-photo-preview')}function clearPreviewUrl(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
 const field=id=>document.getElementById(id);
+function syncProductEditorAccess(){
+ const canEdit=window.inventoryCanEditProducts===true;
+ form.querySelectorAll('input,select,textarea').forEach(control=>control.disabled=!canEdit);
+ form.querySelectorAll('.photo-actions').forEach(actions=>{actions.hidden=!canEdit;actions.classList.toggle('form-hide',!canEdit)});
+ field('product-editor-save').hidden=!canEdit;
+ field('product-editor-save').disabled=!canEdit||saving;
+ field('product-editor-title').textContent=canEdit?'Ficha del insumo':'Ficha del insumo · Solo lectura';
+ if(!canEdit)field('product-editor-message').textContent='Tu perfil permite consultar este insumo. La edición requiere permiso de escritura.';
+}
+window.addEventListener('inventory-access-updated',syncProductEditorAccess);
 function close(){if(saving)return;modal.hidden=true;currentId=null;preparedPhoto=null;photoRun++;clearPreviewUrl()}
 function open(id){
  const p=(window.inventoryProductsForMovements||[]).find(p=>p.id===id);if(!p)return;
  currentId=id;preparedPhoto=null;photoRun++;clearPreviewUrl();field('edit-product-photo-camera').value='';field('edit-product-photo-gallery').value='';photoPreview.textContent=p.photo_path?'Cargando fotografía…':'Sin fotografía';if(p.photo_path){const requestedId=id;window.inventorySupabaseClient.storage.from('inventory-images').download(p.photo_path).then(({data,error})=>{if(error)throw error;if(currentId!==requestedId||preparedPhoto)return;clearPreviewUrl();previewUrl=URL.createObjectURL(data);const img=document.createElement('img');img.alt='Fotografía actual del insumo';img.src=previewUrl;photoPreview.replaceChildren(img)}).catch(()=>{if(currentId===requestedId&&!preparedPhoto)photoPreview.textContent='No se pudo mostrar la foto actual'})}field('edit-product-name').value=p.name||'';const category=field('edit-product-category');if(![...category.options].some(o=>o.value===p.category)){const option=new Option(p.category,p.category);category.add(option)}category.value=p.category;
  field('edit-product-unit').value=p.unit||'';field('edit-product-location').value=p.location||'';field('edit-product-description').value=p.description||'';field('edit-product-minimum').value=p.minimum_stock??0;
- field('edit-product-stock').textContent=p.stock+' '+p.unit;field('edit-product-cost').textContent=Number(p.unit_cost).toFixed(2)+' '+p.currency;field('edit-product-currency').textContent=p.currency;field('product-editor-message').textContent='';modal.hidden=false;field('edit-product-name').focus();
+ field('edit-product-stock').textContent=p.stock+' '+p.unit;field('edit-product-cost').textContent=Number(p.unit_cost).toFixed(2)+' '+p.currency;field('edit-product-currency').textContent=p.currency;field('product-editor-message').textContent='';syncProductEditorAccess();modal.hidden=false;if(window.inventoryCanEditProducts)field('edit-product-name').focus();else field('product-editor-close').focus();
 }
 async function selectPhoto(file){
- if(!file)return;const run=++photoRun;preparedPhoto=null;field('product-editor-message').textContent='Optimizando fotografía…';
+ if(window.inventoryCanEditProducts!==true||!file)return;const run=++photoRun;preparedPhoto=null;field('product-editor-message').textContent='Optimizando fotografía…';
  try{if(!file.type.startsWith('image/'))throw Error('Selecciona una imagen válida');if(file.size>30*1024*1024)throw Error('La foto supera 30 MB');
  const blob=await shrinkPhoto(file);if(blob.size>2*1024*1024)throw Error('No se pudo optimizar la foto a menos de 2 MB');
  if(run!==photoRun)return;preparedPhoto=blob;clearPreviewUrl();previewUrl=URL.createObjectURL(blob);const img=document.createElement('img');img.alt='Nueva fotografía del insumo';img.src=previewUrl;photoPreview.replaceChildren(img);field('product-editor-message').textContent='Nueva fotografía optimizada, lista para guardar.'}
@@ -528,7 +541,7 @@ async function selectPhoto(file){
 ['edit-product-photo-camera','edit-product-photo-gallery'].forEach(id=>field(id).addEventListener('change',e=>selectPhoto(e.target.files?.[0])));
 document.addEventListener('click',e=>{const b=e.target.closest('.inventory-edit-product');if(b)open(b.dataset.productId)});
 field('product-editor-close').onclick=close;field('product-editor-cancel').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
-form.onsubmit=async e=>{e.preventDefault();if(saving||!currentId||!form.reportValidity())return;saving=true;field('product-editor-save').disabled=true;field('product-editor-message').textContent='Guardando cambios…';
+form.onsubmit=async e=>{e.preventDefault();if(window.inventoryCanEditProducts!==true){syncProductEditorAccess();return}if(saving||!currentId||!form.reportValidity())return;saving=true;field('product-editor-save').disabled=true;field('product-editor-message').textContent='Guardando cambios…';
 try{
 const sb=window.inventorySupabaseClient;if(!sb)throw Error('La conexión no está disponible');
 const args={p_product_id:currentId,p_name:field('edit-product-name').value,p_category:field('edit-product-category').value,p_unit:field('edit-product-unit').value,p_description:field('edit-product-description').value,p_minimum_stock:Number(field('edit-product-minimum').value),p_location:field('edit-product-location').value};
@@ -546,7 +559,7 @@ if(preparedPhoto){
 const p=(window.inventoryProductsForMovements||[]).find(p=>p.id===currentId);if(p)Object.assign(p,{name:args.p_name.trim(),category:args.p_category,unit:args.p_unit.trim(),description:args.p_description,minimum_stock:args.p_minimum_stock,location:args.p_location,...(newPhotoPath?{photo_path:newPhotoPath}:{})});
 if(typeof window.refreshInventorySafely==='function')await window.refreshInventorySafely();modal.hidden=true;currentId=null;preparedPhoto=null;photoRun++;clearPreviewUrl();
 }catch(err){field('product-editor-message').textContent='No se pudo guardar: '+err.message}
-finally{saving=false;field('product-editor-save').disabled=false}
+finally{saving=false;syncProductEditorAccess()}
 };
 })();
 </script><script>
