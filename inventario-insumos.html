@@ -185,7 +185,7 @@ async function autoCheckPendingInventoryMovement(){
   clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();
   const notice=document.querySelector('.inventory .notice');
   if(notice)notice.textContent='Se confirmó automáticamente el movimiento pendiente ('+String(saved.id).slice(0,8)+'). Ya puedes continuar.';
-  try{await loadInventory()}catch(e){}
+  try{await loadInventory()}catch(e){if(notice)notice.textContent='Movimiento confirmado ('+String(saved.id).slice(0,8)+'), pero no se pudo actualizar la pantalla. Recarga Inventario para ver las existencias actuales. Detalle: '+e.message}
  }catch(e){}
 }
 autoCheckPendingInventoryMovement();
@@ -221,7 +221,7 @@ async function reconcilePendingInventoryMovement(status=byId('form-message')){
  status.textContent='Consultando la solicitud '+String(saved.id).slice(0,8)+'…';
  const {data,error}=await lookupPendingMovement(saved.id);
  if(error){status.textContent='No se pudo verificar el movimiento. No repitas la operación. Detalle: '+error.message;return}
- if(data){clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){};return}
+ if(data){clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){status.textContent+=' No se pudo actualizar el listado: '+e.message+'. Recarga Inventario para consultar las existencias actuales.'};return}
  status.textContent='La solicitud todavía no aparece en el historial. Su ausencia NO confirma que haya fallado. Reintenta únicamente con el mismo identificador y los mismos datos, o solicita revisión antes de registrar una operación nueva.';
 }
 const reconcileButton=document.createElement('button');reconcileButton.type='button';reconcileButton.className='btn';reconcileButton.textContent='Verificar movimiento pendiente';reconcileButton.addEventListener('click',reconcilePendingInventoryMovement);byId('form-message').after(reconcileButton);
