@@ -341,10 +341,36 @@ async function downloadDeliveryReceipt(d){
  doc.setFillColor(255,218,3);doc.rect(0,0,210,10,'F');doc.setTextColor(25,25,25);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('EL CARTEL STUDIO',18,26);doc.setFontSize(10);doc.text('ALMACEN  /  CONSTANCIA DE ENTREGA',18,34);
  doc.setDrawColor(60,60,60);doc.line(18,39,192,39);doc.setFontSize(16);doc.text('Constancia de entrega de insumos',18,51);
  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Referencia: '+safe(d.id),18,60);doc.text('Fecha: '+safe(d.date),18,66);
- let y=79;const line=(label,value)=>{doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label,18,y);doc.setFont('helvetica','normal');const lines=doc.splitTextToSize(safe(value)||'—',111);doc.text(lines,80,y);y+=Math.max(9,lines.length*5+4)};
+ let y=79;
+ const nextPage=()=>{doc.addPage();doc.setFillColor(255,218,3);doc.rect(0,0,210,6,'F');doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Constancia de entrega de insumos',18,18);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Referencia: '+safe(d.id),18,25);doc.setDrawColor(60,60,60);doc.line(18,30,192,30);y=42;};
+ const line=(label,value)=>{
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  const lines=doc.splitTextToSize(safe(value)||'—',111);
+  const height=Math.max(9,lines.length*5+4);
+  if(height<=228&&y+height>270)nextPage();
+  let offset=0;
+  while(offset<lines.length){
+   if(y+9>270)nextPage();
+   const capacity=Math.max(1,Math.floor((270-y-4)/5)),chunk=lines.slice(offset,offset+capacity);
+   doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label+(offset?' (cont.)':''),18,y);
+   doc.setFont('helvetica','normal');doc.text(chunk,80,y);
+   y+=Math.max(9,chunk.length*5+4);offset+=chunk.length;
+   if(offset<lines.length)nextPage();
+  }
+ };
  line('Insumo',d.name);line('Cantidad entregada',d.quantity+' '+d.unit);line('Costo unitario',money(d.unitCost)+' '+d.currency);line('Valor total',money(Number(d.quantity)*d.unitCost)+' '+d.currency);if(d.stock!=null&&Number.isFinite(Number(d.stock))){line('Existencia anterior',d.stock+' '+d.unit);line('Existencia estimada',Number(d.stock)-Number(d.quantity)+' '+d.unit);}line('Area responsable',d.area);line('Persona que recibe',d.person);line('Tipo de consumo',d.reason==='breakage'?'Rotura o merma (gasto administrativo)':d.kind==='project'?'Proyecto':'Gasto administrativo');if(d.kind==='project')line('Proyecto',d.project);
- const notes=doc.splitTextToSize('Observaciones: '+safe(d.notes||'Sin observaciones'),172);if(y+notes.length*5+65>285){doc.addPage();y=24;}doc.setFontSize(10);doc.text(notes,18,y+3);y+=notes.length*5+15;
- if(y+48>285){doc.addPage();y=24;}const signaturesY=Math.min(259,Math.max(y+27,225));doc.setFontSize(9);doc.text('Se confirma la entrega fisica de los insumos descritos.',18,signaturesY-27);doc.line(20,signaturesY,92,signaturesY);doc.line(118,signaturesY,190,signaturesY);doc.text('Entregado por (nombre y firma)',20,signaturesY+6);doc.text('Recibido por (nombre y firma)',118,signaturesY+6);doc.setFontSize(8);doc.text('Fecha: ___________________',20,signaturesY+14);doc.text('Fecha: ___________________',118,signaturesY+14);
+ doc.setFont('helvetica','normal');doc.setFontSize(10);
+ const notes=doc.splitTextToSize('Observaciones: '+safe(d.notes||'Sin observaciones'),172);
+ let noteOffset=0;
+ while(noteOffset<notes.length){
+  if(y+12>270)nextPage();
+  const capacity=Math.max(1,Math.floor((270-y-3)/5)),chunk=notes.slice(noteOffset,noteOffset+capacity);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(chunk,18,y+3);
+  y+=chunk.length*5;noteOffset+=chunk.length;
+  if(noteOffset<notes.length)nextPage();
+ }
+ y+=15;
+ if(y+48>285)nextPage();const signaturesY=Math.min(259,Math.max(y+27,225));doc.setFontSize(9);doc.text('Se confirma la entrega fisica de los insumos descritos.',18,signaturesY-27);doc.line(20,signaturesY,92,signaturesY);doc.line(118,signaturesY,190,signaturesY);doc.text('Entregado por (nombre y firma)',20,signaturesY+6);doc.text('Recibido por (nombre y firma)',118,signaturesY+6);doc.setFontSize(8);doc.text('Fecha: ___________________',20,signaturesY+14);doc.text('Fecha: ___________________',118,signaturesY+14);
  doc.save('Constancia_entrega_'+safe(d.date)+'_'+safe(d.id).slice(0,8)+'.pdf');
 }
 byId('week-ending').addEventListener('change',()=>{const end=byId('week-ending').value;if(!end)return;const d=new Date(end+'T12:00:00');d.setDate(d.getDate()-6);const start=d.toLocaleDateString('en-CA');const rows=inventoryEconomic.filter(e=>e.occurred_on>=start&&e.occurred_on<=end);byId('week-range').textContent=start+' – '+end;const boxes=byId('weekly-view').querySelectorAll('.econ-empty');for(let i=0;i<3;i++){const subset=rows.filter(e=>i===0||(i===1?e.allocation_type==='project':e.allocation_type==='administrative'));boxes[i].textContent=subset.map(e=>e.product_name+' · '+e.quantity+' · '+(Number(e.quantity)*Number(e.unit_cost)).toFixed(2)+' '+e.currency+' · '+(e.project_reference||e.receiving_area)).join('\n')||'Sin salidas en este período.';boxes[i].style.whiteSpace='pre-line';}});
