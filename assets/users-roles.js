@@ -42,6 +42,32 @@ async function loadAccounts(){
     if(tab==='access')summary.innerHTML='<div class="access-info-card"><h3>Cuenta y seguridad</h3><p>Usuario: <strong>'+esc(u.username||'Sin nombre de usuario')+'</strong></p><p>Correo: '+esc(u.email||'No registrado')+'</p><p>Estado: '+esc(u.is_owner?'Propietario protegido':!u.id?'Cuenta Auth pendiente':u.blocked?'Cuenta bloqueada':u.confirmed?(u.enabled?'Habilitada':'Deshabilitada'):'Confirmación pendiente')+'</p><p class="muted">Las contraseñas no se muestran ni se almacenan en esta ficha. Las invitaciones disponibles están en Roles y permisos.</p></div>';
     if(tab==='views')summary.innerHTML='<div class="access-info-card"><h3>Vistas del usuario</h3><p>Las vistas se preparan por rol en el Editor de vistas.</p><p class="muted">Los borradores aún no están publicados ni vinculados a cuentas. No se ha asignado ninguna vista nueva desde esta ficha.</p><button class="btn" type="button" id="open-profile-views">Abrir Editor de vistas ↗</button></div>';
     if(tab==='activity')summary.innerHTML='<div class="access-info-card"><h3>Actividad y auditoría</h3><p class="muted">El historial de cambios de esta cuenta estará disponible cuando se conecte el registro de auditoría. No se muestran movimientos ficticios.</p></div>';
+    if(tab==='record'&&u.employee_id){
+     const panel=summary.querySelector('.access-info-card');
+     const formBox=document.createElement('div');formBox.className='employee-file-editor';
+     panel.appendChild(formBox);
+     const groups=[
+      {title:'Datos personales',fields:[['identity_number','Carné de identidad'],['preferred_name','Nombre preferido'],['birth_date','Fecha de nacimiento','date'],['nationality','Nacionalidad']]},
+      {title:'Direcciones',fields:[['address','Dirección particular'],['province','Provincia'],['municipality','Municipio'],['address_reference','Referencia del domicilio'],['alternate_address','Dirección alternativa'],['pickup_area','Zona de recogida']]},
+      {title:'Contactos y emergencias',fields:[['phone_alternate','Teléfono alternativo'],['emergency_name','Contacto de emergencia'],['emergency_relation','Parentesco o relación'],['emergency_phone','Teléfono de emergencia'],['emergency_alternate','Segundo contacto de emergencia']]},
+      {title:'Formación',fields:[['education_level','Nivel de escolaridad'],['specialty','Especialidad'],['experience','Experiencia relevante'],['skills','Habilidades'],['driving_license','Licencia de conducción']]},
+      {title:'Documentación y notas',fields:[['document_front_path','Referencia privada al frente del documento'],['document_back_path','Referencia privada al reverso'],['notes','Observaciones']]}
+     ];
+     const status=document.createElement('p');status.className='employee-file-status';status.textContent='Cargando expediente protegido…';
+     formBox.appendChild(status);
+     sb.rpc('hr_owner_get_personal_details',{p_employee:u.employee_id}).then(({data,error})=>{
+      if(error){status.textContent='No se pudo abrir el expediente: '+error.message;return;}
+      const form=document.createElement('form');form.className='employee-file-form';
+      form.innerHTML='<p class="muted">Guarda los datos por etapas. Los campos vacíos son opcionales hasta completar el expediente.</p>'+groups.map((group,i)=>'<details class="employee-file-group" '+(i===0?'open':'')+'><summary>'+esc(group.title)+'</summary><div class="employee-file-fields">'+group.fields.map(([key,label,type])=>'<label class="employee-file-field"><span>'+esc(label)+'</span><input name="'+key+'" type="'+(type||'text')+'" value="'+esc(data?.[key]||'')+'" autocomplete="off"></label>').join('')+'</div></details>').join('')+'<button type="submit" class="btn employee-file-save">Guardar expediente</button><span class="employee-file-result" role="status"></span>';
+      formBox.appendChild(form);status.textContent='Expediente editable · Guardado parcial habilitado';
+      form.onsubmit=async ev=>{
+       ev.preventDefault();const btn=form.querySelector('button[type=submit]'),message=form.querySelector('.employee-file-result');btn.disabled=true;message.textContent='Guardando…';
+       const values=Object.fromEntries(new FormData(form).entries());
+       const {error:saveError}=await sb.rpc('hr_owner_save_personal_details',{p_employee:u.employee_id,p_data:values});
+       btn.disabled=false;message.textContent=saveError?'No se guardó: '+saveError.message:'Expediente guardado correctamente en Supabase.';
+      };
+     }).catch(e=>status.textContent='Error: '+e.message);
+    }
     if((tab==='record'||tab==='position')&&u.employee_id){
       const panel=summary.querySelector('.access-info-card');
       const live=document.createElement('div');live.className='profile-live';live.textContent='Consultando expediente de Recursos Humanos…';panel.appendChild(live);
