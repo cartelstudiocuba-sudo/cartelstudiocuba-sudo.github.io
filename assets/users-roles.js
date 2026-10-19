@@ -13,6 +13,28 @@ async function loadAccounts(){
   try{const {data,error}=await sb.functions.invoke('system-account',{body:{action:'invite',employee_id:accounts[i].employee_id,email:el('email-'+i).value.trim()}});if(error||data?.error)throw Error(data?.error||'No se pudo completar la invitación. Revisa el correo y Auth.');await loadAccounts();el('account-message').textContent=data.message;}
   catch(e){el('account-message').textContent=e.message;button.disabled=false;}
  });
+ const list=el('account-list');
+ const cards=[...list.querySelectorAll(':scope > .card')];
+ cards.forEach((card,i)=>{
+  card.style.display='none';
+  const u=accounts[i];
+  const button=document.createElement('button');
+  button.type='button';button.className='account-item';
+  const name=u.full_name||u.username||u.email||'Usuario';
+  const initials=name.trim().split(/\\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  button.innerHTML='<span class="account-avatar">'+esc(initials)+'</span><span class="account-copy"><strong>'+esc(name)+'</strong><small>'+esc(u.position||(u.roles||[]).map(r=>r.title).join(', ')||'Sin plaza')+'</small><small>'+esc(u.username||u.email||'')+'</small></span><span class="account-arrow">›</span>';
+  list.appendChild(button);
+  button.onclick=()=>{
+   const root=el('access-modal-root');root.innerHTML='<div class="access-overlay"><section class="access-dialog" role="dialog" aria-modal="true"><div class="access-dialog-head"><h2>Ficha del usuario</h2><button class="btn" type="button" id="close-account">✕ Cerrar</button></div><div id="account-detail"></div></section></div>';
+   root.querySelector('#account-detail').appendChild(card);card.style.display='block';document.body.style.overflow='hidden';
+   const close=()=>{card.style.display='none';list.insertBefore(card,list.firstChild);root.innerHTML='';document.body.style.overflow=''};
+   root.querySelector('#close-account').onclick=close;
+   root.querySelector('.access-overlay').onclick=e=>{if(e.target.classList.contains('access-overlay'))close()};
+  };
+ });
+ const search=el('account-search');
+ if(search)search.oninput=()=>{const q=search.value.toLowerCase();list.querySelectorAll('.account-item').forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'flex':'none')};
+
 }
 async function changeRole(index,code,enabled,button){
  if(!code){el('account-message').textContent='Selecciona un rol.';return;}
