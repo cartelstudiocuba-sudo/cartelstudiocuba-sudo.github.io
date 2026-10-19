@@ -141,7 +141,38 @@
  frame.src='/recursos-humanos.html?embedded=1&v='+Date.now();
  document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));
 }
-document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.menu==='rh'){if(location.pathname==='/rrhh-inicio.html')openRhDashboard(b);else location.href='/rrhh-inicio.html'}else openMenu(b.dataset.menu)});function showModule(url,a){ws.classList.remove('selection-mode');ws.classList.add('embedded');selectionFrame.src='';const sep=url.includes('?')?'&':'?';frame.src=url+sep+'embedded=1&v='+Date.now();document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));if(a)a.classList.add('active');document.querySelector('[data-menu="access"]')?.classList.toggle('access-selected',!!a?.dataset.accessSection);if(innerWidth<901)closeMenus()}
+document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.menu==='rh'){if(location.pathname==='/rrhh-inicio.html')openRhDashboard(b);else location.href='/rrhh-inicio.html'}else openMenu(b.dataset.menu)});async function configurePersonalNavigation(){
+ const nav=document.querySelector('.nav');if(!nav)return;
+ try{
+  const client=window.supabase.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn');
+  const {data:{user}}=await client.auth.getUser();if(!user)return;
+  const {data,error}=await client.rpc('system_my_navigation');if(error||!data)return;
+  if(data.is_owner)return;
+  const views=Array.isArray(data.views)?data.views:[];
+  const catalog={inventory_admin:{group:'Inventario',title:'Administrador',url:'/inventario-insumos.html',icon:'◇'},audiovisual_lead:{group:'Audiovisuales',title:'Jefe de Área',url:null,icon:'♙'}};
+  nav.querySelectorAll(':scope > *').forEach(node=>{if(!node.matches('[data-home]'))node.hidden=true});
+  const grouped=new Map();
+  views.forEach(v=>{const def=catalog[v.code];if(!def)return;if(!grouped.has(def.group))grouped.set(def.group,[]);grouped.get(def.group).push({...def,code:v.code})});
+  grouped.forEach((items,name)=>{
+   const wrap=document.createElement('div');wrap.className='personal-nav-group';
+   const parent=document.createElement('button');parent.type='button';parent.className='nav-parent';parent.innerHTML='<span class="ico">'+items[0].icon+'</span><span>'+name+'</span><span class="chev">⌄</span>';
+   const sub=document.createElement('div');sub.className='submenu open';
+   items.forEach(item=>{
+    const link=document.createElement('a');link.href=item.url||'#';link.className='personal-view-link';link.textContent=item.title;
+    if(item.url)link.onclick=e=>{e.preventDefault();showModule(item.url,link)};
+    else {link.classList.add('personal-view-pending');link.onclick=e=>{e.preventDefault();alert('Esta vista todavía está pendiente de configuración.')} }
+    sub.appendChild(link);
+   });
+   parent.onclick=()=>sub.classList.toggle('open');
+   wrap.append(parent,sub);nav.appendChild(wrap);
+  });
+  const foot=document.querySelector('aside .foot');if(foot)foot.textContent=user.email||'Mi cuenta';
+  const profile=document.querySelector('.topbar .profile');if(profile)profile.style.display='none';
+  if(views.length){const first=views.find(v=>v.is_default)||views[0];const item=catalog[first.code];if(item?.url){const link=[...nav.querySelectorAll('.personal-view-link')].find(a=>a.getAttribute('href')===item.url);showModule(item.url,link)}}
+ }catch(e){console.warn('Navegación personal no disponible',e)}
+}
+window.addEventListener('load',configurePersonalNavigation);
+function showModule(url,a){ws.classList.remove('selection-mode');ws.classList.add('embedded');selectionFrame.src='';const sep=url.includes('?')?'&':'?';frame.src=url+sep+'embedded=1&v='+Date.now();document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));if(a)a.classList.add('active');document.querySelector('[data-menu="access"]')?.classList.toggle('access-selected',!!a?.dataset.accessSection);if(innerWidth<901)closeMenus()}
 function showSelectionHub(a){ws.classList.remove('embedded');ws.classList.add('selection-mode');frame.src='';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));if(a)a.classList.add('active');openSelectionStage('candidates',document.querySelector('[data-stage="candidates"]'));if(innerWidth<901)closeMenus()}
 function openSelectionStage(stage,btn){const cfg=selectionStages[stage]||selectionStages.candidates;document.querySelectorAll('#selectionTabs button').forEach(x=>x.classList.toggle('active',x===btn));document.getElementById('selectionFrameLabel').textContent=cfg.label;const openNew=document.getElementById('selectionOpenNew');openNew.href=cfg.url;selectionFrame.dataset.stage=stage;selectionFrame.src=cfg.url+(cfg.url.includes('?')?'&':'?')+'v='+Date.now()}
 let selectionResizeObserver=null,selectionMutationObserver=null;
