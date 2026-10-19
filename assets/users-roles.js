@@ -61,6 +61,28 @@ async function loadAccounts(){
        section.querySelector('.profile-embedded-preview').innerHTML=v?'<h4>'+esc(v.title||'Sin título')+'</h4><p>'+esc(v.description||'')+'</p><p>Diseño: '+esc(v.layout||'list')+'</p><p>Componentes: '+Object.entries(v.blocks||{}).filter(([k,enabled])=>enabled).map(([k])=>esc(k)).join(', ')+'</p>':'<p>Este rol no tiene un borrador de vista en este navegador.</p>';
       });
     }
+    if(tab==='views'&&u.employee_id){
+      const panel=summary.querySelector('.access-info-card');
+      const editor=document.createElement('div');editor.className='profile-view-manager';panel.prepend(editor);
+      const catalog=[{code:'inventory_admin',name:'Inventario · Administrador',description:'Vista operativa de insumos'},{code:'audiovisual_lead',name:'Audiovisuales · Jefe de Área',description:'Vista reservada para configuración futura'}];
+      sb.rpc('system_owner_employee_views',{p_employee:u.employee_id}).then(({data,error})=>{
+       if(error){editor.textContent='No se pudieron consultar las vistas: '+error.message;return;}
+       const assigned=data||[];
+       editor.innerHTML='<h4>Asignación de vistas</h4><p>Estas asignaciones son independientes de la plaza laboral.</p>'+catalog.map(v=>{
+        const current=assigned.find(a=>a.code===v.code);
+        return '<div class="profile-view-option"><div><strong>'+esc(v.name)+'</strong><small>'+esc(v.description)+'</small></div><label><input type="checkbox" data-view-enabled="'+v.code+'" '+(current?.enabled?'checked':'')+'> Acceso</label><label><input type="radio" name="view-default" data-view-default="'+v.code+'" '+(current?.is_default?'checked':'')+'> Inicio</label></div>';
+       }).join('')+'<button class="btn" id="save-profile-views" type="button">Guardar vistas</button><p id="profile-view-result" role="status"></p>';
+       editor.querySelector('#save-profile-views').onclick=async()=>{
+        const btn=editor.querySelector('#save-profile-views'),status=editor.querySelector('#profile-view-result');btn.disabled=true;status.textContent='Guardando…';
+        try{
+         const enabled=catalog.filter(v=>editor.querySelector('[data-view-enabled="'+v.code+'"]').checked);
+         const preferred=editor.querySelector('[data-view-default]:checked')?.dataset.viewDefault;
+         for(const v of catalog){const active=enabled.some(x=>x.code===v.code);const {error:saveError}=await sb.rpc('system_manage_user_view',{p_employee:u.employee_id,p_code:v.code,p_enabled:active,p_default:active&&v.code===preferred});if(saveError)throw saveError;}
+         status.textContent='Vistas guardadas en Supabase.';
+        }catch(e){status.textContent='Error al guardar: '+e.message}finally{btn.disabled=false}
+       };
+      });
+    }
     const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
