@@ -42,6 +42,14 @@ async function loadAccounts(){
     if(tab==='access')summary.innerHTML='<div class="access-info-card"><h3>Cuenta y seguridad</h3><p>Usuario: <strong>'+esc(u.username||'Sin nombre de usuario')+'</strong></p><p>Correo: '+esc(u.email||'No registrado')+'</p><p>Estado: '+esc(u.is_owner?'Propietario protegido':!u.id?'Cuenta Auth pendiente':u.blocked?'Cuenta bloqueada':u.confirmed?(u.enabled?'Habilitada':'Deshabilitada'):'Confirmación pendiente')+'</p><p class="muted">Las contraseñas no se muestran ni se almacenan en esta ficha. Las invitaciones disponibles están en Roles y permisos.</p></div>';
     if(tab==='views')summary.innerHTML='<div class="access-info-card"><h3>Vistas del usuario</h3><p>Las vistas se preparan por rol en el Editor de vistas.</p><p class="muted">Los borradores aún no están publicados ni vinculados a cuentas. No se ha asignado ninguna vista nueva desde esta ficha.</p><button class="btn" type="button" id="open-profile-views">Abrir Editor de vistas ↗</button></div>';
     if(tab==='activity')summary.innerHTML='<div class="access-info-card"><h3>Actividad y auditoría</h3><p class="muted">El historial de cambios de esta cuenta estará disponible cuando se conecte el registro de auditoría. No se muestran movimientos ficticios.</p></div>';
+    if((tab==='record'||tab==='position')&&u.employee_id){
+      const panel=summary.querySelector('.access-info-card');
+      const live=document.createElement('div');live.className='profile-live';live.textContent='Consultando expediente de Recursos Humanos…';panel.appendChild(live);
+      sb.from('hr_employees').select('full_name,email,whatsapp,role_title,status,hired_at,system_username,system_access_enabled').eq('id',u.employee_id).maybeSingle().then(({data,error})=>{
+       if(error||!data){live.textContent='No se pudo consultar el expediente: '+(error?.message||'Sin datos');return;}
+       live.innerHTML='<h4>Datos originales de RRHH</h4>'+Object.entries({Nombre:data.full_name,Correo:data.email,WhatsApp:data.whatsapp,Plaza:data.role_title,Estado:data.status,Contratación:data.hired_at?.slice(0,10),Usuario:data.system_username,Acceso:data.system_access_enabled?'Habilitado':'Deshabilitado'}).map(([k,v])=>'<p><strong>'+esc(k)+':</strong> '+esc(v||'Sin registrar')+'</p>').join('');
+      });
+    }
     const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
