@@ -24,3 +24,8 @@ test('Alert buttons select only the chosen state while preserving both totals',(
  let markup=nodes['inventory-stock-alert-content'].innerHTML;assert.match(markup,/Escaso/);assert.doesNotMatch(markup,/>Agotado</);assert.match(markup,/1 sin stock/);assert.match(markup,/data-alert-filter="low" aria-pressed="true"/);
  ctx.window.inventoryAlertFilter='empty';ctx.renderInventoryStockSummary();markup=nodes['inventory-stock-alert-content'].innerHTML;assert.match(markup,/Agotado/);assert.doesNotMatch(markup,/>Escaso</);ctx.window.inventoryAlertFilter='all';
 });
+
+test('Todos is first and selected by default, showing both low and empty alerts',()=>{
+ ctx.window.inventoryAlertFilter=undefined;ctx.inventoryProducts=[p('Agotado',0,5),p('Escaso',2,5)];ctx.renderInventoryStockSummary();
+ const markup=nodes['inventory-stock-alert-content'].innerHTML;assert.match(markup,/data-alert-filter="all" aria-pressed="true" class="selected">Todos \(2\)/);assert.ok(markup.indexOf('data-alert-filter="all"')<markup.indexOf('data-alert-filter="empty"'));assert.match(markup,/Agotado/);assert.match(markup,/Escaso/);
+});
