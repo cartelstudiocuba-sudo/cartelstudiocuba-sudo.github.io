@@ -42,13 +42,32 @@ async function changeRole(index,code,enabled,button){
  try{const {error}=await sb.rpc('system_set_employee_role',{employee:accounts[index].employee_id,requested_role:code,enabled});if(error)throw error;await loadAccounts();el('account-message').textContent='Rol actualizado. Los permisos se comprueban en el servidor en cada operación.';}
  catch(e){el('account-message').textContent='No se pudo guardar: '+e.message;button.disabled=false;}
 }
-function renderRoles(){el('role-count').textContent=roles.length+' registrados';el('role-list').innerHTML=roles.map((r,i)=>'<article class="card"><h3>'+esc(r.title)+'</h3><p>'+esc(r.description)+'</p><button class="btn" data-role="'+i+'">Configurar permisos →</button></article>').join('');el('role-list').querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>showRole(Number(b.dataset.role)));}
+function renderRoles(){
+ el('role-count').textContent=roles.length+' registrados';
+ el('role-list').innerHTML=roles.map((r,i)=>'<button class="role-item" type="button" data-role="'+i+'"><span class="role-avatar" aria-hidden="true">♙</span><span class="role-copy"><strong>'+esc(r.title)+'</strong><small>'+esc(r.description||'Sin descripción')+'</small></span><span class="role-arrow" aria-hidden="true">›</span></button>').join('');
+ el('role-list').querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>openRoleModal(Number(b.dataset.role)));
+}
+function closeRoleModal(){
+ const layer=document.getElementById('role-modal-layer');if(!layer)return;
+ const detail=el('role-detail');detail.classList.add('hidden');el('roles').appendChild(detail);layer.remove();document.body.style.overflow='';
+}
+function openRoleModal(i){
+ closeRoleModal();
+ const layer=document.createElement('div');layer.className='role-modal-layer';layer.id='role-modal-layer';
+ layer.innerHTML='<div class="role-modal-box" role="dialog" aria-modal="true" aria-label="Configuración de permisos del rol"><div id="role-modal-content"></div></div>';
+ document.body.appendChild(layer);document.body.style.overflow='hidden';
+ layer.onclick=e=>{if(e.target===layer)closeRoleModal()};
+ layer.querySelector('#role-modal-content').appendChild(el('role-detail'));
+ showRole(i);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('role-modal-layer'))closeRoleModal()});
+
 function showRole(i){
  const r=roles[i],p=permissions.find(p=>p.access_role_id===r.id&&p.module_code==='inventario_insumos')||{};const d=el('role-detail');d.classList.remove('hidden');
  d.innerHTML='<div class="row"><h2>'+esc(r.title)+'</h2><button class="btn" id="close-role">Cerrar</button></div><p>'+esc(r.description)+'</p><form id="permission-form"><table class="matrix"><thead><tr><th>Módulo</th><th>Leer</th><th>Escribir</th></tr></thead><tbody><tr><td>Inventario Insumos</td><td><input type="checkbox" id="allow-read" aria-label="Leer Inventario Insumos" '+(p.can_read?'checked':'')+'></td><td><input type="checkbox" id="allow-write" aria-label="Escribir Inventario Insumos" '+(p.can_write?'checked':'')+'></td></tr><tr><td>Usuarios y Roles</td><td colspan="2">Solo propietario</td></tr><tr><td>Recursos Humanos</td><td colspan="2">Solo propietario</td></tr></tbody></table><p>Escribir permite registrar productos y movimientos; el historial no se modifica. Los roles de una persona acumulan sus permisos. El acceso a RRHH y la gestión de usuarios no se delegan desde esta matriz.</p><button class="btn" type="submit">Guardar permisos</button><p id="permission-message" role="status"></p></form>';
  el('allow-write').onchange=()=>{if(el('allow-write').checked)el('allow-read').checked=true;};el('allow-read').onchange=()=>{if(!el('allow-read').checked)el('allow-write').checked=false;};
  el('permission-form').onsubmit=async event=>{event.preventDefault();const b=event.currentTarget.querySelector('button');b.disabled=true;try{const {error}=await sb.rpc('system_set_role_permission',{role_id:r.id,module:'inventario_insumos',allow_read:el('allow-read').checked,allow_write:el('allow-write').checked});if(error)throw error;await loadPermissions();el('permission-message').textContent='Permisos guardados y vigentes en el servidor.';}catch(e){el('permission-message').textContent='No se pudo guardar: '+e.message;}finally{b.disabled=false;}};
- el('close-role').onclick=()=>d.classList.add('hidden');d.scrollIntoView({behavior:'smooth',block:'nearest'});
+ el('close-role').onclick=closeRoleModal;
 }
 async function loadPermissions(){const r=await sb.from('system_role_module_permissions').select('*');if(r.error)throw r.error;permissions=r.data||[];}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
