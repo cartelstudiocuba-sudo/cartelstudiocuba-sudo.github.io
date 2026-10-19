@@ -4,6 +4,10 @@ const money=(n,c)=>Number(n).toLocaleString('es-CU',{minimumFractionDigits:2,max
 const statusOf=p=>Number(p.stock)===0?'Sin stock':Number(p.stock)<=Number(p.minimum_stock)?'Stock bajo':'En stock';
 const summaryByCurrency=rows=>['CUP'].map(c=>money(rows.filter(e=>e.currency===c).reduce((s,e)=>s+Number(e.quantity)*Number(e.unit_cost),0),c)).join(' / ');
 async function allRows(table,order){let rows=[];for(let from=0;;from+=500){const r=await sb.from(table).select('*').order(order).order('id').range(from,from+499);if(r.error)throw r.error;rows.push(...r.data);if(r.data.length<500)return rows;}}
+(function initializeLegacyInventoryCatalog(){
+// The current inventory UI owns rendering, movement submission and recovery.
+// Keep shared helpers above available to the fund, without overriding current handlers.
+if(!byId('filters')||!byId('new')||!byId('out'))return;
 const filterBar=document.createElement('div');filterBar.id='catalog-filters';filterBar.className='form-grid form-hide';
 filterBar.innerHTML='<div class="field"><label for="stock-filter">Existencias</label><select id="stock-filter"><option value="">Todos los estados</option><option>En stock</option><option>Stock bajo</option><option>Sin stock</option></select></div><div class="field"><label for="currency-filter">Moneda</label><select id="currency-filter"><option value="">Todas las monedas</option><option>CUP</option><option>USD</option></select></div>';
 document.querySelector('.tools').after(filterBar);
@@ -66,3 +70,5 @@ function persistMovement(request,payload){if(recoveryKey)sessionStorage.setItem(
 function clearPersistedMovement(){if(recoveryKey)sessionStorage.removeItem(recoveryKey);}
 async function recoverMovement(saved){const button=byId('recover-movement');button.disabled=true;try{const r=await sb.rpc('inventory_record_movement',{request_id:saved.id,payload:saved.payload});if(r.error)throw r.error;clearPersistedMovement();button.remove();await loadInventory();document.querySelector('.notice').textContent='Movimiento pendiente confirmado una sola vez.';}catch(e){document.querySelector('.notice').textContent='El movimiento pendiente no se confirmó: '+e.message;button.disabled=false;}}
 (async()=>{try{const {data:{session}}=await sb.auth.getSession();if(!session)return;recoveryKey='cartel.inventory.pending.'+session.user.id;const raw=sessionStorage.getItem(recoveryKey);if(raw){const saved=JSON.parse(raw),button=document.createElement('button');button.id='recover-movement';button.className='btn primary';button.textContent='Confirmar movimiento pendiente';button.onclick=()=>recoverMovement(saved);document.querySelector('.tools').after(button);byId('new').disabled=byId('out').disabled=true;await loadInventory();byId('new').disabled=byId('out').disabled=true;inventoryCanWrite=false;}else await loadInventory();}catch(e){console.error('Carga del inventario:',e);document.querySelector('.notice').textContent='No se pudo cargar el inventario: '+e.message;}})();
+
+})();
