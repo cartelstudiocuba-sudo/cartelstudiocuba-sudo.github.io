@@ -185,13 +185,12 @@ function syncPendingRecoveryButton(){
 pendingRecoveryButton.addEventListener('click',async()=>{
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
  if(!saved?.submitted||!saved.id){syncPendingRecoveryButton();return}
- showModal(saved.payload?.kind==='out'?'out':'entry');
- await reconcilePendingInventoryMovement();
- syncPendingRecoveryButton();
+ pendingRecoveryButton.disabled=true;
+ try{await reconcilePendingInventoryMovement(pendingRecoveryNotice||byId('form-message'))}
+ finally{pendingRecoveryButton.disabled=false;syncPendingRecoveryButton()}
 });
 syncPendingRecoveryButton();
-async function reconcilePendingInventoryMovement(){
- const status=byId('form-message');
+async function reconcilePendingInventoryMovement(status=byId('form-message')){
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}
  if(!saved?.id||!saved.submitted){status.textContent='No existe una solicitud enviada pendiente de confirmación.';return}
  status.textContent='Consultando la solicitud '+String(saved.id).slice(0,8)+'…';
