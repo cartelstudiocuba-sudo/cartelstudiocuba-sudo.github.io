@@ -1,0 +1,8 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../inventario-insumos.html'),'utf8');
+const ctx={};vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('let inventoryVisibleLimit=10,'),html.indexOf("byId('inventory-show-more').addEventListener")),ctx);
+const rows=Array.from({length:31},(_,i)=>i);
+test('Catalog starts at ten rows and expands in tens until the final partial batch',()=>{assert.equal(ctx.inventoryVisibleRows(rows,'all').length,10);vm.runInContext('inventoryVisibleLimit+=10',ctx);assert.equal(ctx.inventoryVisibleRows(rows,'all').length,20);vm.runInContext('inventoryVisibleLimit+=10',ctx);assert.equal(ctx.inventoryVisibleRows(rows,'all').length,30);vm.runInContext('inventoryVisibleLimit+=10',ctx);assert.equal(ctx.inventoryVisibleRows(rows,'all').length,31);assert.equal(rows.length,31)});
+test('Changing search, filter or order starts from ten; small and empty matches show everything',()=>{for(const key of ['search','stock-low','order-name']){vm.runInContext('inventoryVisibleLimit=40',ctx);assert.equal(ctx.inventoryVisibleRows(rows,key).length,10)}assert.equal(ctx.inventoryVisibleRows(rows.slice(0,3),'small').length,3);assert.equal(ctx.inventoryVisibleRows([],'none').length,0)});
+test('Movement actor header and value immediately follow currency',()=>{assert.match(html,/<th>Moneda<\/th><th>Realizado por<\/th><th>Observaciones<\/th>/);assert.ok(html.includes("escape(m.currency||p?.currency||'CUP')+'</td><td>'+escape(actor(m))"));assert.doesNotMatch(html,/<th>Usuario responsable<\/th>/)});
