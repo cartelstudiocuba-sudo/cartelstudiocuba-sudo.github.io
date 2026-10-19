@@ -173,6 +173,14 @@ function lookupPendingMovement(id){
  promise.finally(()=>{if(pendingReconciliationPromise?.promise===promise)pendingReconciliationPromise=null});
  return promise;
 }
+function finishConfirmedPendingMovement(id){
+ let current;try{current=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){return false}
+ if(current?.id!==id||!current.submitted)return false;
+ clearPersistedMovement();
+ if(pendingRequest?.id===id)pendingRequest=null;
+ syncPendingRecoveryButton();
+ return true;
+}
 async function autoCheckPendingInventoryMovement(){
  let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){return}
  if(!saved?.submitted||!saved.id)return;
@@ -180,9 +188,7 @@ async function autoCheckPendingInventoryMovement(){
   const auth=await sb.auth.getUser();if(auth.error||!auth.data?.user)return;
   const result=await lookupPendingMovement(saved.id);
   if(result.error||!result.data)return;
-  const current=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null');
-  if(current?.id!==saved.id)return;
-  clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();
+  if(!finishConfirmedPendingMovement(saved.id))return;
   const notice=document.querySelector('.inventory .notice');
   if(notice)notice.textContent='Se confirmó automáticamente el movimiento pendiente ('+String(saved.id).slice(0,8)+'). Ya puedes continuar.';
   try{await loadInventory()}catch(e){if(notice)notice.textContent='Movimiento confirmado ('+String(saved.id).slice(0,8)+'), pero no se pudo actualizar la pantalla. Recarga Inventario para ver las existencias actuales. Detalle: '+e.message}
@@ -220,8 +226,9 @@ async function reconcilePendingInventoryMovement(status=byId('form-message')){
  if(!saved?.id||!saved.submitted){status.textContent='No existe una solicitud enviada pendiente de confirmación.';return}
  status.textContent='Consultando la solicitud '+String(saved.id).slice(0,8)+'…';
  const {data,error}=await lookupPendingMovement(saved.id);
+ if(!data){let current;try{current=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){}if(current?.id!==saved.id)return}
  if(error){status.textContent='No se pudo verificar el movimiento. No repitas la operación. Detalle: '+error.message;return}
- if(data){clearPersistedMovement();pendingRequest=null;syncPendingRecoveryButton();status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){status.textContent+=' No se pudo actualizar el listado: '+e.message+'. Recarga Inventario para consultar las existencias actuales.'};return}
+ if(data){if(!finishConfirmedPendingMovement(saved.id))return;status.textContent='Movimiento confirmado en el historial ('+data.kind+', '+data.quantity+' unidades, '+data.occurred_on+'). Se liberó el bloqueo de nuevas operaciones.';const notice=document.querySelector('.inventory .notice');if(notice)notice.textContent='Movimiento anterior confirmado. Ya puedes registrar otra operación.';try{await loadInventory()}catch(e){status.textContent+=' No se pudo actualizar el listado: '+e.message+'. Recarga Inventario para consultar las existencias actuales.'};return}
  status.textContent='La solicitud todavía no aparece en el historial. Su ausencia NO confirma que haya fallado. Reintenta únicamente con el mismo identificador y los mismos datos, o solicita revisión antes de registrar una operación nueva.';
 }
 const reconcileButton=document.createElement('button');reconcileButton.type='button';reconcileButton.className='btn';reconcileButton.textContent='Verificar movimiento pendiente';reconcileButton.addEventListener('click',reconcilePendingInventoryMovement);byId('form-message').after(reconcileButton);
