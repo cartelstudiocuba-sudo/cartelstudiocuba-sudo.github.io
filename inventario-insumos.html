@@ -181,6 +181,16 @@ async function autoCheckPendingInventoryMovement(){
  }catch(e){}
 }
 autoCheckPendingInventoryMovement();
+let pendingAutoCheckRunning=false,lastPendingAutoCheck=0;
+async function refreshPendingConfirmation(){
+ if(pendingAutoCheckRunning||savingMovement||document.visibilityState==='hidden'||Date.now()-lastPendingAutoCheck<15000)return;
+ let saved;try{saved=JSON.parse(sessionStorage.getItem(inventoryPendingKey)||'null')}catch(e){return}
+ if(!saved?.submitted||!saved.id)return;
+ pendingAutoCheckRunning=true;lastPendingAutoCheck=Date.now();
+ try{await autoCheckPendingInventoryMovement()}finally{pendingAutoCheckRunning=false}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshPendingConfirmation()});
+window.addEventListener('focus',refreshPendingConfirmation);
 const pendingRecoveryButton=document.createElement('button');
 pendingRecoveryButton.type='button';pendingRecoveryButton.className='btn';pendingRecoveryButton.textContent='Verificar solicitud pendiente';pendingRecoveryButton.hidden=true;
 const pendingRecoveryNotice=document.querySelector('.inventory .notice');
