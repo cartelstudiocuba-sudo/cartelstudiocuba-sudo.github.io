@@ -1888,7 +1888,7 @@ function approvedOpenVacancy(id){
  const v=vacancies.find(z=>String(z.id)===String(x.vacancy_id));
  if(!v?.slug){alert('Esta plaza no tiene una convocatoria vinculada para consultar.');return}
  let m=document.getElementById('approvedVacancyModal');if(!m){m=document.createElement('div');m.id='approvedVacancyModal';m.className='approved-document-modal';document.body.appendChild(m)}
- const url='/aplicar.html?plaza='+encodeURIComponent(v.slug)+'&vista=admin&preview=1&consulta=1';
+ const url='/aplicar.html?plaza='+encodeURIComponent(v.slug)+'&vista=admin&preview=1&consulta=1&v=20261020b';
  m.innerHTML='<div class="approved-document-backdrop" onclick="approvedCloseVacancy()"></div><section class="approved-document-dialog approved-vacancy-preview" role="dialog" aria-modal="true" aria-label="Información de la plaza"><header><div class="approved-document-title"><span class="approved-document-icon">▣</span><div><strong>Información de la plaza</strong><small>'+esc(v.title||x.role_title||'Convocatoria')+'</small></div></div><button class="approved-document-close" onclick="approvedCloseVacancy()" aria-label="Cerrar">✕</button></header><iframe title="Convocatoria de la plaza" loading="eager" src="'+url+'"></iframe><footer><button type="button" onclick="approvedCloseVacancy()">← Regresar a la ficha</button></footer></section>';
  m.style.display='flex';document.addEventListener('keydown',approvedVacancyEscape);window.addEventListener('message',approvedVacancyMessage);m.querySelector('.approved-document-close').focus();
 }
