@@ -20,19 +20,12 @@ async function hireCandidate(id){
  location.href='/trabajador-ficha.html?id='+encodeURIComponent(employeeId);
 }
 async function closeTrial(id,status){
- if(!['talent_pool','not_selected'].includes(status))return alert('Decisión no reconocida.');
- const label=status==='talent_pool'?'Cantera':'No seleccionado';
- if(!confirm('¿Confirmas la decisión final: '+label+'? Se cerrará el período de prueba y se conservará el historial del candidato.'))return;
- const {data:t,error:te}=await sb.from('hr_trial_periods').select('candidate_id,stage').eq('id',id).single();
- if(te||!t)return alert(te?.message||'No se encontró el período de prueba.');
- if(!['in_trial','evaluation_pending'].includes(t.stage))return alert('Este período de prueba no admite una decisión final en su estado actual.');
- const {data:c,error:ce}=await sb.from('hr_candidates').select('id,status').eq('id',t.candidate_id).single();
- if(ce||!c)return alert(ce?.message||'No se encontró el candidato.');
- if(c.status==='hired')return alert('Este candidato ya está contratado. No puede enviarse a cantera ni descartarse.');
- const now=new Date().toISOString();
- const {error}=await sb.from('hr_candidates').update({status,decision_status:status,decision_updated_at:now}).eq('id',t.candidate_id);
- if(error)return alert('No se pudo actualizar el candidato: '+error.message);
- const {error:trialError}=await sb.from('hr_trial_periods').update({stage:'completed',completed_at:now,updated_at:now}).eq('id',id);
- if(trialError)return alert('La decisión del candidato se guardó, pero el cierre de la prueba falló. Requiere revisión: '+trialError.message);
- alert('Decisión registrada: '+label+'.');reload()
-}</script></body></html>
+ if(!['talent_pool','not_selected'].includes(status))return alert('Decisión no válida.');
+ const label=status==='talent_pool'?'Guardar en cantera':'No contratar';
+ if(!confirm('¿Confirmas la decisión final: '+label+'?'))return;
+ const {error}=await sb.rpc('hr_close_trial_decision',{p_trial_id:id,p_outcome:status});
+ if(error)return alert('No se guardó la decisión. '+error.message);
+ alert('Decisión final registrada correctamente.');
+ reload();
+}
+</script></body></html>
