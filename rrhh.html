@@ -1871,33 +1871,37 @@ async function extractCandidateCvText(blob,path){
  throw new Error('Este formato no admite extracción automática. Se admiten PDF y DOCX.')
 }
 function candidateCvExtract(text){
- const raw=String(text).split(/\n+/).map(v=>v.replace(/\s+/g,' ').trim()).filter(Boolean);
- const categories=[{title:'Experiencia laboral',heading:/^(experiencia( laboral| profesional)?|trayectoria( profesional)?|historial laboral|empleos)\s*:?$/i,hits:[]},{title:'Formación',heading:/^(educaci[oó]n|formaci[oó]n( acad[eé]mica| profesional)?|estudios( realizados)?|cursos|certificaciones)\s*:?$/i,hits:[]},{title:'Habilidades y conocimientos',heading:/^(habilidades( personales| t[eé]cnicas| profesionales)?|competencias|conocimientos|herramientas|idiomas)\s*:?$/i,hits:[]}];
- const job=/\b(asistente|secretari[ao]|administrador|coordinador|director|gerente|supervisor|productor|editor|diseñador|fot[oó]graf[ao]|community manager|vendedor|recepcionista|operador|auxiliar|responsable|encargad[ao])\b/i;
- const study=/\b(universidad|instituto|licenciatura|licenciad[ao]|bachiller|t[eé]cnico medio|graduad[ao]|certificaci[oó]n|diplomado|curso de|academia|formaci[oó]n en)\b/i;
- const skill=/\b(excel|word|office|photoshop|illustrator|premiere|canva|ingl[eé]s|software|herramientas|edici[oó]n|gesti[oó]n|comunicaci[oó]n|organizaci[oó]n|dominio|manejo|aprendizaje|resoluci[oó]n|creaci[oó]n de contenido|atenci[oó]n al cliente)\b/i;
- const headings=/^(perfil( profesional)?|sobre m[ií]|contacto|datos personales|referencias|proyectos|logros|informaci[oó]n adicional|excelencia en)\s*:?$/i;
- let active=null;const chunks=[];
- for(const part of raw){
-  const heading=categories.find(c=>c.heading.test(part));
-  if(heading){active=heading;continue}
-  if(headings.test(part)){active=null;continue}
-  if(part.length<5)continue;
-  const prev=chunks[chunks.length-1];
-  if(prev&&prev.section===active&&prev.text.length<175&&/^[a-záéíóúñ]/.test(part)&&!/[.!?:;]$/.test(prev.text)){prev.text+=' '+part;continue}
-  chunks.push({section:active,text:part});
+ const lines=String(text).split(/\n+/).map(v=>v.replace(/\s+/g,' ').trim()).filter(Boolean);
+ const titles=['Experiencia laboral','Formación','Habilidades y conocimientos'];
+ const heading=[/^(experiencia( laboral| profesional)?|trayectoria( profesional)?|historial laboral|empleos)\s*:?$/i,/^(educaci[oó]n|formaci[oó]n( acad[eé]mica)?|estudios( realizados)?|cursos|certificaciones)\s*:?$/i,/^(habilidades( personales| t[eé]cnicas| profesionales)?|competencias|conocimientos|herramientas|idiomas)\s*:?$/i];
+ const job=/\b(asistente|secretari[ao]|administrador|coordinador|director|gerente|supervisor|productor|editor|diseñador|fot[oó]graf[ao]|community manager|encargad[ao]|responsable|vendedor|recepcionista)\b/i;
+ const study=/\b(universidad|instituto|licenciatura|licenciad[ao]|bachiller|t[eé]cnico medio|graduad[ao]|certificaci[oó]n|diplomado|curso de|academia|facultad|formaci[oó]n en)\b/i;
+ const skill=/\b(excel|word|office|photoshop|illustrator|premiere|canva|ingl[eé]s|software|herramientas|edici[oó]n|gesti[oó]n|comunicaci[oó]n|organizaci[oó]n|dominio|manejo|aprendizaje|resoluci[oó]n|contenido|atenci[oó]n al cliente)\b/i;
+ const results=[[],[],[]];let section=-1;let block=[];
+ const flush=()=>{
+  if(!block.length)return;
+  const joined=block.join(' ').replace(/\s+/g,' ').trim();block=[];
+  if(joined.length<18||joined.length>650)return;
+  const academic=study.test(joined);
+  const joblike=job.test(joined)&&/\b(agencia|empresa|trabaj|cargo|puesto|(?:19|20)\d{2}|\|)\b/i.test(joined);
+  let target=-1;
+  if(academic)target=1;
+  else if(joblike)target=0;
+  else if(section===0&&(job.test(joined)||/\b(empresa|trabaj|desempeñ|(?:19|20)\d{2})\b/i.test(joined)))target=0;
+  else if(skill.test(joined)&&section!==1)target=2;
+  else if(section===2&&skill.test(joined))target=2;
+  if(target>=0&&results[target].length<5&&!results[target].includes(joined))results[target].push(joined);
+ };
+ for(const line of lines){
+  const h=heading.findIndex(re=>re.test(line));
+  if(h>=0){flush();section=h;continue}
+  if(/^(perfil( profesional)?|sobre m[ií]|contacto|datos personales|referencias|proyectos|logros|informaci[oó]n adicional|excelencia en)\s*:?$/i.test(line)){flush();section=-1;continue}
+  if(line.length<5||/^[A-ZÁÉÍÓÚÑ\s]{4,55}$/.test(line)){flush();continue}
+  if(block.length&&(/^[A-ZÁÉÍÓÚÑ]/.test(line)||/[.!?;:]$/.test(block[block.length-1])||block.join(' ').length>280))flush();
+  block.push(line);
  }
- for(const item of chunks){
-  const line=item.text;
-  if(line.length<18||line.length>450||/^[A-ZÁÉÍÓÚÑ\s]{4,55}$/.test(line))continue;
-  let target=null;
-  if(item.section===categories[1]){if(study.test(line))target=categories[1];else if(skill.test(line))target=categories[2]}
-  else if(item.section===categories[0]){if(job.test(line)||/\b(empresa|trabaj[eé]|desempeñ[eé]|(?:19|20)\d{2})\b/i.test(line))target=categories[0];else if(skill.test(line))target=categories[2]}
-  else if(item.section===categories[2]){if(skill.test(line))target=categories[2];else if(job.test(line))target=categories[0]}
-  else {if(study.test(line))target=categories[1];else if(job.test(line)&&/\b(agencia|empresa|trabaj|(?:19|20)\d{2})\b/i.test(line))target=categories[0];else if(skill.test(line))target=categories[2]}
-  if(target&&target.hits.length<6&&!target.hits.includes(line))target.hits.push(line);
- }
- return categories.map(c=>({title:c.title,hits:c.hits}));
+ flush();
+ return titles.map((title,i)=>({title,hits:results[i]}));
 }
 async function analyzeCandidateCv(force){
  const box=document.getElementById('approvedCvSummary'),output=document.getElementById('approvedCvSummaryContent');if(!box||!output)return;const path=box.dataset.path;if(!path)return;
