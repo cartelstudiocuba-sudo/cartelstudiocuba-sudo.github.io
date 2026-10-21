@@ -1874,16 +1874,16 @@ function candidateCvExtract(text){
  const lines=String(text).split(/\n+/).map(v=>v.replace(/\s+/g,' ').trim()).filter(Boolean);
  const titles=['Experiencia laboral','Formación','Habilidades y conocimientos'];
  const heading=[/^(experiencia( laboral| profesional)?|trayectoria( profesional)?|historial laboral|empleos)\s*:?$/i,/^(educaci[oó]n|formaci[oó]n( acad[eé]mica)?|estudios( realizados)?|cursos|certificaciones)\s*:?$/i,/^(habilidades( personales| t[eé]cnicas| profesionales)?|competencias|conocimientos|herramientas|idiomas)\s*:?$/i];
- const job=/\b(asistente|secretari[ao]|administrador|coordinador|director|gerente|supervisor|productor|editor|diseñador|fot[oó]graf[ao]|community manager|encargad[ao]|responsable|vendedor|recepcionista)\b/i;
+ const job=/\b(asistente|secretari[ao]|administrador|coordinador|coordinadora|director|directora|gerente|supervisor|supervisora|productor|productora|editor|editora|diseñador|diseñadora|fot[oó]graf[ao]|community manager|encargad[ao]|responsable|vendedor|vendedora|recepcionista)\b/i;
  const study=/\b(universidad|instituto|licenciatura|licenciad[ao]|bachiller|t[eé]cnico medio|graduad[ao]|certificaci[oó]n|diplomado|curso de|academia|facultad|formaci[oó]n en)\b/i;
  const skill=/\b(excel|word|office|photoshop|illustrator|premiere|canva|ingl[eé]s|software|herramientas|edici[oó]n|gesti[oó]n|comunicaci[oó]n|organizaci[oó]n|dominio|manejo|aprendizaje|resoluci[oó]n|contenido|atenci[oó]n al cliente)\b/i;
  const results=[[],[],[]];let section=-1;let block=[];
  const flush=()=>{
   if(!block.length)return;
   const joined=block.join(' ').replace(/\s+/g,' ').trim();block=[];
-  if(joined.length<18||joined.length>650)return;
+  if(joined.length<18||joined.length>650)return;const unfinished=/\b(para|de|del|en|con|y|o|por|la|el|los|las|una|un|que|desde|mediante|incluyendo)\s*:?$/i.test(joined);if(unfinished)return;
   const academic=study.test(joined);
-  const joblike=job.test(joined)&&/\b(agencia|empresa|trabaj|cargo|puesto|(?:19|20)\d{2}|\|)\b/i.test(joined);
+  const joblike=job.test(joined)&&(/agencia|empresa|trabaj|cargo|puesto|(?:19|20)\d{2}|\|/i.test(joined)||/^(coordinador[ao]|secretari[ao]|asistente|director[ao]|gerente|supervisor[ao])\b/i.test(joined));
   let target=-1;
   if(academic)target=1;
   else if(joblike)target=0;
