@@ -1873,48 +1873,31 @@ async function extractCandidateCvText(blob,path){
 function candidateCvExtract(text){
  const raw=String(text).split(/\n+/).map(v=>v.replace(/\s+/g,' ').trim()).filter(Boolean);
  const personal=/^(nombre(?: completo)?|edad|sexo|g[eé]nero|direcci[oó]n|domicilio|residencia|tel[eé]fono|celular|m[oó]vil|whatsapp|correo|e-?mail|fecha de nacimiento|nacimiento|estado civil|nacionalidad|dni|carn[eé] de identidad)\s*:/i;
- const headings=/^(perfil( profesional)?|sobre m[ií]|resumen( profesional)?|experiencia( laboral| profesional)?|trayectoria( profesional)?|educaci[oó]n|formaci[oó]n( acad[eé]mica| profesional)?|estudios|habilidades( personales| t[eé]cnicas)?|competencias|conocimientos|idiomas|herramientas|certificaciones|cursos|proyectos|logros|referencias|datos personales|contacto|informaci[oó]n personal)\s*:?$/i;
- const job=/^(coordinador[ao]|secretari[ao]|asistente|director[ao]|gerente|supervisor[ao]|administrador[ao]|productor[ao]|editor[ao]|diseñador[ao]|responsable|encargad[ao])\b/i;
- const dates=/^(?:\(?\d{4}\s*[-–—]\s*(?:\d{4}|actualidad|presente)\)?|actualidad|presente)$/i;
- const groups=[];let current=null;let caps=[];
- const educationTitle=()=>current&&/^(educaci[oó]n|formaci[oó]n|estudios)/i.test(current.title);
- const flush=()=>{
-  if(!caps.length||!current){caps=[];return}
-  const joined=caps.join(' ').replace(/\s+/g,' ').trim();
-  if(educationTitle()){
-   const split=joined.match(/^(BACHILLER\s+EN\s+CIENCIAS\s+Y\s+LETRAS)\s+(.+)$/i);
-   if(split){current.lines.push(split[1]);const rest=split[2].replace(/\s+(PROYECTO\s+LA\s+MONEDA\s+CUBANA)/i,'\n$1');for(const part of rest.split('\n'))if(part.trim())current.lines.push(part.trim())}
-   else current.lines.push(joined);
-  }else current.lines.push(joined);
-  caps=[];
- };
- const finish=()=>{flush();if(current&&current.lines.length)groups.push(current)};
- const switchTo=title=>{finish();current={title,lines:[]}};
- for(let i=0;i<raw.length;i++){
-  const line=raw[i];
+ const heading=/^(perfil( profesional)?|sobre m[ií]|resumen( profesional)?|experiencia( laboral| profesional| de trabajo)?|trayectoria( profesional)?|historial laboral|educaci[oó]n|formaci[oó]n( acad[eé]mica| profesional)?|estudios|habilidades( personales| t[eé]cnicas| profesionales)?|competencias|conocimientos|idiomas|herramientas|certificaciones|cursos|proyectos|logros|referencias|datos personales|contacto|informaci[oó]n personal|objetivo profesional|publicaciones|voluntariado|premios|intereses)\s*:?$/i;
+ const groups=[];let current={title:'Otros datos del currículum',lines:[]};
+ const finish=()=>{if(current.lines.length)groups.push(current)};
+ for(const line of raw){
   if(personal.test(line)||/^(?:\+?\d[\d\s().-]{7,}|[\w.+-]+@[\w.-]+\.[a-z]{2,})$/i.test(line))continue;
-  if(headings.test(line)){switchTo(line.replace(/:$/,'').trim());continue}
-  if(!current||/^(datos personales|contacto|informaci[oó]n personal)$/i.test(current.title))continue;
-  if(line.length<3||line.length>550)continue;
-  const isJob=job.test(line)||/^(?:empresa|agencia)\s+.{5,}$/i.test(line);
-  if(educationTitle()&&isJob)switchTo('Experiencia laboral');
-  const capsLine=/^[A-ZÁÉÍÓÚÑ0-9\s&(),.-]+$/.test(line)&&line.length<65&&!dates.test(line);
-  if(capsLine){caps.push(line);continue}
-  flush();
+  if(heading.test(line)){
+   finish();current={title:line.replace(/:$/,'').trim(),lines:[]};continue;
+  }
+  if(/^(datos personales|contacto|informaci[oó]n personal)$/i.test(current.title))continue;
+  if(line.length<2||line.length>800)continue;
   const prev=current.lines[current.lines.length-1];
-  const continuation=/^[a-záéíóúñ]/.test(line)||/^(?:VIP|PyMEs|Reels|TikToks|Mar\s)/i.test(line);
-  const previousEndsWithConnector=prev&&/\b(para|de|del|con|en|y|a|por|la|el|los|las|una|un)\s*$/i.test(prev);
-  if(prev&&prev.length<420&&!/[.!?]$/.test(prev)&&(continuation||previousEndsWithConnector)&&!dates.test(line))current.lines[current.lines.length-1]=prev+' '+line;
-  else current.lines.push(line);
+  const continuation=/^[a-záéíóúñ]/.test(line);
+  const unfinished=prev&&!/[.!?;:]$/.test(prev)&&/\b(para|de|del|con|en|y|por|la|el|los|las|una|un|que|mediante)\s*$/i.test(prev);
+  if(prev&&prev.length+line.length<450&&(continuation||unfinished)){
+   current.lines[current.lines.length-1]=prev+' '+line;
+  }else current.lines.push(line);
  }
  finish();
- return groups.filter(g=>!/^(datos personales|contacto|informaci[oó]n personal)$/i.test(g.title)).map(g=>({title:g.title,hits:g.lines.slice(0,45)}));
+ return groups.filter(g=>g.lines.length).map(g=>({title:g.title,hits:g.lines.slice(0,100)}));
 }
 function candidateCvPersonal(text){
  const lines=String(text).split(/\n+/).map(v=>v.trim()).filter(Boolean),out={};
  const rules={address:/^(?:direcci[oó]n|domicilio|residencia|zona de residencia)\s*:\s*(.+)$/i,age:/^edad\s*:\s*(\d{1,2})(?:\s*años)?$/i,sex:/^(?:sexo|g[eé]nero)\s*:\s*(femenino|masculino|mujer|hombre|otro)$/i,education_level:/^(?:nivel escolar|escolaridad|nivel de estudios)\s*:\s*(.+)$/i};
  for(const line of lines)for(const [key,re] of Object.entries(rules)){const match=line.match(re);if(match&&!out[key]&&match[1].length<160)out[key]=match[1].trim()}
- if(!out.education_level&&/\bbachiller\s+en\s+ciencias\s+y\s+letras\b/i.test(String(text).replace(/\s+/g,' ')))out.education_level='Bachiller en Ciencias y Letras';
+ 
  return out;
 }
 function applyCandidateCvPersonal(path,found){
