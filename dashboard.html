@@ -215,34 +215,6 @@ let selectionResizePending=false,selectionLastHeight=0;function resizeSelectionF
 function prepareSelectionFrame(){
  try{
   const doc=selectionFrame.contentDocument;if(!doc)return;selectionFrame.parentElement?.classList.add('is-ready');
-  const isCandidates=selectionFrame.dataset.stage==='candidates';
-  document.getElementById('selectionTabs').style.display=isCandidates?'none':'';
-  if(isCandidates){
-   const hero=doc.querySelector('.capture-v4-top');
-   if(hero){
-    doc.getElementById('selectionStagesInline')?.remove();
-    const nav=document.getElementById('selectionTabs').cloneNode(true);
-    nav.id='selectionStagesInline';
-    const original=document.getElementById('selectionTabs');
-    const copyStyle=(source,target)=>{
-     const computed=getComputedStyle(source);
-     target.style.cssText=Array.from(computed).map(prop=>prop+':'+computed.getPropertyValue(prop)+';').join('');
-     for(let i=0;i<source.children.length;i++)if(target.children[i])copyStyle(source.children[i],target.children[i]);
-    };
-    copyStyle(original,nav);
-    nav.style.display='grid';
-    nav.style.gridTemplateColumns='repeat(4,minmax(0,1fr))';
-    nav.style.margin='12px 0 18px';
-    nav.querySelectorAll('button[data-stage]').forEach(button=>{
-     button.removeAttribute('onclick');
-     button.addEventListener('click',()=>openSelectionStage(button.dataset.stage,document.querySelector('#selectionTabs button[data-stage="'+button.dataset.stage+'"]')));
-    });
-    const responsive=doc.createElement('style');
-    responsive.textContent='@media(max-width:800px){#selectionStagesInline{grid-template-columns:repeat(2,minmax(0,1fr))!important}}';
-    doc.head.appendChild(responsive);
-    hero.insertAdjacentElement('afterend',nav);
-   }
-  }
   const st=doc.createElement('style');
   st.textContent='a[href="/rrhh-inicio.html"],a[href="/rrhh-inicio.html#"]{display:none!important} html,body{height:auto!important;min-height:0!important;overflow:hidden!important} body{background:transparent!important}';
   doc.head.appendChild(st);
