@@ -2205,14 +2205,19 @@ function sendEditedVacancyWhatsApp(){
  else alert('No se pudo abrir WhatsApp. Revisa el bloqueo de ventanas emergentes.');
 }
 function returnToCaptureDashboard(event){
+ if(event)event.preventDefault();
+ // The quick-access PWA can be standalone, framed, or embedded in Dashboard.
+ // Always return to the Captación home rather than relying on browser history.
+ const home='/rrhh.html?embedded=1&v=captacion-return-20261022';
  if(window.parent!==window){
   try{
    if(window.parent.location.origin===location.origin&&typeof window.parent.showSelectionHub==='function'){
-    event.preventDefault();window.parent.showSelectionHub(null);return false;
+    window.parent.showSelectionHub(null);return false;
    }
   }catch(_){}
  }
- return true;
+ window.location.assign(home);
+ return false;
 }
 function scrollCaptureVacancies(direction){const el=document.getElementById('roleList');if(!el)return;const card=el.querySelector('.capture-vacancy-card');const step=card?card.getBoundingClientRect().width+14:Math.max(240,el.clientWidth*.8);el.scrollBy({left:direction*step,behavior:'smooth'});}
 function updateCaptureVacancyArrows(){const el=document.getElementById('roleList');if(!el)return;const wrap=el.closest('.capture-vacancy-carousel');if(!wrap)return;const prev=wrap.querySelector('.capture-vacancy-nav.prev'),next=wrap.querySelector('.capture-vacancy-nav.next');if(prev)prev.disabled=el.scrollLeft<=3;if(next)next.disabled=el.scrollLeft+el.clientWidth>=el.scrollWidth-3;}
