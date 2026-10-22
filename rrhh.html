@@ -2076,10 +2076,11 @@ body.vacancy-management-mode .vacancy-management-grid-wrap{position:relative!imp
 body.vacancy-management-mode #roleList.role-list>.vacancy-management-card{flex:0 0 calc((100% - 36px)/4)!important;width:calc((100% - 36px)/4)!important;min-width:0!important;max-width:calc((100% - 36px)/4)!important;display:grid!important;grid-template-columns:39% minmax(0,1fr)!important;gap:8px!important;padding:7px!important;height:160px!important;min-height:160px!important;max-height:160px!important;overflow:hidden!important;scroll-snap-align:start!important;border-radius:12px!important;box-sizing:border-box!important}
 body.vacancy-management-mode #roleList .vacancy-management-flyer{width:100%!important;height:100%!important;min-height:0!important;aspect-ratio:auto!important;border-radius:7px!important;overflow:hidden!important}
 body.vacancy-management-mode #roleList .vacancy-management-flyer img{width:100%!important;height:100%!important;object-fit:cover!important}
-body.vacancy-management-mode #roleList .vacancy-management-card-info{display:flex!important;flex-direction:column!important;min-width:0!important;gap:3px!important;overflow:hidden!important}
+body.vacancy-management-mode #roleList .vacancy-management-card-info{display:grid!important;grid-template-rows:25px minmax(0,1fr) 16px 49px!important;min-width:0!important;min-height:0!important;gap:3px!important;overflow:hidden!important}
 body.vacancy-management-mode #roleList .vacancy-management-card-head strong{font-size:10px!important;line-height:1.2!important}
-body.vacancy-management-mode #roleList .vacancy-management-facts{display:grid!important;gap:3px!important;font-size:9px!important;line-height:1.2!important}
-body.vacancy-management-mode #roleList .vacancy-management-status{font-size:9px!important;padding:3px 6px!important}
+body.vacancy-management-mode #roleList .vacancy-management-facts{display:grid!important;gap:3px!important;font-size:9px!important;line-height:1.2!important;overflow:hidden!important}
+body.vacancy-management-mode #roleList .vacancy-management-facts span{overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.vacancy-management-mode #roleList .vacancy-management-status{font-size:9px!important;padding:2px 6px!important;margin:0!important}
 body.vacancy-management-mode #roleList .vacancy-management-card-actions{display:grid!important;grid-template-columns:1fr!important;gap:3px!important;margin-top:auto!important}
 body.vacancy-management-mode #roleList .vacancy-management-card-actions button{width:100%!important;min-height:23px!important;padding:3px!important;font-size:9px!important;white-space:nowrap!important}
 .vacancy-compact-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:28px;height:42px;border:1px solid #465e70;border-radius:10px;background:#20384a;color:#ffda03;font-size:25px;cursor:pointer}
@@ -2433,6 +2434,9 @@ function init(){
  const wrap=document.querySelector('body.vacancy-management-mode .vacancy-management-grid-wrap');
  if(!wrap)return;
  const track=wrap.querySelector('#roleList.vacancy-management-grid');if(!track)return;
+ const cols=window.innerWidth>1200?4:window.innerWidth>850?3:window.innerWidth>540?2:1;
+ const width=cols===1?'88%':'calc((100% - '+((cols-1)*12)+'px) / '+cols+')';
+ track.querySelectorAll('.vacancy-management-card').forEach(card=>{card.style.setProperty('flex','0 0 '+width,'important');for(const prop of ['width','max-width'])card.style.setProperty(prop,width,'important');});
  if(!wrap.querySelector('.vacancy-compact-arrow')){
   for(const [dir,cls,label] of [[-1,'prev','Convocatorias anteriores'],[1,'next','Convocatorias siguientes']]){
    const b=document.createElement('button');b.type='button';b.className='vacancy-compact-arrow '+cls;b.textContent=dir<0?'‹':'›';b.setAttribute('aria-label',label);
