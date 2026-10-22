@@ -2154,6 +2154,13 @@ html body.embedded.dashboard-mode #candidateDashboard.capture-v4>.capture-v4-top
  }
 }
 </style><style id="capture-hide-duplicate-vacancies-20261022">
+
+/* Hide the entire vacancy carousel on Captación, including cards rendered dynamically. */
+html body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard #roleList,
+html body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard #roleList.role-list,
+html body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard .capture-vacancy-nav,
+html body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard .capture-vacancy-carousel,
+html body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard .vacancy-management-grid-wrap{display:none!important}
 /* Convocatorias now have their own navigation view; hide the duplicate carousel only on Captación home. */
 body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard .vacancy-section-head,
 body.embedded.dashboard-mode:not(.vacancy-management-mode) #candidateDashboard .vacancy-tabs,
