@@ -242,8 +242,8 @@ function prepareSelectionFrame(){
       originalTabs.style.display='';
       copyAppearance(originalTabs,tabs);
       originalTabs.style.display=originalDisplay;
-      tabs.style.setProperty('display','grid','important');
-      tabs.style.margin='12px 0 18px';
+      tabs.style.setProperty('display','none','important');
+      tabs.style.margin='0';
       tabs.querySelectorAll('button[data-stage]').forEach(button=>{
         button.removeAttribute('onclick');
         button.onclick=null;
