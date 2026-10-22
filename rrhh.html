@@ -2057,6 +2057,19 @@ html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate
 html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate-hero #captureListSearch.capture-banner-search{top:60%!important;width:185px!important;max-width:27%!important}
 @media(max-width:800px){html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate-hero #captureListSearch.capture-banner-search{top:60%!important;width:145px!important;max-width:30%!important}}
 
+/* Buscador del dashboard: dentro de la cabecera, sin superponer el título. */
+html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate-hero{position:relative!important}
+html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate-hero #captureListSearch.capture-banner-search{
+ position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+ transform:none!important;display:block!important;align-self:flex-start!important;
+ width:min(320px,100%)!important;max-width:100%!important;height:38px!important;
+ margin:12px 0 0!important;z-index:1!important;
+}
+@media(max-width:800px){
+ html body.embedded.dashboard-mode #candidateDashboard .capture-v4-top .candidate-hero #captureListSearch.capture-banner-search{
+  width:min(280px,100%)!important;max-width:100%!important;margin-top:10px!important;
+ }
+}
 /* Vista independiente de Convocatorias: reutiliza las tarjetas y acciones reales de RRHH */
 body.embedded.dashboard-mode #vacancyManagementHeading{display:none}
 body.embedded.dashboard-mode.vacancy-management-mode #candidateDashboard.capture-v4 .capture-v4-top,body.embedded.dashboard-mode.vacancy-management-mode #candidateDashboard.capture-v4 #captureStatusFilters,body.embedded.dashboard-mode.vacancy-management-mode #candidateDashboard.capture-v4 #captureCandidateList{display:none!important}
