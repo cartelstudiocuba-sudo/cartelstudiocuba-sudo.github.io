@@ -252,6 +252,11 @@ function prepareSelectionFrame(){
           openSelectionStage(button.dataset.stage,real);
         });
       });
+      const iconStyles=doc.createElement('style');
+      iconStyles.id='selectionStagesInlineIcons';
+      iconStyles.textContent='#selectionStagesInline button[data-stage=candidates] .selection-step-no::after{content:"♟";font-size:23px}#selectionStagesInline button[data-stage=interviews] .selection-step-no::after{content:"▦";font-size:25px}#selectionStagesInline button[data-stage=trial] .selection-step-no::after{content:"☷";font-size:25px}#selectionStagesInline button[data-stage=hiring] .selection-step-no::after{content:"✓";font-size:23px}';
+      doc.getElementById('selectionStagesInlineIcons')?.remove();
+      doc.head.appendChild(iconStyles);
       hero.insertAdjacentElement('afterend',tabs);
     }
   }
