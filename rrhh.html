@@ -2206,18 +2206,8 @@ function sendEditedVacancyWhatsApp(){
 }
 function returnToCaptureDashboard(event){
  if(event)event.preventDefault();
- const home='/rrhh.html?embedded=1&v=captacion-return-20261022b';
- if(window.parent!==window){
-  try{
-   if(window.parent.location.origin===location.origin&&typeof window.parent.openSelectionStage==='function'){
-    // Explicitly replace the Convocatorias iframe; changing menu selection alone is insufficient.
-    window.parent.openSelectionStage('candidates',window.parent.document.querySelector('#selectionTabs button[data-stage="candidates"]'));
-    return false;
-   }
-  }catch(_){}
- }
- // In standalone quick access, replace the current page with the Captación dashboard.
- window.location.replace(home);
+ // Return directly to the Captación y selección home, independently of the sidebar or parent frame state.
+ window.top.location.href='/rrhh.html?embedded=1&v=captacion-home-20261022';
  return false;
 }
 function scrollCaptureVacancies(direction){const el=document.getElementById('roleList');if(!el)return;const card=el.querySelector('.capture-vacancy-card');const step=card?card.getBoundingClientRect().width+14:Math.max(240,el.clientWidth*.8);el.scrollBy({left:direction*step,behavior:'smooth'});}
