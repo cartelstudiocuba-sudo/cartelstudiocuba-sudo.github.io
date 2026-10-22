@@ -2134,14 +2134,6 @@ function renderCandidateDashboard(){
   const track=$('roleList'),wrap=track.parentElement;
   wrap.style.setProperty('position','relative','important');wrap.style.setProperty('overflow','hidden','important');wrap.style.setProperty('padding','0 32px','important');
   track.style.setProperty('display','flex','important');track.style.setProperty('flex-direction','row','important');track.style.setProperty('flex-wrap','nowrap','important');track.style.setProperty('grid-template-columns','none','important');track.style.setProperty('overflow-x','auto','important');track.style.setProperty('overflow-y','hidden','important');track.style.setProperty('scroll-snap-type','x mandatory','important');track.style.setProperty('gap','12px','important');
-  const cols=window.innerWidth>540?3:1;
-  track.querySelectorAll('.vacancy-management-card').forEach(card=>{
-   const w=cols===1?'88%':'340px';
-   for(const prop of ['flex-basis','width','max-width'])card.style.setProperty(prop,w,'important');
-   card.style.setProperty('flex','0 0 '+w,'important');card.style.setProperty('display','grid','important');card.style.setProperty('grid-template-columns','39% minmax(0,1fr)','important');
-   card.style.setProperty('height','205px','important');card.style.setProperty('min-height','205px','important');card.style.setProperty('max-height','205px','important');card.style.setProperty('padding','7px','important');card.style.setProperty('gap','8px','important');card.style.setProperty('overflow','hidden','important');
-   const flyer=card.querySelector('.vacancy-management-flyer');if(flyer){flyer.style.setProperty('min-height','0','important');flyer.style.setProperty('height','100%','important')}
-  });
   if(typeof window.initVacancyCarousel==='function')window.initVacancyCarousel();
  }
 requestAnimationFrame(updateCaptureVacancyArrows);
@@ -2443,9 +2435,6 @@ function init(){
  const wrap=document.querySelector('body.vacancy-management-mode .vacancy-management-grid-wrap');
  if(!wrap)return;
  const track=wrap.querySelector('#roleList.vacancy-management-grid');if(!track)return;
- const cols=window.innerWidth>1200?4:window.innerWidth>850?3:window.innerWidth>540?2:1;
- const width=cols===1?'88%':'calc((100% - '+((cols-1)*12)+'px) / '+cols+')';
- track.querySelectorAll('.vacancy-management-card').forEach(card=>{card.style.setProperty('flex','0 0 '+width,'important');for(const prop of ['width','max-width'])card.style.setProperty(prop,width,'important');});
  if(!wrap.querySelector('.vacancy-compact-arrow')){
   for(const [dir,cls,label] of [[-1,'prev','Convocatorias anteriores'],[1,'next','Convocatorias siguientes']]){
    const b=document.createElement('button');b.type='button';b.className='vacancy-compact-arrow '+cls;b.textContent=dir<0?'‹':'›';b.setAttribute('aria-label',label);
