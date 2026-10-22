@@ -215,6 +215,24 @@ let selectionResizePending=false,selectionLastHeight=0;function resizeSelectionF
 function prepareSelectionFrame(){
  try{
   const doc=selectionFrame.contentDocument;if(!doc)return;selectionFrame.parentElement?.classList.add('is-ready');
+  const isCandidates=selectionFrame.dataset.stage==='candidates';
+  document.getElementById('selectionTabs').style.display=isCandidates?'none':'';
+  if(isCandidates){
+   const hero=doc.querySelector('.capture-v4-top');
+   if(hero){
+    doc.getElementById('selectionStagesInline')?.remove();
+    const nav=document.getElementById('selectionTabs').cloneNode(true);
+    nav.id='selectionStagesInline';nav.style.cssText='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 18px;padding:9px;border:1px solid #42566b;border-radius:16px;background:#152535';
+    nav.querySelectorAll('button[data-stage]').forEach(button=>{
+     button.removeAttribute('onclick');
+     button.addEventListener('click',()=>openSelectionStage(button.dataset.stage,document.querySelector('#selectionTabs button[data-stage="'+button.dataset.stage+'"]')));
+     button.style.cssText='border:1px solid #435b70;border-radius:12px;background:#294258;color:#fff;padding:12px;text-align:left;display:flex;gap:9px;align-items:center;cursor:pointer';
+     button.querySelector('.selection-step-no').style.cssText='background:#ffda03;color:#171717;border-radius:8px;padding:8px;font-weight:800';
+    });
+    hero.insertAdjacentElement('afterend',nav);
+    const style=doc.createElement('style');style.textContent='#selectionStagesInline b{display:block;font-size:13px}#selectionStagesInline small{display:block;font-size:10px;color:#d0d7df}@media(max-width:720px){#selectionStagesInline{grid-template-columns:repeat(2,minmax(0,1fr))!important}}';doc.head.appendChild(style);
+   }
+  }
   const st=doc.createElement('style');
   st.textContent='a[href="/rrhh-inicio.html"],a[href="/rrhh-inicio.html#"]{display:none!important} html,body{height:auto!important;min-height:0!important;overflow:hidden!important} body{background:transparent!important}';
   doc.head.appendChild(st);
