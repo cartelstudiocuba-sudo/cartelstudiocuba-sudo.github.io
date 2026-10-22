@@ -2205,9 +2205,22 @@ function sendEditedVacancyWhatsApp(){
  else alert('No se pudo abrir WhatsApp. Revisa el bloqueo de ventanas emergentes.');
 }
 function returnToCaptureDashboard(event){
- if(event)event.preventDefault();
- // Return directly to the Captación y selección home, independently of the sidebar or parent frame state.
- window.top.location.href='/rrhh.html?embedded=1&v=captacion-home-20261022';
+ if(event){event.preventDefault();event.stopPropagation();}
+ // Restore the already loaded Captación dashboard in-place, without a frame reload.
+ document.body.classList.remove('vacancy-management-mode');
+ const home=new URL(window.location.href);
+ home.searchParams.delete('view');
+ home.searchParams.delete('source');
+ home.searchParams.delete('build');
+ window.history.replaceState(null,'',home.pathname+home.search+home.hash);
+ document.querySelectorAll('#overviewStats .capture-stage-tile').forEach(button=>{
+  const active=button.dataset.stage==='candidates';
+  button.classList.toggle('is-active',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ const top=document.getElementById('candidateDashboard');
+ if(top)top.scrollIntoView({block:'start',behavior:'instant'});
+ window.scrollTo(0,0);
  return false;
 }
 function scrollCaptureVacancies(direction){const el=document.getElementById('roleList');if(!el)return;const card=el.querySelector('.capture-vacancy-card');const step=card?card.getBoundingClientRect().width+14:Math.max(240,el.clientWidth*.8);el.scrollBy({left:direction*step,behavior:'smooth'});}
