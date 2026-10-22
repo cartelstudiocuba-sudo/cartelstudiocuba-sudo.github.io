@@ -2444,7 +2444,8 @@ function init(){
  if(!track.dataset.carouselBound){track.addEventListener('scroll',refresh,{passive:true});track.dataset.carouselBound='1';}
  refresh();
 }
-window.initVacancyCarousel=init;\nconst observer=new MutationObserver(()=>{if(document.body.classList.contains('vacancy-management-mode'))init();});
+window.initVacancyCarousel=init;
+const observer=new MutationObserver(()=>{if(document.body.classList.contains('vacancy-management-mode'))init();});
 observer.observe(document.body,{subtree:true,childList:true,attributes:false});
 window.addEventListener('resize',init);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
