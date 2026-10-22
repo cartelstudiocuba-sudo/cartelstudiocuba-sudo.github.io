@@ -218,6 +218,43 @@ function prepareSelectionFrame(){
   const st=doc.createElement('style');
   st.textContent='a[href="/rrhh-inicio.html"],a[href="/rrhh-inicio.html#"]{display:none!important} html,body{height:auto!important;min-height:0!important;overflow:hidden!important} body{background:transparent!important}';
   doc.head.appendChild(st);
+  // Conservar la botonera original como fuente de estilo y navegación.
+  const originalTabs=document.getElementById('selectionTabs');
+  const header=document.querySelector('.selection-shell-head');
+  if(header)header.style.display='none';
+  const isCapture=selectionFrame.dataset.stage==='candidates';
+  if(originalTabs)originalTabs.style.display=isCapture?'none':'';
+  if(isCapture&&originalTabs){
+    const hero=doc.querySelector('.capture-v4-top');
+    if(hero){
+      doc.getElementById('selectionStagesInline')?.remove();
+      const tabs=originalTabs.cloneNode(true);
+      tabs.id='selectionStagesInline';
+      const copyAppearance=(source,target)=>{
+        const computed=getComputedStyle(source);
+        target.style.cssText=Array.from(computed).map(prop=>prop+':'+computed.getPropertyValue(prop)).join(';');
+        for(let i=0;i<source.children.length;i++){
+          if(target.children[i])copyAppearance(source.children[i],target.children[i]);
+        }
+      };
+      // Copiar apariencia antes de ocultar el elemento original.
+      const originalDisplay=originalTabs.style.display;
+      originalTabs.style.display='';
+      copyAppearance(originalTabs,tabs);
+      originalTabs.style.display=originalDisplay;
+      tabs.style.setProperty('display','grid','important');
+      tabs.style.margin='12px 0 18px';
+      tabs.querySelectorAll('button[data-stage]').forEach(button=>{
+        button.removeAttribute('onclick');
+        button.onclick=null;
+        button.addEventListener('click',()=>{
+          const real=originalTabs.querySelector('button[data-stage="'+button.dataset.stage+'"]');
+          openSelectionStage(button.dataset.stage,real);
+        });
+      });
+      hero.insertAdjacentElement('afterend',tabs);
+    }
+  }
   selectionFrame.setAttribute('scrolling','no');
   if(selectionResizeObserver){selectionResizeObserver.disconnect();selectionResizeObserver=null}
   if(selectionMutationObserver){selectionMutationObserver.disconnect();selectionMutationObserver=null}
