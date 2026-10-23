@@ -2686,6 +2686,17 @@ function approvedInterviewRatingSummary(x){
  const cards=labels.map((label,i)=>{const n=scores[i];return '<div '+esc+'><div style="display:flex;gap:9px;align-items:center;font-size:13px"><span style="color:#ffda03;font-size:19px">'+icons[i]+'</span><span style="flex:1">'+label+'</span><strong style="color:#ffda03;white-space:nowrap">'+(n?n+'/5':'—')+'</strong></div><div style="display:flex;gap:5px;margin-top:12px">'+[1,2,3,4,5].map(v=>'<i style="flex:1;height:6px;border-radius:6px;background:'+(v<=n?'#ffda03':'#415b70')+'"></i>').join('')+'</div></div>'}).join('');
  return '<div style="padding:10px 3px"><div style="color:#b9cfdf;margin-bottom:14px">Resultados de la valoración del entrevistador</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:20px"><div '+esc+'><div style="color:#b9cfdf">Criterios evaluados</div><strong style="display:block;font-size:25px;margin:8px 0">'+count+'/10</strong><div style="height:6px;background:#415b70;border-radius:8px;overflow:hidden"><i style="display:block;height:100%;width:'+(count*10)+'%;background:#ffda03"></i></div></div><div '+esc+'><div style="color:#b9cfdf">Promedio orientativo</div><strong style="display:block;font-size:25px;color:#ffda03;margin-top:8px">'+avg+' <small style="color:#b9cfdf;font-size:14px">/ 5</small></strong></div></div><h3 style="margin:0 0 12px;color:#e9f2fa">Valoración por cualidades</h3><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'+cards+'</div>'+(count?'':'<p style="color:#b9cfdf;margin-top:12px">Todavía no hay puntuaciones registradas.</p>')+'</div>';
 }
+function applyReturnedCandidateEvaluation(id,patch){
+ const candidate=candidates.find(x=>String(x.id)===String(id));if(!candidate||!patch)return;
+ let changed=false;
+ for(const key of ['internal_first_impression','internal_role_fit','internal_strengths','internal_interview_checks','internal_notes']){
+  if(typeof patch[key]==='string'&&candidate[key]!==patch[key]){candidate[key]=patch[key];changed=true;}
+ }
+ const detail=$('detail');
+ if(!changed||detail?.dataset.candidateId!==String(id))return;
+ const section=detail.querySelector('.approved-internal');
+ if(section)section.innerHTML='<div class="approved-heading"><span>✧ &nbsp; EVALUACIÓN INTERNA</span></div>'+approvedInterviewRatingSummary(candidate);
+}
 function approvedCandidatePanel(x,role,ans,phone,history,iv){
  const get=(key)=>{const a=ans.find(a=>a.question_key===key);return a?(a.answer??''):''};
  const date=x.submitted_at?new Date(x.submitted_at).toLocaleDateString('es-ES'):'No registrada';
