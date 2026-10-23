@@ -2666,11 +2666,12 @@ async function analyzeCandidateCv(force){
  }catch(err){if(document.getElementById('approvedCvSummary')?.dataset.path===path)document.getElementById('approvedCvSummaryContent').textContent='No fue posible generar el resumen: '+(err.message||'Error desconocido')}
 }
 function approvedInterviewSummary(iv){
- const field=(label,value)=>'<div class="approved-field"><small>'+esc(label)+'</small><strong>'+esc(value||'No registrado')+'</strong></div>';
+ const icons={Estado:'◉','Fecha de entrevista':'▦',Entrevistador:'♙',Modalidad:'▣'};
+ const field=(label,value)=>'<div class="approved-field"><small><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:1.35em;margin-right:5px;color:#ffda03;font-size:1.15em">'+icons[label]+'</span>'+esc(label)+'</small><strong>'+esc(value||'No registrado')+'</strong></div>';
  const status=String(iv?.attendance_status||'').toLowerCase();
  const state=iv?.completed_at?'Realizada':status==='absent'||status==='no_show'?'Ausencia':status==='cancelled'||status==='canceled'?'Cancelada':status==='confirmed'?'Confirmada':iv?.interview_date?'Programada':'No registrado';
  const mode=iv?.modality||iv?.interview_modality||iv?.interview_mode||iv?.mode||'No registrada';
- const rows=[field('Fecha de entrevista',iv?.interview_date||''),field('Entrevistador',iv?.interviewer||''),field('Modalidad',mode),field('Estado',state)];
+ const rows=[field('Estado',state),field('Fecha de entrevista',iv?.interview_date||''),field('Entrevistador',iv?.interviewer||''),field('Modalidad',mode)];
  return '<div class="approved-grid">'+rows.join('')+'</div>';
 }
 function togglePremiumQuickActions(button){const panel=button.closest('.approved-quick-actions');if(!panel)return;const collapsed=panel.classList.toggle('quick-premium-collapsed');button.setAttribute('aria-expanded',String(!collapsed));}
