@@ -5,6 +5,13 @@
     --interview-surface: #142332;
     --interview-border: #344b60;
   }
+  html body.interview-review-embedded {
+    background: var(--interview-surface) !important;
+    background-image: none !important;
+  }
+  html body.interview-review-embedded::before {
+    display: none !important;
+  }
 
   html body #interviewView :is(.interview-brief, .interview-steps, .panel,
     .card, .opening-guide, .opening-script, .question, .group-title, .final,
