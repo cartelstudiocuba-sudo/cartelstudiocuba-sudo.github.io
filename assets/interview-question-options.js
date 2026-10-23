@@ -23,8 +23,9 @@ function renderInterviewQuestionResponse(index, notes) {
   const choices = options ? [...options, 'Otra respuesta', 'No responde / no se abordó'] : [];
   // Preserve any previously saved suggestion if the list is edited in the future.
   if (selected && !choices.includes(selected)) choices.push(selected);
-  const dropdown = options ? `<label class="question-response-label no-print" for="questionChoice${number}">Respuesta indicada por el candidato</label><select class="question-response-choice no-print" id="questionChoice${number}" onchange="saveQuestionnaireValue('${key}_choice',this.value)"><option value="">Selecciona la respuesta que mejor coincida…</option>${choices.map(value => `<option value="${esc(value)}"${value === selected ? ' selected' : ''}>${esc(value)}</option>`).join('')}</select><p class="question-response-help no-print">Registra la respuesta después de escuchar al candidato. Puedes ampliar o matizar en las notas.</p>` : '';
-  return dropdown + `<textarea class="no-print" aria-label="Notas de la pregunta ${number}" placeholder="Notas de la respuesta…" onblur="saveQuestionnaireValue('${key}',this.value)">${esc(notes[key] || '')}</textarea>`;
+  const dropdown = options ? `<label class="question-response-label no-print" for="questionChoice${number}">Respuesta indicada por el candidato</label><select class="question-response-choice no-print" id="questionChoice${number}" onchange="saveQuestionnaireValue('${key}_choice',this.value)"><option value="">Selecciona la respuesta que mejor coincida…</option>${choices.map(value => `<option value="${esc(value)}"${value === selected ? ' selected' : ''}>${esc(value)}</option>`).join('')}</select><p class="question-response-help no-print">Registra la respuesta después de escuchar al candidato.</p>` : '';
+  if (options) return dropdown;
+  return `<textarea class="no-print" aria-label="Notas de la pregunta ${number}" placeholder="Notas de la respuesta…" onblur="saveQuestionnaireValue('${key}',this.value)">${esc(notes[key] || '')}</textarea>`;
 }
 
 function interviewQuestionAnswer(notes, index) {
