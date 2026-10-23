@@ -217,6 +217,22 @@ window.addEventListener('message',function(event){
  selectionFrame.src='';
  openSelectionStage('candidates',document.querySelector('#selectionTabs button[data-stage="candidates"]'));
 });
+window.addEventListener('message',function(event){
+ if(event.origin!==location.origin||event.data?.type!=='cartel-return-candidate-detail')return;
+ const id=String(event.data.candidateId||'');if(!id)return;
+ const vacancy=String(event.data.vacancyId||'');
+ const existing=selectionFrame.contentWindow;
+ const existingDoc=selectionFrame.contentDocument;
+ if(selectionFrame.dataset.stage==='candidates'&&existingDoc?.getElementById('detail')&&typeof existing?.openDetail==='function'){
+  existing.openDetail(id);
+  existingDoc.getElementById('detail')?.scrollIntoView({block:'start'});
+  return;
+ }
+ showSelectionHub(null);
+ const url='/rrhh.html?embedded=1&candidate='+encodeURIComponent(id)+(vacancy?'&vacancy='+encodeURIComponent(vacancy):'')+'&v=direct-interview-return-20261022';
+ selectionFrame.dataset.stage='candidates';
+ selectionFrame.src=url;
+});
 window.addEventListener('message',function(event){if(event.origin!==location.origin||event.data?.type!=='cartel-return-interview-agenda')return;showSelectionHub(null);openSelectionStage('interviews',document.querySelector('[data-stage="interviews"]'));});
 window.addEventListener('message',function(event){if(event.origin!==location.origin||event.data?.type!=='cartel-open-interviews')return;const candidate=event.data.candidate;const url='/entrevistas.html?embedded=1&v=interview-colores-plaza-v3'+(candidate?'&candidate='+encodeURIComponent(candidate):'');showModule(url,document.querySelector('[data-module="interviews"]')||null)});
 function showModule(url,a){ws.classList.remove('selection-mode');ws.classList.add('embedded');selectionFrame.src='';const sep=url.includes('?')?'&':'?';frame.src=url+sep+'embedded=1&v='+Date.now();document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));if(a)a.classList.add('active');document.querySelector('[data-menu="access"]')?.classList.toggle('access-selected',!!a?.dataset.accessSection);if(innerWidth<901)closeMenus()}
