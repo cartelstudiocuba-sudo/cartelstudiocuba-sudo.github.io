@@ -68,7 +68,7 @@
   }
   html body #interviewView #interviewStepEvaluation :is(
     .interview-rating-section, .interview-rating-card,
-    .interview-rating-select, .interview-rating-summary) {
+    .interview-rating-select, .interview-rating-summary, .interview-extra-notes) {
     background: var(--interview-surface) !important;
     background-image: none !important;
     border-color: var(--interview-border) !important;
