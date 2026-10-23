@@ -56,6 +56,15 @@
     outline: 2px solid #ffda03;
     outline-offset: 2px;
   }
+  html body #interviewView #interviewStepPresentation :is(
+    .opening-guide-v2, .opening-guide-layout-a, .opening-a-left,
+    .opening-a-right, .opening-v2-script, .opening-v2-card,
+    .opening-v2-note, .opening-v2-copy) {
+    background: var(--interview-surface) !important;
+    background-image: none !important;
+    border-color: var(--interview-border) !important;
+    box-shadow: none !important;
+  }
   html body #interviewView .interview-step.active b,
   html body #interviewView .interview-step.active span {
     background: #ffda03 !important;
