@@ -2,7 +2,7 @@
 document.documentElement.dataset.accessPending='true';
 const CartelAccess={
  async load(client){
-  const entries=await Promise.all(['inventario_insumos','rrhh','usuarios_roles'].map(async module=>{const r=await client.rpc('system_has_permission',{module,operation:'read'});if(r.error)throw r.error;return [module,!!r.data];}));
+  const entries=await Promise.all(['inventario_insumos','rrhh','usuarios_roles'].map(async module=>{const query=()=>client.rpc('system_has_permission',{module,operation:'read'});const r=window.CartelLoad?await CartelLoad.read('permission_'+module,query):await query();if(r.error)throw r.error;return [module,!!r.data];}));
   return Object.fromEntries(entries);
  },
  applyDashboard(access){
