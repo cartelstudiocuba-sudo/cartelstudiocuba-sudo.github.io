@@ -252,7 +252,12 @@ function returnFromInterview(){
  const params=new URLSearchParams(location.search);
  if(params.get('origin')==='candidate'&&current){
   const url='/rrhh.html?embedded=1&vacancy='+encodeURIComponent(current.vacancy_id||params.get('vacancy')||'')+'&candidate='+encodeURIComponent(current.id)+'&v=interview-return-20261022';
-  location.assign(url);
+  // Return to the existing candidate detail in the parent frame, avoiding a second page load.
+  if(window.parent!==window){
+   window.parent.postMessage({type:'cartel-return-candidate-detail',candidateId:String(current.id),vacancyId:String(current.vacancy_id||params.get('vacancy')||'')},location.origin);
+   return;
+  }
+  location.replace(url);
   return;
  }
  returnToInterviewAgenda();
