@@ -2700,6 +2700,15 @@ function applyReturnedCandidateEvaluation(id,patch){
  const section=detail.querySelector('.approved-internal');
  if(section)section.innerHTML='<div class="approved-heading"><span>✧ &nbsp; EVALUACIÓN INTERNA</span></div>'+approvedInterviewRatingSummary(candidate);
 }
+function applyReturnedCandidatePending(id,evaluation,completedAt){
+ const candidate=candidates.find(x=>String(x.id)===String(id));
+ if(!candidate||!['interview_scheduled','interviewed'].includes(candidate.status))return;
+ applyReturnedCandidateEvaluation(id,evaluation);
+ Object.assign(candidate,{status:'interviewed',decision_status:'pending',decision_updated_at:completedAt});
+ const iv=interviews.find(x=>String(x.candidate_id)===String(id));if(iv)iv.completed_at=completedAt;
+ if(document.body.classList.contains('dashboard-mode'))renderCandidateDashboard();else render();
+ const detail=$('detail');if(detail?.dataset.candidateId===String(id)&&detail.style.display!=='none')openDetail(id);
+}
 function approvedCandidatePanel(x,role,ans,phone,history,iv){
  const get=(key)=>{const a=ans.find(a=>a.question_key===key);return a?(a.answer??''):''};
  const date=x.submitted_at?new Date(x.submitted_at).toLocaleDateString('es-ES'):'No registrada';
