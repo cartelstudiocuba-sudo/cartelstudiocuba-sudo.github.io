@@ -2,7 +2,7 @@
 document.documentElement.dataset.accessPending='true';
 const CartelAccess={
  async load(client){
-  const entries=await Promise.all(['inventario_insumos','rrhh','usuarios_roles'].map(async module=>{const controller=new AbortController();let r;try{const query=()=>client.rpc('system_has_permission',{module,operation:'read'}).abortSignal(controller.signal);r=window.CartelLoad?await CartelLoad.deadline(query,60000):await query();}finally{controller.abort();}if(r.error)throw r.error;return [module,!!r.data];}));
+  const entries=await Promise.all(['inventario_insumos','rrhh','usuarios_roles'].map(async module=>{const controller=new AbortController();let r;try{const query=()=>client.rpc('system_has_permission',{module,operation:'read'},{get:true}).abortSignal(controller.signal);r=window.CartelLoad?await CartelLoad.deadline(query,60000):await query();}finally{controller.abort();}if(r.error)throw r.error;return [module,!!r.data];}));
   return Object.fromEntries(entries);
  },
  applyDashboard(access){
