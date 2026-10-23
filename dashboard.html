@@ -224,14 +224,19 @@ window.addEventListener('message',function(event){
  const existing=selectionFrame.contentWindow;
  const existingDoc=selectionFrame.contentDocument;
  if(selectionFrame.dataset.stage==='candidates'&&existingDoc?.getElementById('detail')&&typeof existing?.openDetail==='function'){
-  existing.openDetail(id);
-  existingDoc.getElementById('detail')?.scrollIntoView({block:'start'});
-  return;
+  existing.openDetail(id);existingDoc.getElementById('detail')?.scrollIntoView({block:'start'});return;
  }
- showSelectionHub(null);
+ // Avoid showSelectionHub(): it loads the empty candidates view before the target URL.
+ ws.classList.remove('embedded');ws.classList.add('selection-mode');frame.src='';
  const url='/rrhh.html?embedded=1&candidate='+encodeURIComponent(id)+(vacancy?'&vacancy='+encodeURIComponent(vacancy):'')+'&v=direct-interview-return-20261022';
  selectionFrame.dataset.stage='candidates';
+ selectionFrame.style.visibility='hidden';
  selectionFrame.src=url;
+ // The child signals only after the requested candidate detail has rendered.
+ const restore=()=>{selectionFrame.style.visibility='';window.removeEventListener('message',ready)};
+ const ready=e=>{if(e.origin===location.origin&&e.source===selectionFrame.contentWindow&&e.data?.type==='cartel-candidate-detail-ready'&&String(e.data.candidateId)===id)restore()};
+ window.addEventListener('message',ready);
+ setTimeout(restore,12000);
 });
 window.addEventListener('message',function(event){if(event.origin!==location.origin||event.data?.type!=='cartel-return-interview-agenda')return;showSelectionHub(null);openSelectionStage('interviews',document.querySelector('[data-stage="interviews"]'));});
 window.addEventListener('message',function(event){if(event.origin!==location.origin||event.data?.type!=='cartel-open-interviews')return;const candidate=event.data.candidate;const url='/entrevistas.html?embedded=1&v=interview-colores-plaza-v3'+(candidate?'&candidate='+encodeURIComponent(candidate):'');showModule(url,document.querySelector('[data-module="interviews"]')||null)});
