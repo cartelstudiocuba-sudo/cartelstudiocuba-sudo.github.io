@@ -1,5 +1,27 @@
 /* Shared by the interview and its applicant-review iframe. */
 @media screen {
+  #interviewView .question-response-label {
+    display: block;
+    margin: 16px 0 7px;
+    color: #ffda03;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  #interviewView .question-response-choice {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font: inherit;
+    color-scheme: dark;
+  }
+  #interviewView .question-response-help {
+    margin: 7px 0 0;
+    color: #b9c9d8;
+    font-size: 12px;
+    line-height: 1.5;
+  }
   #interviewView,
   body.interview-review-embedded {
     --interview-surface: #142332;
