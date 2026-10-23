@@ -20,7 +20,8 @@
   html body.interview-review-embedded #detail #interviewReviewExact :is(
     .approved-block, .approved-field, .approved-personal-photo,
     .approved-personal-avatar, .approved-photo-caption,
-    .approved-summary-content, #aiBox, .approved-cv-section) {
+    .approved-summary-content, #aiBox, .approved-cv-section,
+    .approved-cv-summary, .cv-summary-icon) {
     background: var(--interview-surface) !important;
     background-image: none !important;
     border-color: var(--interview-border) !important;
@@ -32,6 +33,9 @@
     background: var(--interview-surface) !important;
     border-color: var(--interview-border) !important;
     box-shadow: none !important;
+  }
+  body.interview-review-embedded #interviewReviewExact a {
+    color: #ffda03;
   }
   html body #interviewView .interview-step.active b,
   html body #interviewView .interview-step.active span {
