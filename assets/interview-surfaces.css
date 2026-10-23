@@ -5,7 +5,7 @@
     --interview-surface: #142332;
     --interview-border: #344b60;
   }
-  html body.interview-review-embedded {
+  html body.embedded.interview-review-embedded {
     background: var(--interview-surface) !important;
     background-image: none !important;
   }
