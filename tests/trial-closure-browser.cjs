@@ -12,4 +12,10 @@ await page.addInitScript(links=>{window.open=(...args)=>{window.opened=args};win
 await page.goto('https://test/gestionar-cierre-prueba.html?trial=synthetic');await page.locator('#edit').click();let message=await page.locator('#message').inputValue();assert(message.includes('prueba:\n'+links.document_url));assert(message.includes('identidad:\n'+links.form_url));await page.locator('#message').fill(message+'\nEdición individual');await page.locator('#send').click();assert((await page.evaluate(()=>window.lastRpc.a.p_payload.message)).endsWith('Edición individual'));assert((await page.evaluate(()=>window.opened[0])).startsWith('https://wa.me/'));assert(!await page.evaluate(()=>closureTemplate.includes('Edición individual')));assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
 await page.close();
 }
-await browser.close();console.log('PASS: syntax, responsive editor, inline links, individual edit, unchanged template, WhatsApp handoff');})().catch(e=>{console.error(e);process.exitCode=1});
+const live=await browser.newPage();
+for(const name of ['actualizar-expediente','cierre-periodo-prueba']){
+ await live.goto('https://gestion.elcartelstudio.com/'+name+'.html#token='+'f'.repeat(64));
+ await live.getByText('Enlace no válido, caducado o revocado.',{exact:false}).waitFor();
+ assert.equal(await live.locator('form').count(),0);
+}
+await live.close();await browser.close();console.log('PASS: syntax, responsive editor, inline links, individual edit, unchanged template, WhatsApp handoff; published form/document reject invalid links');})().catch(e=>{console.error(e);process.exitCode=1});
