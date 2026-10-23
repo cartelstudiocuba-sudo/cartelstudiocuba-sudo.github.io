@@ -1,0 +1,41 @@
+/* Shared by the interview and its applicant-review iframe. */
+@media screen {
+  #interviewView,
+  body.interview-review-embedded {
+    --interview-surface: #142332;
+    --interview-border: #344b60;
+  }
+
+  html body #interviewView :is(.interview-brief, .interview-steps, .panel,
+    .card, .opening-guide, .opening-script, .question, .group-title, .final,
+    .evaluation-panel, .evaluation-field, .evaluation-help, .follow,
+    .saved-answer, .context-box, .interview-review-content,
+    .interview-context-card, .interview-info-card, .interview-profile-optional,
+    .interview-quick-actions, .interview-quick-head, .interview-quick-bolt,
+    .interview-photo-card, .interview-photo-symbol),
+  html body #interviewView .interview-banner-facts span,
+  html body #interviewView .interview-quick-grid button span,
+  html body #interviewView .interview-step:not(.active) b,
+  html body #interviewView :is(input:not([type="checkbox"]), select, textarea),
+  html body.interview-review-embedded #detail #interviewReviewExact :is(
+    .approved-block, .approved-field, .approved-personal-photo,
+    .approved-personal-avatar, .approved-photo-caption,
+    .approved-summary-content, #aiBox, .approved-cv-section) {
+    background: var(--interview-surface) !important;
+    background-image: none !important;
+    border-color: var(--interview-border) !important;
+    box-shadow: none !important;
+    color: #f3f6fa !important;
+  }
+
+  html body #interviewView .interview-banner-avatar img {
+    background: var(--interview-surface) !important;
+    border-color: var(--interview-border) !important;
+    box-shadow: none !important;
+  }
+  html body #interviewView .interview-step.active b,
+  html body #interviewView .interview-step.active span {
+    background: #ffda03 !important;
+    color: #16283b !important;
+  }
+}
