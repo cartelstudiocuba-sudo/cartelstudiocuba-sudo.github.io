@@ -379,9 +379,9 @@ const main=el.querySelector('.agenda-main');if(main){const headings=document.cre
 function setAgendaCandidateSearch(input){const pos=input.selectionStart;agendaSearch=input.value;renderAgenda();const next=document.getElementById('agendaCandidateSearch');if(next){next.focus();try{next.setSelectionRange(pos,pos)}catch(_){}}}
 function interviewActionIsCurrent(action,x=current){
  if(!x)return false;
- // Persisted status is authoritative; pending/consider are the existing decision aliases.
+ // Match the agenda and candidate workflow: interviewed is pending decision, even if an older decision remains.
  const status=String(x.status||'').trim(),decision=String(x.decision_status||'').trim();
- if(action==='pending')return status==='interviewed'&&['','pending','consider'].includes(decision);
+ if(action==='pending')return status==='interviewed';
  if(action==='reprofile')return decision==='profiled';
  return status===({schedule:'interview_scheduled',preselect:'preselected',trial:'trial',talent_pool:'talent_pool',not_selected:'not_selected',contract:'hired'}[action]||'__none__');
 }
