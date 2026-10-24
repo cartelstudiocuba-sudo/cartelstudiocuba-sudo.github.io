@@ -1,0 +1,20 @@
+begin;
+insert into public.hr_candidates(id,vacancy_id,full_name,whatsapp,source) values ('04fb0cba-a128-48ac-afdb-265062818944','80f6c852-e7a8-431e-8e08-af3bbedb49c7','PRUEBA SINTETICA RLS EXPEDIENTE','0000000000','rls_verification');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"6418ad20-d0e8-49c0-8d9a-e1da3daf71b6","email":"cartelstudiocuba@gmail.com","role":"authenticated"}',true);
+insert into public.hr_candidate_answers(candidate_id,question_key,question_text,answer) values ('04fb0cba-a128-48ac-afdb-265062818944','interview_email','Correo electrónico','"synthetic@example.invalid"');
+update public.hr_candidate_answers set answer='"updated@example.invalid"' where candidate_id='04fb0cba-a128-48ac-afdb-265062818944' and question_key='interview_email';
+insert into public.hr_candidate_answers(candidate_id,question_key,question_text,answer) values ('04fb0cba-a128-48ac-afdb-265062818944','interview_email','Correo electrónico','"upsert@example.invalid"') on conflict(candidate_id,question_key) do update set answer=excluded.answer;
+do $$ begin if not exists(select 1 from public.hr_candidate_answers where candidate_id='04fb0cba-a128-48ac-afdb-265062818944' and answer='"upsert@example.invalid"') then raise exception 'owner reload failed'; end if; end $$;
+select set_config('request.jwt.claims','{"sub":"13633e43-e46f-4d9e-a021-cc69ea9d548d","role":"authenticated"}',true);
+do $$ begin
+if exists(select 1 from public.hr_candidate_answers where candidate_id='04fb0cba-a128-48ac-afdb-265062818944') then raise exception 'outsider read allowed'; end if;
+update public.hr_candidate_answers set answer='"forbidden"' where candidate_id='04fb0cba-a128-48ac-afdb-265062818944';
+if found then raise exception 'outsider update allowed'; end if;
+begin insert into public.hr_candidate_answers(candidate_id,question_key,question_text,answer) values ('04fb0cba-a128-48ac-afdb-265062818944','interview_home_address','test','"forbidden"'); raise exception 'outsider insert allowed'; exception when insufficient_privilege then null; end;
+end $$;
+set local role anon;
+do $$ begin begin perform * from public.hr_candidate_answers where candidate_id='04fb0cba-a128-48ac-afdb-265062818944'; raise exception 'anon read allowed'; exception when insufficient_privilege then null; end; end $$;
+reset role;
+select 'PASS: owner insert/update/upsert/reload; outsider select/update/insert denied; anon select denied; synthetic data rolled back' as result;
+rollback;
