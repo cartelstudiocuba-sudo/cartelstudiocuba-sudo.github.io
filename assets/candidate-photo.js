@@ -46,17 +46,26 @@ window.CandidatePhoto = (() => {
     if(old?.original===file)return old.promise;
     const promise=prepare(file);pending.set(input,{original:file,promise});return promise;
   }
+  function progress(input,status,message){
+    status.textContent=message;
+    status.classList.toggle('photo-progress',Boolean(message));
+    status.setAttribute('aria-live','polite');
+    input.disabled=Boolean(message);
+    input.closest('.interview-photo-capture')?.setAttribute('aria-busy',String(Boolean(message)));
+  }
   async function preview(input,img,placeholder,status){
     const original=input.files?.[0];if(!original)return;
-    status.textContent='Preparando fotografía…';
+    progress(input,status,'Optimizando fotografía…');
     try{
       const result=await selection(input);
       if(input.files?.[0]!==original || !input.isConnected)return;
       if(img.dataset.localPhoto)URL.revokeObjectURL(img.dataset.localPhoto);
       const url=URL.createObjectURL(result.file);img.dataset.localPhoto=url;img.src=url;img.style.display='block';placeholder.style.display='none';
       img.onload=()=>{URL.revokeObjectURL(url);delete img.dataset.localPhoto;};
+      if(input.dataset.saving)return;
+      progress(input,status,'');
       status.textContent='Foto lista · '+Math.ceil(result.file.size/1024)+' KB. Se guardará al continuar.'+(result.fallback?' Se conserva el original.':'');
-    }catch(error){if(input.files?.[0]!==original)return;input.value='';status.textContent=error.message;}
+    }catch(error){if(input.files?.[0]!==original)return;input.value='';progress(input,status,'');status.textContent=error.message;}
   }
-  return {prepare,selection,preview};
+  return {prepare,selection,preview,progress};
 })();
