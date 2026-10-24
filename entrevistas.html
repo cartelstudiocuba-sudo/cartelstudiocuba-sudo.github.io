@@ -379,10 +379,10 @@ const main=el.querySelector('.agenda-main');if(main){const headings=document.cre
 function setAgendaCandidateSearch(input){const pos=input.selectionStart;agendaSearch=input.value;renderAgenda();const next=document.getElementById('agendaCandidateSearch');if(next){next.focus();try{next.setSelectionRange(pos,pos)}catch(_){}}}
 function interviewActionIsCurrent(action,x=current){
  if(!x)return false;
- // Match the agenda and candidate workflow: interviewed is pending decision, even if an older decision remains.
- const status=String(x.status||'').trim(),decision=String(x.decision_status||'').trim();
- if(action==='pending')return decision==='pending';
- if(action==='reprofile')return decision==='profiled';
+ const normalize=v=>String(v||'').trim().toLowerCase();
+ const status=normalize(x.status),decision=normalize(x.decision_status);
+ if(action==='pending')return ['interviewed','pending','pending_decision','por_decidir'].includes(status)||['pending','consider'].includes(decision)&&['interview_scheduled','preselected','new',''].includes(status);
+ if(action==='reprofile')return status==='profiled'||decision==='profiled';
  return status===({schedule:'interview_scheduled',preselect:'preselected',trial:'trial',talent_pool:'talent_pool',not_selected:'not_selected',contract:'hired'}[action]||'__none__');
 }
 function syncInterviewQuickActions(){
@@ -396,10 +396,15 @@ function syncInterviewQuickActions(){
 }
 let interviewDecisionNavigating=false;
 window.addEventListener('pageshow',()=>{interviewDecisionNavigating=false;syncInterviewQuickActions()});
-function goToCandidateDecision(action){
+async function goToCandidateDecision(action){
  if(!current||interviewDecisionSaving||interviewDecisionNavigating||interviewActionIsCurrent(action))return;
  const routes={schedule:'schedule',preselect:'preselect',trial:'trial',reprofile:'reprofile',talent_pool:'talent_pool',not_selected:'not_selected',contract:'contract',delete:'delete'};
  if(!routes[action])return;
+ const target=current;
+ // Complete the interview before opening the existing destination-specific workflow.
+ // Keep pending until that workflow confirms the transition (it may be cancelled).
+ if(['trial','reprofile','talent_pool','not_selected'].includes(action)&&!await finalizeInterview('pending'))return;
+ if(current!==target||interviewDecisionNavigating)return;
  const url=new URL('/rrhh.html',location.origin);
  url.searchParams.set('embedded','1');
  url.searchParams.set('vacancy',current.vacancy_id||'');
@@ -455,9 +460,14 @@ let evaluationSaveQueue=Promise.resolve();
 function saveCandidateEvaluation(){if(!current)return Promise.resolve();const target=current,patch=candidateEvaluationPayload();evaluationSaveQueue=evaluationSaveQueue.catch(()=>{}).then(async()=>{const {error}=await sb.from('hr_candidates').update(patch).eq('id',target.id);if(error){alert('No se pudo guardar la evaluación: '+error.message);throw error}Object.assign(target,patch);if(window.parent!==window)window.parent.postMessage({type:'cartel-candidate-evaluation-saved',candidateId:String(target.id),evaluation:patch},location.origin)});return evaluationSaveQueue}
 let interviewDecisionSaving=false;
 async function markInterviewed(){
- if(!current||interviewDecisionSaving||interviewActionIsCurrent('pending'))return;interviewDecisionSaving=true;syncInterviewQuickActions();
- try{const {data,error}=await sb.from('hr_candidates').update({decision_status:'pending',decision_updated_at:new Date().toISOString()}).eq('id',current.id).select().single();
- if(error)return alert(error.message);Object.assign(current,data);}finally{interviewDecisionSaving=false;syncInterviewQuickActions()}
+ if(!current||interviewDecisionSaving||interviewActionIsCurrent('pending'))return;
+ const target=current,iv=interviews.find(v=>String(v.candidate_id)===String(target.id));
+ if(iv?.completed_at){
+  interviewDecisionSaving=true;syncInterviewCompletion();
+  try{const {data,error}=await sb.from('hr_candidates').update({status:'interviewed',decision_status:'pending',decision_updated_at:new Date().toISOString()}).eq('id',target.id).select().single();if(error)throw error;Object.assign(target,data);renderList();if(window.parent!==window)window.parent.postMessage({type:'cartel-interview-completed',candidateId:String(target.id),candidate:data,interview:iv},location.origin)}catch(error){alert('No se pudo guardar la decisión: '+error.message)}finally{interviewDecisionSaving=false;syncInterviewCompletion()}
+  return;
+ }
+ await finalizeInterview('pending');
 }
 
 function completionRatings(){const controls=[...document.querySelectorAll('#interviewStepEvaluation .interview-rating-select')];return controls.map((el,i)=>el.dataset.loaded?el.value:interviewRatingsFromNotes(current?.internal_notes)[i]||'')}
@@ -466,21 +476,30 @@ function interviewCompletionMissing(){const iv=interviews.find(v=>String(v.candi
  if(!current?.id||!iv?.id)missing.push('Candidato y entrevista identificados');if(!iv?.interview_date)missing.push('Fecha');if(!iv?.interviewer?.trim())missing.push('Entrevistador');
  const notes=completionNotes();const unanswered=Q.map((_,i)=>{const value=String(notes['q'+i+'_choice']||notes['q'+i]||'').trim();return !value||['No responde / no se abordó','Otra respuesta'].includes(value)?i+1:null}).filter(Boolean);
  if(unanswered.length)missing.push('Preguntas obligatorias: '+unanswered.join(', '));const ratings=completionRatings();if(ratings.length!==10||ratings.some(v=>!/^([1-5])$/.test(String(v))))missing.push('Diez calificaciones de 1 a 5');
- if(!document.getElementById('closureDecision')?.value)missing.push('Decisión');return missing;
+ return missing;
 }
-function syncInterviewCompletion(){if(!current)return;const host=document.getElementById('interviewStepDecision');if(!host)return;let panel=document.getElementById('interviewCompletion');const iv=interviews.find(v=>String(v.candidate_id)===String(current.id));
- if(!panel){panel=document.createElement('section');panel.id='interviewCompletion';panel.className='panel';panel.style.cssText='padding:18px;margin:16px 0;max-width:100%;overflow-wrap:anywhere';panel.innerHTML='<h2>Cierre de entrevista</h2><p>El cuestionario contiene 16 preguntas obligatorias. Guardar la evaluación conserva el borrador; finalizar registra el cierre.</p><label for="closureDecision">Decisión registrada</label><select id="closureDecision" style="display:block;width:100%;padding:12px;margin:12px 0;background:#243b50;color:white" onchange="syncInterviewCompletion()"><option value="">Selecciona una decisión…</option><option value="pending">Por decidir</option><option value="selected">Continuar proceso</option><option value="talent_pool">Cantera</option><option value="profiled">Perfilar para otra plaza</option><option value="not_selected">No selección</option></select><p id="closureRequirements" aria-live="polite"></p><button type="button" id="interviewAbsence" class="btn dark" onclick="toggleInterviewAbsence()" style="margin-bottom:12px">Registrar ausencia</button><button type="button" id="finalizeInterview" class="btn primary" onclick="finalizeInterview()">Finalizar entrevista</button>';host.prepend(panel);if(iv?.closure_decision)panel.querySelector('select').value=iv.closure_decision;}
- const absence=document.getElementById('interviewAbsence');absence.hidden=!!iv?.completed_at;absence.textContent=iv?.attendance_status==='absent'?'Restablecer programada':'Registrar ausencia';const missing=interviewCompletionMissing(),button=document.getElementById('finalizeInterview');button.disabled=!!iv?.completed_at||interviewDecisionSaving||missing.length>0;button.style.opacity=button.disabled?'.55':'1';document.getElementById('closureDecision').disabled=!!iv?.completed_at;
- document.getElementById('closureRequirements').textContent=iv?.completed_at?'Realizada · Cierre: '+new Date(iv.completed_at).toLocaleString('es-ES')+' · La edición autorizada conserva el cierre y el historial.':missing.length?'Pendiente: '+missing.join(' · '):'Requisitos completos. Puedes finalizar la entrevista.';
+function syncInterviewCompletion(){
+ if(!current)return;const host=document.getElementById('interviewStepDecision');if(!host)return;
+ const iv=interviews.find(v=>String(v.candidate_id)===String(current.id));
+ let status=document.getElementById('closureRequirements');
+ if(!status){status=document.createElement('p');status.id='closureRequirements';status.setAttribute('role','status');host.querySelector('.interview-quick-body').append(status)}
+ const missing=interviewCompletionMissing();
+ status.textContent=iv?.completed_at?'Realizada · Cierre: '+new Date(iv.completed_at).toLocaleString('es-ES'):missing.length?'Para completar la entrevista: '+missing.join(' · '):'Requisitos completos. Elige una acción para finalizar la entrevista.';
+ let absence=document.getElementById('interviewAbsence');
+ if(!absence){absence=document.createElement('button');absence.type='button';absence.id='interviewAbsence';absence.className='btn dark no-print';absence.onclick=toggleInterviewAbsence;document.querySelector('.interview-brief').append(absence)}
+ absence.hidden=!!iv?.completed_at;absence.disabled=interviewDecisionSaving;
+ absence.textContent=iv?.attendance_status==='absent'?'Restablecer programada':'Registrar ausencia';
+ syncInterviewQuickActions();
 }
-async function toggleInterviewAbsence(){const iv=interviews.find(v=>String(v.candidate_id)===String(current?.id));if(!iv||iv.completed_at)return;const {data,error}=await sb.from('hr_interviews').update({attendance_status:iv.attendance_status==='absent'?'pending':'absent',updated_at:new Date().toISOString()}).eq('id',iv.id).select().single();if(error)return alert(error.message);Object.assign(iv,data);renderList();syncInterviewCompletion()}
-async function finalizeInterview(){if(!current||interviewDecisionSaving)return;const missing=interviewCompletionMissing();if(missing.length)return alert(missing.join(' · '));const target=current,notes=completionNotes(),ratings=completionRatings().map(Number),decision=document.getElementById('closureDecision').value,evaluation=candidateEvaluationPayload();interviewDecisionSaving=true;syncInterviewCompletion();
+async function toggleInterviewAbsence(){const iv=interviews.find(v=>String(v.candidate_id)===String(current?.id));if(!iv||iv.completed_at||interviewDecisionSaving)return;interviewDecisionSaving=true;syncInterviewCompletion();try{const {data,error}=await sb.from('hr_interviews').update({attendance_status:iv.attendance_status==='absent'?'pending':'absent',updated_at:new Date().toISOString()}).eq('id',iv.id).select().single();if(error)throw error;Object.assign(iv,data);renderList()}catch(error){alert('No se pudo actualizar la asistencia: '+error.message)}finally{interviewDecisionSaving=false;syncInterviewCompletion()}}
+async function finalizeInterview(decision='pending'){if(!current||interviewDecisionSaving)return false;const existing=interviews.find(v=>String(v.candidate_id)===String(current.id));if(existing?.completed_at)return true;const missing=interviewCompletionMissing();if(missing.length){alert(missing.join(' · '));return false}const target=current,notes=completionNotes(),ratings=completionRatings().map(Number),evaluation=candidateEvaluationPayload();interviewDecisionSaving=true;syncInterviewCompletion();
  try{await evaluationSaveQueue;await questionnaireSaveQueue;const iv=interviews.find(v=>String(v.candidate_id)===String(target.id));const saved=await sb.from('hr_interviews').update({interview_notes:notes}).eq('id',iv.id).select().single();if(saved.error)throw saved.error;
  const {data,error}=await sb.rpc('hr_finalize_interview',{p_candidate:target.id,p_ratings:ratings,p_decision:decision,p_notes:interviewCleanNotes(evaluation.internal_notes)});if(error)throw error;Object.assign(target,data.candidate);Object.assign(iv,data.interview);renderList();syncInterviewCompletion();
  if(window.parent!==window)window.parent.postMessage({type:'cartel-interview-completed',candidateId:String(target.id),candidate:data.candidate,interview:data.interview},location.origin);
- }catch(error){alert('No se pudo finalizar: '+error.message)}finally{interviewDecisionSaving=false;syncInterviewCompletion()}}
+ return true;
+ }catch(error){alert('No se pudo finalizar: '+error.message);return false}finally{interviewDecisionSaving=false;syncInterviewCompletion()}}
 document.addEventListener('input',()=>syncInterviewCompletion());document.addEventListener('change',()=>syncInterviewCompletion());
-const completionObserver=new MutationObserver(()=>{if(current&&document.getElementById('interviewStepDecision')&&!document.getElementById('interviewCompletion'))syncInterviewCompletion()});completionObserver.observe(document.getElementById('interviewBody'),{childList:true,subtree:true});
+const completionObserver=new MutationObserver(()=>{if(current&&document.getElementById('interviewStepDecision')&&!document.getElementById('closureRequirements'))syncInterviewCompletion()});completionObserver.observe(document.getElementById('interviewBody'),{childList:true,subtree:true});
 
 function interviewPrintHtml(x){const a=amap(x.id),iv=interviews.find(v=>v.candidate_id===x.id)||{},notes=iv.interview_notes||{};return '<section class="all-print-interview"><div class="print-head" style="display:block"><b>EL CARTEL STUDIO · ENTREVISTA DE CANDIDATO</b><div>Plaza: '+esc(interviewRole(x))+'</div></div>'+OPENING_GUIDE+'<div class="panel" style="padding:18px"><div class="brand">FICHA PARA ENTREVISTA</div><h1 style="font-size:28px">'+esc(x.full_name)+'</h1><div class="summary"><span class="chip">Fecha: '+esc(fmtDate(iv.interview_date))+'</span><span class="chip">Hora: '+esc(fmtInterviewTime(iv.interview_time))+'</span><span class="chip">Entrevistador: '+esc(iv.interviewer||'—')+'</span><span class="chip">Edad: '+esc(a.age||'—')+'</span><span class="chip">Municipio: '+esc(x.municipality||'—')+'</span></div><div class="candidate-context"><div class="context-box"><span class="context-label">Experiencia laboral declarada</span>'+esc(a.experience_description||'No especificada')+'</div><div class="context-box"><span class="context-label">Habilidad principal / punto fuerte</span>'+esc(a.main_strength||'No especificada')+'</div></div></div>'+Q.map((q,i)=>'<div class="question"><div class="section-title">'+(i+1)+'. '+esc(q[0])+'</div><h3>'+esc(q[1])+'</h3><div class="follow">Repregunta / guía: '+esc(q[2])+'</div><div class="saved-answer">'+esc(interviewQuestionAnswer(notes,i))+'</div></div>').join('')+'</section>'}function printSelectedInterviews(selected){if(!selected.length)return alert('Selecciona al menos un candidato.');allPrintView.innerHTML=selected.map(interviewPrintHtml).join('');document.body.classList.add('print-all');const cleanup=()=>{document.body.classList.remove('print-all');window.removeEventListener('afterprint',cleanup)};window.addEventListener('afterprint',cleanup);window.print()}
 function printAllInterviews(){printSelectedInterviews(agendaPrintRows().map(v=>v.x))}
