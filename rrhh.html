@@ -2737,13 +2737,14 @@ async function analyzeCandidateCv(force){
  cvSummaryCache.set(path,{html,personal});if(document.getElementById('approvedCvSummary')?.dataset.path===path)document.getElementById('approvedCvSummaryContent').innerHTML=html;
  }catch(err){if(document.getElementById('approvedCvSummary')?.dataset.path===path)document.getElementById('approvedCvSummaryContent').textContent='No fue posible generar el resumen: '+(err.message||'Error desconocido')}
 }
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='cartel-interview-completed')return;const id=String(event.data.candidateId);const c=candidates.find(x=>String(x.id)===id),iv=interviews.find(x=>String(x.candidate_id)===id);if(c)Object.assign(c,event.data.candidate);if(iv)Object.assign(iv,event.data.interview);if(document.getElementById('detail')?.dataset.candidateId===id)openDetail(id);});
 function approvedInterviewSummary(iv){
- const icons={Estado:'◉','Fecha de entrevista':'▦',Entrevistador:'♙',Modalidad:'▣'};
+ const icons={Estado:'◉','Fecha de entrevista':'▦',Entrevistador:'♙',Modalidad:'▣',Cierre:'◷'};
  const field=(label,value)=>'<div class="approved-field"><small><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:1.35em;margin-right:5px;color:#ffda03;font-size:1.15em">'+icons[label]+'</span>'+esc(label)+'</small><strong>'+esc(value||'No registrado')+'</strong></div>';
  const status=String(iv?.attendance_status||'').toLowerCase();
- const state=iv?.completed_at?'Realizada':status==='absent'||status==='no_show'?'Ausencia':status==='cancelled'||status==='canceled'?'Cancelada':status==='confirmed'?'Confirmada':iv?.interview_date?'Programada':'No registrado';
+ const state=iv?.completed_at?'Realizada':status==='absent'||status==='no_show'?'Ausencia':iv?.interview_date?'Programada':'No registrado';
  const mode=iv?.modality||iv?.interview_modality||iv?.interview_mode||iv?.mode||'No registrada';
- const rows=[field('Estado',state),field('Fecha de entrevista',iv?.interview_date||''),field('Entrevistador',iv?.interviewer||''),field('Modalidad',mode)];
+ const rows=[field('Estado',state),field('Fecha de entrevista',iv?.interview_date||''),field('Entrevistador',iv?.interviewer||''),field('Modalidad',mode),field('Cierre',iv?.completed_at?new Date(iv.completed_at).toLocaleString('es-ES'):'Pendiente')];
  return '<div class="approved-grid">'+rows.join('')+'</div>';
 }
 function togglePremiumQuickActions(button){const panel=button.closest('.approved-quick-actions');if(!panel)return;const collapsed=panel.classList.toggle('quick-premium-collapsed');button.setAttribute('aria-expanded',String(!collapsed));}
@@ -2797,7 +2798,7 @@ function approvedCandidatePanel(x,role,ans,phone,history,iv){
  '<div class="approved-block approved-personal"><div class="approved-heading"><span>♙ &nbsp; INFORMACIÓN PERSONAL</span></div><div class="approved-personal-layout"><div class="approved-grid">'+approvedField('Nombre completo',x.full_name)+approvedField('Edad',get('age'))+approvedField('Sexo',get('sex'))+approvedField('Dirección / zona de residencia',get('address'))+approvedField('Nivel escolar terminado',get('education_level'))+approvedField('Teléfono / WhatsApp',x.whatsapp)+approvedField('Fecha de aplicación',date)+'</div><aside class="approved-personal-photo"><div class="approved-personal-avatar" role="img" aria-label="Avatar provisional sin fotografía"><svg viewBox="0 0 120 120" width="108" height="108" aria-hidden="true"><circle cx="60" cy="60" r="58" fill="#233647"/><circle cx="60" cy="43" r="21" fill="#91a9bb"/><path d="M19 103c3-26 20-40 41-40s38 14 41 40" fill="#91a9bb"/></svg><strong>'+esc(initials)+'</strong></div><div class="approved-photo-caption">Sin fotografía registrada</div></aside></div></div>'+
  '<div class="approved-block approved-personal approved-summary"><div class="approved-heading"><span>✧ &nbsp; RESUMEN PARA LA DECISIÓN</span></div><div id="aiBox" class="approved-summary-content">Preparando resumen para decisión…</div></div>'+
  '<div class="approved-block approved-personal approved-application"><div class="approved-heading"><span>▤ &nbsp; APLICACIÓN A LA PLAZA</span></div><div class="approved-grid">'+approvedApplicationFields(x,ans)+'</div></div>'+
- '<div class="approved-block approved-personal approved-interview"><div class="approved-heading"><span>◉ &nbsp; ENTREVISTA</span></div>'+approvedInterviewSummary(iv)+'</div>'+
+ '<div class="approved-block approved-personal approved-interview"><div class="approved-heading"><span>◉ &nbsp; ENTREVISTA</span>'+(iv?btn('Editar entrevista',"approvedJump('"+x.id+"','attendance')"): '')+'</div>'+approvedInterviewSummary(iv)+'</div>'+
  '<div class="approved-block approved-personal approved-internal"><div class="approved-heading"><span>✧ &nbsp; EVALUACIÓN INTERNA</span></div>'+approvedInterviewRatingSummary(x)+'</div>'+
  ''+ 
  '';

@@ -11,8 +11,9 @@ const INTERVIEW_QUESTION_OPTIONS = {
 
 let questionnaireSaveQueue = Promise.resolve();
 function saveQuestionnaireValue(key, value) {
+  const candidateId=current?.id;
   // Serialize changes so a selection and its notes cannot overwrite one another.
-  questionnaireSaveQueue = questionnaireSaveQueue.catch(() => {}).then(() => saveInterviewNote(key, value));
+  questionnaireSaveQueue = questionnaireSaveQueue.catch(() => {}).then(() => saveInterviewNote(key, value, candidateId));
   return questionnaireSaveQueue;
 }
 

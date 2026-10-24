@@ -225,6 +225,10 @@ window.addEventListener('message',function(event){
  if(event.origin!==location.origin||event.source!==frame.contentWindow||event.data?.type!=='cartel-candidate-pending-decision')return;
  selectionFrame.contentWindow?.applyReturnedCandidatePending?.(String(event.data.candidateId||''),event.data.evaluation,event.data.completedAt);
 });
+window.addEventListener('message',function(event){
+ if(event.origin!==location.origin||event.source!==frame.contentWindow||event.data?.type!=='cartel-interview-completed')return;
+ selectionFrame.contentWindow?.postMessage(event.data,location.origin);
+});
 let candidateReturnPending=null;
 function cancelCandidateReturn(){candidateReturnPending?.cancel();}
 function returnCandidateDetail(id,vacancy){
