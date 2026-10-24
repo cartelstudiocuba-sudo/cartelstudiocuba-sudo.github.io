@@ -1,0 +1,12 @@
+.agenda-role-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;max-width:100%;min-width:0}
+.agenda-role-actions>.agenda-state:first-child{min-width:0;white-space:normal!important;overflow-wrap:anywhere}
+@media(max-width:850px){#agendaView .agenda-item .agenda-item-side:has(.agenda-absence-button){grid-column:1/-1!important;width:100%!important;justify-self:stretch!important}.agenda-role-actions{flex:0 1 auto}}
+.agenda-absence-button{font:inherit;cursor:pointer;border:1px solid #668098;color:#e1ecf7;background:#304f70;line-height:1.3;white-space:nowrap;flex-shrink:0}
+.agenda-absence-button:hover{border-color:#ffda03;color:#ffda03}
+.agenda-absence-button:focus-visible{outline:2px solid #ffda03;outline-offset:3px}
+.agenda-absence-dialog{box-sizing:border-box;width:min(460px,calc(100% - 28px));max-height:90vh;overflow:auto;background:linear-gradient(145deg,#1c344b,#152638);color:#eef4f9;border:1px solid #506d87;border-radius:18px;padding:24px;box-shadow:0 24px 80px #0009}
+.agenda-absence-dialog::backdrop{background:#08111acc;backdrop-filter:blur(4px)}
+.agenda-absence-dialog h2{font-size:21px;margin:0 0 14px}.agenda-absence-dialog p{line-height:1.6;color:#cbd9e6}
+.agenda-absence-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;flex-wrap:wrap}
+.agenda-absence-dialog button:disabled{opacity:.6;cursor:wait}
+#agendaAbsenceError{color:#ffc4bd}
