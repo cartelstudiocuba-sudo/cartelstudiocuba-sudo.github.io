@@ -1,0 +1,182 @@
+[
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "landscape",
+    "size": 1336,
+    "original": 22768,
+    "width": 800,
+    "height": 533,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "portrait",
+    "size": 1132,
+    "original": 17143,
+    "width": 400,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "small",
+    "size": 477,
+    "original": 477,
+    "width": 120,
+    "height": 80,
+    "type": "image/png",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "transparent",
+    "size": 1170,
+    "original": 11558,
+    "width": 800,
+    "height": 400,
+    "type": "image/webp",
+    "alpha": 77
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "exif6",
+    "size": 1292,
+    "original": 10406,
+    "width": 500,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "exif8",
+    "size": 1292,
+    "original": 10406,
+    "width": 500,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "exif2",
+    "size": 1292,
+    "original": 10406,
+    "width": 800,
+    "height": 500,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 1440,
+    "name": "detailed",
+    "size": 134814,
+    "original": 3708137,
+    "width": 800,
+    "height": 533,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "landscape",
+    "size": 1336,
+    "original": 22768,
+    "width": 800,
+    "height": 533,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "portrait",
+    "size": 1132,
+    "original": 17143,
+    "width": 400,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "small",
+    "size": 477,
+    "original": 477,
+    "width": 120,
+    "height": 80,
+    "type": "image/png",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "transparent",
+    "size": 1170,
+    "original": 11558,
+    "width": 800,
+    "height": 400,
+    "type": "image/webp",
+    "alpha": 77
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "exif6",
+    "size": 1292,
+    "original": 10406,
+    "width": 500,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "exif8",
+    "size": 1292,
+    "original": 10406,
+    "width": 500,
+    "height": 800,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "exif2",
+    "size": 1292,
+    "original": 10406,
+    "width": 800,
+    "height": 500,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "chromium",
+    "viewport": 390,
+    "name": "detailed",
+    "size": 134814,
+    "original": 3708137,
+    "width": 800,
+    "height": 533,
+    "type": "image/webp",
+    "alpha": 255
+  },
+  {
+    "engine": "webkit",
+    "unavailable": "browserType.launch: Executable doesn't exist at C:\\Users\\julio\\AppData\\Local\\ms-playwright\\webkit-2336\\Playwright.exe"
+  }
+]

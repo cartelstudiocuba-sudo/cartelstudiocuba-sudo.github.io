@@ -1,0 +1,22 @@
+const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),sharp=require('sharp'),assert=require('assert');
+let mock=require('./interview-fixture.cjs');
+mock=mock.replace('rpc:async(name,p)=>',`storage:{from(bucket){return {upload:async(p,f,opts)=>{testState.upload={bucket,path:p,size:f.size,type:f.type,opts};return {error:testState.uploadFail?{message:'Fallo de subida sintético'}:null}},createSignedUrl:async()=>({data:{signedUrl:'data:image/png;base64,iVBORw0KGgo='}})}}},rpc:async(name,p)=>`);
+mock=mock.replace('single(){return q.then',"insert(p){patch={id:'PHOTO',...p};return q},single(){return q.then");
+mock=mock.replace('Object.assign(data[0],patch)',"data[0]||(data[0]={});Object.assign(data[0],patch)");
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});
+for(const width of [390,1440]){
+ const page=await browser.newPage({viewport:{width,height:950}});let requests=0;
+ await page.route('**/*',route=>{const req=route.request(),u=new URL(req.url());if(req.method()!=='GET'){if(!u.pathname.includes("hr-ai-summary"))requests++;return route.abort()}if(u.pathname.includes('/assets/vendor/supabase'))return route.fulfill({contentType:'application/javascript',body:mock});const file=path.join(process.cwd(),decodeURIComponent(u.pathname));return fs.existsSync(file)&&fs.statSync(file).isFile()?route.fulfill({path:file}):route.fulfill({status:404,body:''})});
+ await page.goto('http://isolated.test/entrevistas.html?candidate=A');await page.waitForSelector('.interview-brief-name');await page.locator('[data-interview-step="3"]').click();
+ const buffer=await sharp({create:{width:2400,height:1600,channels:3,background:'#345678'}}).jpeg().toBuffer();
+ await page.locator('#interviewCandidatePhoto').setInputFiles({name:'test.jpg',mimeType:'image/jpeg',buffer});
+ await page.waitForFunction(()=>document.getElementById('interviewPhotoStatus').textContent.includes('Foto lista'));
+ assert(await page.locator('#interviewCandidatePhotoPreview').isVisible());
+ await page.evaluate(()=>testState.uploadFail=true);
+ assert.equal(await page.evaluate(()=>saveInterviewOptionalFields()),false);
+ assert.equal(await page.locator('#interviewCandidatePhoto').evaluate(el=>el.files.length),1);
+ await page.evaluate(()=>testState.uploadFail=false);
+ assert.equal(await page.evaluate(()=>saveInterviewOptionalFields()),true);
+ const upload=await page.evaluate(()=>testState.upload);assert.equal(upload.bucket,'hr-candidate-files');assert(upload.path.endsWith('.webp'));assert.equal(upload.type,'image/webp');assert.equal(upload.opts.upsert,false);assert(upload.size<buffer.length);assert.equal(requests,0);
+ await page.screenshot({path:'tests/candidate-photo-'+width+'.png'});console.log('PASS preview, compressed upload, failure/retry, private bucket; viewport '+width);await page.close();
+}await browser.close()})().catch(e=>{console.error(e);process.exit(1)});
