@@ -21,10 +21,9 @@ Has completado satisfactoriamente tu período de prueba para la plaza de *{PLAZA
 
 Queremos agradecerte el esfuerzo, la disposición y el compromiso demostrado durante esta etapa.
 
-📄 *Acta de Cierre del Período de Prueba:*
-{CIERRE}
-
 Por favor, descarga el acta, imprímela, complétala y fírmala. Deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.
+
+{CIERRE}
 
 En caso de que seas seleccionado para continuar hacia una contratación en nuestra empresa, te lo notificaremos oportunamente por esta misma vía.
 
