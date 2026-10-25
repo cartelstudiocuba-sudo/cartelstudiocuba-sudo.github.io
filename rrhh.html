@@ -2689,7 +2689,7 @@ const labels={new:'Revisión inicial',preselected:'Confirmar disponibilidad y co
 const actions={new:'<button type="button" class="candidate-flow-action" onclick="openInitialDecision(\''+x.id+'\')">Tomar decisión →</button>',preselected:x.interview_availability_confirmed_at?'':'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'schedule\')">Confirmar disponibilidad →</button>',interview_scheduled:'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'attendance\')">Gestionar entrevista →</button>',interviewed:needsDocuments?'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'documentation\')">Enviar contrato →</button>':'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'trial\')">Confirmar disponibilidad →</button>',trial:needsDocuments?'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'documentation\')">Enviar documentación →</button>':'<button type="button" class="candidate-flow-action" onclick="location.href=\'/periodo-prueba.html?embedded=1\'">Abrir período de prueba →</button>',hired:'<button type="button" class="candidate-flow-action" onclick="location.href=\'/contratados.html\'">Ver contratados →</button>'};
 if(st==='trial'&&trialStage==='agreement_sent'){
  labels.trial='Cierre de período de prueba';
- actions.trial='<button type="button" class="candidate-flow-action" onclick="registerTrialAgreementReceived(\''+x.id+'\')">Enviar acta de cierre →</button>';
+ actions.trial='<button type="button" class="candidate-flow-action" onclick="openTrialClosureDecision(\''+x.id+'\')">Enviar acta de cierre →</button>';
 }
 if(st==='trial'&&trialStage==='agreement_accepted'){
  labels.trial='Acuerdo firmado recibido';
@@ -2702,6 +2702,28 @@ if(st==='trial'&&['in_trial','evaluation_pending'].includes(trialStage)){
 const trialHelp=st==='trial'&&trialStage==='agreement_sent'?'El contrato fue enviado. Confirma su recepción firmada y, al finalizar satisfactoriamente la prueba, comparte el Acta de Cierre y consulta si desea continuar.':st==='trial'&&['in_trial','evaluation_pending'].includes(trialStage)?'Al aprobar satisfactoriamente el período de prueba, consulta si el candidato desea continuar y comparte el Acta de Cierre.':null;
 const help=st==='new'?'Revisa los datos de la candidatura y elige: preseleccionar, cantera, otra plaza o no seleccionar.':st==='preselected'?'Confirma la disponibilidad antes de coordinar la entrevista.':st==='interviewed'&&!needsDocuments?'Envía una propuesta de fechas y condiciones para consultar su disponibilidad e interés.':needsDocuments?'El siguiente paso es preparar el contrato de período de prueba.':'Las acciones disponibles dependen de la etapa actual.';
 return '<section class="candidate-flow" aria-label="Ruta de incorporación"><div class="candidate-flow-title">Ruta de incorporación</div><div class="candidate-flow-sub">Sigue el proceso de esta candidatura sin perder su historial.</div><div class="candidate-flow-steps">'+steps.map((label,i)=>'<div class="candidate-flow-step '+(phase>=0&&i<phase?'done':i===phase?'current':'')+'"><span class="route-icon">'+routeSvg(routeIcons[i])+'</span><span class="route-step-text"><b>'+(phase>=0&&i<phase?'✓':'0'+(i+1))+'</b><span>'+label+'</span></span></div>').join('')+'</div><div class="candidate-flow-next"><span class="route-next-icon">'+routeSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M9 10h6m-6 4h6m-6 4h4"/>')+'</span><div><strong>'+esc(labels[st]||'Consultar situación actual')+'</strong><small>'+esc(st==='trial'?'':help)+'</small></div>'+(actions[st]||'')+'</div></section>';
+}
+async function openTrialClosureDecision(candidateId){
+ const trial=trialPeriodsByCandidate[String(candidateId)];
+ if(!trial)return alert('No se encontró el período de prueba de este candidato.');
+ let modal=document.getElementById('trialClosureDecisionOverlay');
+ if(!modal){modal=document.createElement('div');modal.id='trialClosureDecisionOverlay';modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px';document.body.appendChild(modal)}
+ modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Cierre del período de prueba" style="width:min(100%,460px);background:#142234;color:#f5f7fb;border:1px solid #42576c;border-radius:24px;padding:24px;box-shadow:0 20px 65px #0008"><h3 style="margin:0 0 12px;font-size:23px">Cierre del período de prueba</h3><p style="color:#cbd5e1;line-height:1.5">¿Cómo deseas continuar con este candidato?</p><button type="button" id="trialCloseContinue" style="display:block;width:100%;padding:16px;border:0;border-radius:14px;background:#ffda03;color:#151515;font-weight:800;margin:14px 0">Continuar a capacitación</button><button type="button" id="trialCloseFinish" style="display:block;width:100%;padding:16px;border:1px solid #536779;border-radius:14px;background:#243549;color:white;font-weight:700;margin:14px 0">Finalizar prueba sin avanzar</button><button type="button" id="trialCloseCancel" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#cbd5e1;padding:10px">Cancelar</button></div>';
+ modal.querySelector('#trialCloseCancel').onclick=()=>modal.remove();
+ const go=async(mode)=>{
+  const btn=modal.querySelector(mode==='continue'?'#trialCloseContinue':'#trialCloseFinish');btn.disabled=true;
+  try{
+   if(trial.stage==='agreement_sent'||trial.stage==='agreement_accepted'){
+    const now=new Date().toISOString();
+    const {data,error}=await sb.from('hr_trial_periods').update({stage:'evaluation_pending',updated_at:now}).eq('id',trial.id).eq('stage',trial.stage).select('id').maybeSingle();
+    if(error||!data)throw Error(error?.message||'No se pudo registrar la decisión de cierre.');
+    trialPeriodsByCandidate[String(candidateId)]={...trial,stage:'evaluation_pending'};
+   }
+   location.href='/gestionar-cierre-prueba.html?trial='+encodeURIComponent(trial.id)+'&mode='+mode;
+  }catch(e){btn.disabled=false;alert(e.message)}
+ };
+ modal.querySelector('#trialCloseContinue').onclick=()=>go('continue');
+ modal.querySelector('#trialCloseFinish').onclick=()=>go('finish');
 }
 async function registerTrialAgreementReceived(candidateId){
  const trial=trialPeriodsByCandidate[String(candidateId)];
