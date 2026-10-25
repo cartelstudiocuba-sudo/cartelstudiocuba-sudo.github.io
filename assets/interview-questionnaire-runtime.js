@@ -21,7 +21,7 @@ async function persistPublishedAnswer(candidateId,key,value){
  const expected=iv.interview_notes?.[key]??null;
  if(value===expected)return;
  const {data,error}=await sb.rpc('hr_save_role_interview_answer',{p_candidate:candidateId,p_question:key,p_value:value,p_expected:expected,p_revision:iv.questionnaire_snapshot.revision});
- if(error)throw error;Object.assign(iv,publishedInterviewRecord(data,candidateId));
+ if(error)throw error;Object.assign(iv,publishedInterviewRecord(data,candidateId));if(window.parent!==window)window.parent.postMessage({type:'cartel-interview-progress-saved',candidateId:String(candidateId)},location.origin);
 }
 async function persistPublishedQuestionnaire(candidateId,notes){
  if(publishedSaveError)throw publishedSaveError;
