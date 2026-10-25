@@ -2890,21 +2890,21 @@ function openDetail(id,preferredTab){$('detail').dataset.candidateId=String(id);
  let row=answers.find(a=>String(a.candidate_id)===String(candidateId)&&a.question_key==='photo_path');
  if(!row?.answer){
   const result=await sb.from('hr_candidate_answers').select('id,candidate_id,question_key,answer').eq('candidate_id',candidateId).eq('question_key','photo_path').limit(1);
-  if(result.error){console.warn('No se pudo consultar la fotografía',result.error);return}
+  if(result.error){console.warn('No se pudo consultar la fotografía',result.error);const caption=detail.querySelector('.approved-photo-caption');if(caption)caption.textContent='Error al consultar fotografía ('+String(result.error.code||'consulta')+')';return}
   row=result.data?.[0];
   if(row){const existing=answers.find(a=>String(a.id)===String(row.id));if(existing)Object.assign(existing,row);else answers.push(row)}
  }
  const path=String(row?.answer||'').trim();
- if(!path){console.info('El candidato no tiene photo_path accesible desde RRHH',candidateId);return;}
+ if(!path){console.info('El candidato no tiene photo_path accesible desde RRHH',candidateId);const caption=detail.querySelector('.approved-photo-caption');if(caption)caption.textContent='Fotografía no encontrada en la consulta';return;}
  const avatar=detail.querySelector('.approved-personal-avatar'),caption=detail.querySelector('.approved-photo-caption');
  if(!avatar)return;
  const {data,error}=await sb.storage.from('hr-candidate-files').createSignedUrl(path,3600);
- if(error||!data?.signedUrl){console.warn('Fotografía del candidato no disponible',error);return}
+ if(error||!data?.signedUrl){console.warn('Fotografía del candidato no disponible',error);if(caption)caption.textContent='Error al abrir fotografía ('+String(error?.statusCode||error?.code||'enlace')+')';return}
  if(String(detail.dataset.candidateId)!==String(candidateId)||!avatar.isConnected)return;
  avatar.replaceChildren();
  const img=document.createElement('img');
  img.src=data.signedUrl;img.alt='Fotografía del candidato';img.style.cssText='width:100%;height:100%;min-height:210px;object-fit:cover;display:block';
- img.onerror=()=>{if(caption)caption.textContent='No se pudo cargar la fotografía'};
+ img.onerror=()=>{if(caption)caption.textContent='Error al mostrar fotografía'};
  avatar.appendChild(img);
  avatar.setAttribute('aria-label','Fotografía del candidato');
  if(caption)caption.textContent='Fotografía registrada';
