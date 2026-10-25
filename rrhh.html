@@ -2755,7 +2755,6 @@ async function openTrialClosureDecision(candidateId){
  const go=async(mode)=>{
   const btn=modal.querySelector(mode==='continue'?'#trialCloseContinue':'#trialCloseFinish');
   btn.disabled=true;
-  const whatsappWindow=window.open('about:blank','_blank');
   try{
    const candidate=candidates.find(x=>String(x.id)===String(candidateId));
    let phone=String(candidate?.whatsapp||candidate?.phone||'').replace(/\\D/g,'');
@@ -2772,7 +2771,7 @@ async function openTrialClosureDecision(candidateId){
     if(error||!data)throw Error(error?.message||'No se pudo registrar la decisión de cierre.');
     trialPeriodsByCandidate[String(candidateId)]={...trial,stage:'evaluation_pending'};
    }
-   let {data:closure,error:closureError}=await sb.from('hr_trial_closures').select('id').eq('trial_id',trial.id).maybeSingle();
+   let {data:closure,error:closureError}=await sb.from('hr_trial_closures').select('trial_id').eq('trial_id',trial.id).maybeSingle();
    if(closureError)throw Error(closureError.message);
    let links;
    if(!closure){
@@ -2789,19 +2788,17 @@ async function openTrialClosureDecision(candidateId){
    if(personError)throw Error(personError.message);
    const name=String(person.full_name||'').replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').trim().split(/\\s+/)[0]||'';
    const role=trial.role_title||candidate?.role_title||'la plaza correspondiente';
-   const common='🎉 *¡Enhorabuena, '+name+'!*\\n\\nHas completado satisfactoriamente tu período de prueba para la plaza de *'+role+'* en *El Cartel Studio*.\\n\\n';
-   const docs='\\n\\n📄 *Acta de Cierre del Período de Prueba:*\\n'+links.document_url+'\\n\\nPor favor, descarga el acta, imprímela, complétala y fírmala. Deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.';
+   const common='🎉 *¡Enhorabuena, '+name+'!*\n\nHas completado satisfactoriamente tu período de prueba para la plaza de *'+role+'* en *El Cartel Studio*.\n\n';
+   const docs='\n\n📄 *Acta de Cierre del Período de Prueba:*\n'+links.document_url+'\n\nPor favor, descarga el acta, imprímela, complétala y fírmala. Deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.';
    const message=mode==='finish'
-    ?common+'Queremos agradecerte el esfuerzo, la disposición y el compromiso demostrado durante esta etapa.'+docs+'\\n\\nEn caso de que seas seleccionado para continuar hacia una contratación en nuestra empresa, te lo notificaremos oportunamente por esta misma vía.\\n\\n¡Muchas gracias por haber formado parte de esta etapa con nosotros!'
-    :common+'Queremos felicitarte por esta primera etapa y agradecerte el esfuerzo, la disposición y el compromiso demostrado durante estos días.'+docs+'\\n\\nNos gustaría continuar contigo en el proceso de incorporación a El Cartel Studio y avanzar hacia la siguiente etapa de capacitación para tu plaza.\\n\\n*¿Estás de acuerdo e interesado en continuar formando parte de nuestro equipo?*\\n\\nConfírmanos por esta vía para coordinar los próximos pasos de tu capacitación.';
+    ?common+'Queremos agradecerte el esfuerzo, la disposición y el compromiso demostrado durante esta etapa.'+docs+'\n\nEn caso de que seas seleccionado para continuar hacia una contratación en nuestra empresa, te lo notificaremos oportunamente por esta misma vía.\n\n¡Muchas gracias por haber formado parte de esta etapa con nosotros!'
+    :common+'Queremos felicitarte por esta primera etapa y agradecerte el esfuerzo, la disposición y el compromiso demostrado durante estos días.'+docs+'\n\nNos gustaría continuar contigo en el proceso de incorporación a El Cartel Studio y avanzar hacia la siguiente etapa de capacitación para tu plaza.\n\n*¿Estás de acuerdo e interesado en continuar formando parte de nuestro equipo?*\n\nConfírmanos por esta vía para coordinar los próximos pasos de tu capacitación.';
    const {error:logError}=await sb.rpc('hr_manage_trial_closure',{p_trial:trial.id,p_action:'message_opened',p_payload:{message,decision:mode}});
    if(logError)throw Error(logError.message);
    const url='https://wa.me/'+phone+'?text='+encodeURIComponent(message);
-   if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.location.replace(url);
-   else window.location.href=url;
+   window.location.assign(url);
    modal.remove();
   }catch(e){
-   if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.close();
    btn.disabled=false;
    alert(e.message);
   }
