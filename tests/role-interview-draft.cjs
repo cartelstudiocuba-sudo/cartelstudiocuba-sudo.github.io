@@ -5,7 +5,7 @@ for(const m of fs.readFileSync('plaza-ficha.html','utf8').matchAll(/<script\b[^>
 const fixture=`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/assets/role-interview-draft.css"><script>
 const stored=localStorage.getItem('roles');window.records=stored?JSON.parse(stored):Array.from({length:5},(_,i)=>({id:'R'+i,title:'Plaza sintética '+i,updated_at:'t0',work_content:{standard:{sentinel:'conservar'},evaluation_master:{criteria:[]}}}));
 let role=records[0];window.writes=[];window.fail=false;window.race=false;window.pause=false;window.alert=()=>{};window.confirm=()=>true;
-const sb={from(table){if(table!=='hr_roles')throw Error('Forbidden table '+table);let patch=null,filters=[];
+const sb={async rpc(name,args){if(name!=='hr_publish_role_questionnaire')throw Error('Unexpected RPC');const row=records.find(r=>r.id===args.p_role);if(JSON.stringify(row.work_content.interview_questionnaire_draft)!==JSON.stringify(args.p_expected))return {error:{message:'El borrador cambió'}};row.work_content.interview_questionnaire_published={version:1,revision:1,status:'published',questions:JSON.parse(JSON.stringify(args.p_expected.questions))};return {data:[JSON.parse(JSON.stringify(row))],error:null}},from(table){if(table!=='hr_roles')throw Error('Forbidden table '+table);let patch=null,filters=[];
 const q={select(){return q},eq(k,v){filters.push([k,v]);return q},is(k,v){filters.push([k,v]);return q},update(p){patch=p;return q},single(){return run()},maybeSingle(){return run()}};
 async function run(){if(window.pause)await new Promise(r=>window.release=r);const row=records.find(r=>r.id===filters.find(f=>f[0]==='id')[1]);if(fail)return {error:{message:'Error sintético'}};
 if(!patch)return {data:JSON.parse(JSON.stringify(row))};if(race)row.work_content.standard.sentinel='edición concurrente';
@@ -25,6 +25,7 @@ await rows.nth(1).locator('[name=options]').fill('Uno\nDos');await rows.nth(1).g
 await page.getByRole('button',{name:'Guardar borrador',exact:true}).click();await page.waitForFunction(()=>writes.length===1);await page.waitForFunction(()=>document.querySelector('[role=status]').textContent.includes('Borrador guardado'));
 assert.equal(await page.evaluate(()=>records[0].work_content.standard.sentinel),'conservar');assert.equal(await page.evaluate(()=>records[0].work_content.interview_questionnaire_draft.status),'draft');
 assert.equal(await page.evaluate(()=>records[0].work_content.interview_questionnaire_draft.questions[1].id),firstId);
+await page.getByRole('button',{name:'Aprobar y publicar',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[role=status]').textContent.includes('aprobado y publicado'));assert.equal(await page.evaluate(()=>records[0].work_content.interview_questionnaire_published.status),'published');
 assert.equal(await page.evaluate(()=>document.querySelector('dialog').scrollWidth<=document.querySelector('dialog').clientWidth),true);
 await page.screenshot({path:'tests/role-interview-draft-'+width+'.png'});
 await page.reload();await page.click('#open');assert.equal(await rows.count(),2);assert.equal(await rows.nth(1).getAttribute('data-question-id'),firstId);

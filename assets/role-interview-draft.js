@@ -1,4 +1,4 @@
-/* Preparation only: saving a draft does not change interviews or closure rules. */
+/* Drafts and publication are separate, explicit operations. */
 (function () {
   'use strict';
   const KEY = 'interview_questionnaire_draft';
@@ -27,7 +27,8 @@
 
   window.renderRoleInterviewDraftEntry = function () {
     const draft = role.work_content?.[KEY];
-    return '<section class="definition-detail-card interview-draft-entry"><h3>Cuestionario de entrevista</h3><p>' + (draft ? 'Borrador guardado para esta plaza.' : 'Esta plaza no tiene un cuestionario de entrevista configurado.') + '</p><p>Prepara aquí las preguntas. Guardar un borrador no las activa en entrevistas ni cambia las condiciones de cierre.</p><button type="button" class="btn" onclick="openRoleInterviewDraft()">Editar borrador de preguntas</button></section>';
+    const published=role.work_content?.interview_questionnaire_published;
+    return '<section class="definition-detail-card interview-draft-entry"><h3>Cuestionario de entrevista</h3><p>' + (published ? 'Publicada: versión '+escape(published.revision)+'.' : 'Sin versión publicada. Las propuestas no están activas.') + '</p><p>'+escape(draft?.review_note||'Borrador editable pendiente de revisión y aprobación.')+'</p><p>Guardar un borrador no lo activa. Las entrevistas iniciadas conservan su versión.</p><button type="button" class="btn" onclick="openRoleInterviewDraft()">Editar borrador de preguntas</button></section>';
   };
 
   window.openRoleInterviewDraft = function () {
@@ -56,7 +57,7 @@
 
   function render() {
     const dialog = document.getElementById('roleInterviewDraft');
-    dialog.innerHTML = '<h2>Borrador de entrevista · '+escape(role.title)+'</h2><p>Solo se guardan las preguntas que escribas. El borrador queda pendiente de activación.</p><div id="roleInterviewDraftRows">'+editor.questions.map((q,i) => '<fieldset data-question-id="'+escape(q.id)+'"><legend>Pregunta '+(i+1)+'</legend><label>Sección<input name="section" maxlength="200" value="'+escape(q.section)+'"></label><label>Pregunta<textarea name="text" maxlength="4000">'+escape(q.text)+'</textarea></label><label>Orientación para quien entrevista<textarea name="help" maxlength="4000">'+escape(q.help)+'</textarea></label><label>Respuesta<select name="type"><option value="text" '+(q.type==='text'?'selected':'')+'>Texto libre</option><option value="select" '+(q.type==='select'?'selected':'')+'>Una opción</option></select></label><label>Opciones (una por línea; solo para respuesta de una opción)<textarea name="options">'+escape(q.options.join('\n'))+'</textarea></label><label><input name="required" type="checkbox" '+(q.required?'checked':'')+'> Obligatoria al activar el cuestionario</label><div class="draft-actions"><button type="button" onclick="changeRoleInterviewDraft('+i+',-1)" '+(i===0?'disabled':'')+'>Subir</button><button type="button" onclick="changeRoleInterviewDraft('+i+',1)" '+(i===editor.questions.length-1?'disabled':'')+'>Bajar</button><button type="button" onclick="changeRoleInterviewDraft('+i+',0)">Eliminar pregunta</button></div></fieldset>').join('')+'</div><p id="roleInterviewDraftStatus" role="status"></p><div class="draft-actions"><button type="button" onclick="addRoleInterviewDraftQuestion()">Añadir pregunta</button><button type="button" onclick="saveRoleInterviewDraft()">Guardar borrador</button><button type="button" onclick="closeRoleInterviewDraft()">Cerrar</button></div>';
+    dialog.innerHTML = '<h2>Borrador de entrevista · '+escape(role.title)+'</h2><p>Revisa la propuesta y adapta las preguntas. Guardar no publica ni activa el borrador.</p><div id="roleInterviewDraftRows">'+editor.questions.map((q,i) => '<fieldset data-question-id="'+escape(q.id)+'"><legend>Pregunta '+(i+1)+'</legend><label>Sección<input name="section" maxlength="200" value="'+escape(q.section)+'"></label><label>Pregunta<textarea name="text" maxlength="4000">'+escape(q.text)+'</textarea></label><label>Orientación para quien entrevista<textarea name="help" maxlength="4000">'+escape(q.help)+'</textarea></label><label>Respuesta<select name="type"><option value="text" '+(q.type==='text'?'selected':'')+'>Texto libre</option><option value="select" '+(q.type==='select'?'selected':'')+'>Una opción</option></select></label><label>Opciones (una por línea; solo para respuesta de una opción)<textarea name="options">'+escape(q.options.join('\n'))+'</textarea></label><label><input name="required" type="checkbox" '+(q.required?'checked':'')+'> Obligatoria al activar el cuestionario</label><div class="draft-actions"><button type="button" onclick="changeRoleInterviewDraft('+i+',-1)" '+(i===0?'disabled':'')+'>Subir</button><button type="button" onclick="changeRoleInterviewDraft('+i+',1)" '+(i===editor.questions.length-1?'disabled':'')+'>Bajar</button><button type="button" onclick="changeRoleInterviewDraft('+i+',0)">Eliminar pregunta</button></div></fieldset>').join('')+'</div><p id="roleInterviewDraftStatus" role="status"></p><div class="draft-actions"><button type="button" onclick="addRoleInterviewDraftQuestion()">Añadir pregunta</button><button type="button" onclick="saveRoleInterviewDraft()">Guardar borrador</button><button type="button" onclick="publishRoleInterviewDraft()">Aprobar y publicar</button><button type="button" onclick="closeRoleInterviewDraft()">Cerrar</button></div>';
   }
 
   window.addRoleInterviewDraftQuestion = function () {
@@ -92,7 +93,7 @@
       if (!latest.data || String(role.id)!==state.roleId) throw Error('La plaza cambió. Vuelve a abrir el borrador.');
       const content=latest.data.work_content || {};
       if (canonical(content[KEY] || null)!==canonical(state.original)) throw Error('Otra sesión modificó este borrador. Cierra y vuelve a abrir la plaza antes de guardar.');
-      const draft={version:1,revision:(state.original?.revision || 0)+1,status:'draft',questions};
+      const draft={...state.original,version:1,revision:(state.original?.revision || 0)+1,status:'draft',questions};
       let query=sb.from('hr_roles').update({work_content:{...content,[KEY]:draft},updated_at:new Date().toISOString()}).eq('id',state.roleId);
       query=latest.data.updated_at==null ? query.is('updated_at',null) : query.eq('updated_at',latest.data.updated_at);
       query=latest.data.work_content==null ? query.is('work_content',null) : query.eq('work_content',JSON.stringify(latest.data.work_content));
@@ -108,4 +109,24 @@
       document.querySelectorAll('#roleInterviewDraft button, #roleInterviewDraft input, #roleInterviewDraft textarea, #roleInterviewDraft select').forEach(el=>el.disabled=false);
     }
   };
+  window.publishRoleInterviewDraft = async function () {
+    if(!editor||editor.saving)return;
+    const state=editor;
+    if(String(role.id)!==state.roleId)return alert('La plaza cambió. Vuelve a abrir el borrador.');
+    read();
+    if(canonical(editor.questions)!==canonical(editor.original?.questions||[]))return alert('Guarda primero el borrador que deseas aprobar.');
+    if(!editor.questions.length)return alert('Un cuestionario vacío no se puede publicar.');
+    if(!confirm('¿Aprobar y publicar este cuestionario para nuevas entrevistas de esta plaza? Las entrevistas iniciadas conservarán su versión.'))return;
+    editor.saving=true;
+    try{
+      const {data,error}=await sb.rpc('hr_publish_role_questionnaire',{p_role:state.roleId,p_expected:state.original});
+      if(error)throw error;const row=Array.isArray(data)&&data.length===1?data[0]:data;
+      if(!row||Array.isArray(row)||String(row.id)!==state.roleId)throw Error('Respuesta de publicación no válida. Recarga la plaza.');
+      if(String(role.id)===state.roleId)role=row;document.getElementById('roleInterviewDraftStatus').textContent='Cuestionario aprobado y publicado. Versión '+row.work_content.interview_questionnaire_published.revision;
+    }catch(error){document.getElementById('roleInterviewDraftStatus').textContent='No se publicó: '+error.message}finally{state.saving=false}
+  };
+  window.addEventListener('beforeunload',event=>{
+    if(!editor)return;read();
+    if(editor.saving||canonical(editor.questions)!==canonical(editor.original?.questions||[])){event.preventDefault();event.returnValue=''}
+  });
 })();

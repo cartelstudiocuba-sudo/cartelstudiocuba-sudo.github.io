@@ -1,0 +1,227 @@
+/* Read-only descriptions of the two historical positional formats. Never used for new interviews. */
+window.InterviewQuestionnaireLegacy={
+  "inline": [
+    [
+      "¿Qué te llamó la atención de esta convocatoria y qué te motivó a aplicar?",
+      "Motivación"
+    ],
+    [
+      "¿Qué conocías de El Cartel Studio antes de ver la convocatoria?",
+      "Conocimiento"
+    ],
+    [
+      "Cuéntame sobre tu último trabajo y tus responsabilidades.",
+      "Experiencia"
+    ],
+    [
+      "¿Cuáles consideras tus principales fortalezas para esta plaza?",
+      "Fortalezas"
+    ],
+    [
+      "¿Qué parte del trabajo crees que te resultaría más difícil durante el primer mes?",
+      "Autopercepción"
+    ]
+  ],
+  "full": [
+    {
+      "id": "iq_assistant_0",
+      "section": "Inicio y motivación",
+      "text": "¿Qué te llamó la atención de esta convocatoria y qué fue lo que te motivó a aplicar?",
+      "help": "Profundizar en qué entendió de la plaza y qué espera encontrar.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_1",
+      "section": "Inicio y motivación",
+      "text": "¿Qué conocías de El Cartel Studio antes de ver la convocatoria?",
+      "help": "Explorar qué investigó o conocía previamente, sin asumir que debía conocer la empresa.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Sí, ya conocía la agencia y su trabajo",
+        "Solo había oído el nombre",
+        "La conocí por esta convocatoria",
+        "La investigué después de ver la convocatoria",
+        "No la conocía ni la había investigado",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_2",
+      "section": "Trayectoria laboral",
+      "text": "Cuéntame sobre tu último trabajo y cuáles eran tus principales responsabilidades.",
+      "help": "Pedir ejemplos concretos de tareas que dependían directamente de la persona.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_3",
+      "section": "Trayectoria laboral",
+      "text": "¿Por qué dejaste de trabajar en tu último empleo?",
+      "help": "Profundizar de manera neutral en el contexto del cambio laboral.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_4",
+      "section": "Trayectoria laboral",
+      "text": "¿Qué estás buscando actualmente en un nuevo trabajo?",
+      "help": "Conocer expectativas sobre funciones, dinámica y desarrollo.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_5",
+      "section": "Trayectoria laboral",
+      "text": "De las experiencias que has tenido, ¿cuál crees que te ha preparado más para las funciones de esta plaza y por qué?",
+      "help": "Pedir un ejemplo concreto que conecte esa experiencia con el trabajo.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_6",
+      "section": "Organización y prioridades",
+      "text": "Llegas por la mañana y tienes cinco cosas: recoger un documento antes de las 12, comprar un insumo, coordinar una cita, responder dos asuntos administrativos y a las 11 aparece una urgencia nueva. ¿Qué haces?",
+      "help": "Ordénalas y explica el criterio utilizado.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Ordena por horarios límite y reorganiza ante la urgencia",
+        "Consulta la prioridad de la urgencia antes de reorganizar",
+        "Delega o coordina tareas para cumplir los plazos",
+        "Mantiene el orden inicial aunque aparezca la urgencia",
+        "Atiende la urgencia y deja las demás tareas para después",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_7",
+      "section": "Autonomía y resolución",
+      "text": "Te encargo recoger algo. Llegas y te dicen que no está listo y que regreses mañana, pero yo estoy ocupado y no respondo. ¿Qué harías?",
+      "help": "¿Qué alternativas intentarías antes de regresar sin haber resuelto?",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Pregunta por alternativas y busca resolver la gestión",
+        "Contacta a otra persona autorizada para orientarse",
+        "Espera una respuesta antes de continuar",
+        "Regresa y deja la gestión para el día siguiente",
+        "Busca otra solución e informa de lo ocurrido",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_8",
+      "section": "Ejercicio práctico · Planificación",
+      "text": "Son las 9:00 a. m. Debes estar en El Cartel Studio a las 12:00. Antes necesitas recoger un documento, comprar dos artículos, realizar un pago y confirmar una cita. Una oficina cierra a las 11:00. Tienes tres minutos: organiza la mañana.",
+      "help": "Registrar el orden propuesto, qué información solicita y cómo controla los tiempos.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Organiza por horario de cierre, recorrido y tiempo disponible",
+        "Confirma primero horarios, distancias y requisitos",
+        "Delega o coordina alguna gestión para llegar a tiempo",
+        "Sigue el orden de la lista de tareas",
+        "Propone posponer alguna gestión para llegar a las 12",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_9",
+      "section": "Iniciativa y límites",
+      "text": "Dime tres ejemplos de decisiones que tomarías por tu cuenta como asistente y tres situaciones en las que preferirías consultarme antes.",
+      "help": "Profundizar en cómo diferencia autonomía de decisiones que requieren autorización.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_10",
+      "section": "Manejo de errores",
+      "text": "Te das cuenta de que cometiste un error en una gestión que puede generar un problema y yo todavía no me he enterado. ¿Qué haces?",
+      "help": "Pedir además un ejemplo real de un error laboral y cómo lo gestionó.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Informa del error y propone cómo corregirlo",
+        "Corrige lo que puede y después informa",
+        "Consulta antes de intentar corregirlo",
+        "Espera a comprobar si el error genera un problema",
+        "Intenta resolverlo sin comunicarlo",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_11",
+      "section": "Comunicación ejecutiva",
+      "text": "Una gestión se complicó. Yo estoy rodando y probablemente solo leeré las primeras dos líneas del WhatsApp. Dime exactamente qué mensaje me enviarías.",
+      "help": "Registrar el mensaje tal como lo formularía.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Resume el problema, propone una solución y pide una decisión concreta",
+        "Resume el problema y comunica el siguiente paso",
+        "Explica primero todos los antecedentes",
+        "Pide que le llamen para explicar la situación",
+        "Comunica que hay un problema sin proponer el siguiente paso",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_12",
+      "section": "Confianza profesional",
+      "text": "Esta plaza implica acceso a asuntos personales y empresariales y trabajar muy cerca de Dirección. ¿Qué hace que un jefe termine confiando de verdad en su asistente?",
+      "help": "¿Qué conductas pueden afectar esa confianza?",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_13",
+      "section": "Tecnología y aprendizaje",
+      "text": "¿Qué herramientas digitales utilizas realmente en tu trabajo y para qué las usas?",
+      "help": "Si declaró Excel, Office o IA, pedir un ejemplo concreto de algo que haya resuelto con esas herramientas.",
+      "type": "text",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "iq_assistant_14",
+      "section": "Tecnología y aprendizaje",
+      "text": "Te entrego una tarea que nunca has hecho y una herramienta que nunca has utilizado. Debes resolverla hoy. Explícame paso por paso qué haces.",
+      "help": "Pedir un ejemplo real de algo que haya aprendido por su cuenta para resolver un problema.",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Aclara el objetivo, investiga, prueba y valida el resultado",
+        "Busca una guía o tutorial y aprende mientras realiza la tarea",
+        "Pide orientación inicial y después continúa por su cuenta",
+        "Solicita acompañamiento durante toda la tarea",
+        "Espera instrucciones o formación antes de empezar",
+        "Otra respuesta",
+        "No responde / no se abordó"
+      ]
+    },
+    {
+      "id": "iq_assistant_15",
+      "section": "Cierre y autopercepción",
+      "text": "Después de conocer mejor la plaza, ¿qué parte crees que te resultaría más difícil durante el primer mes?",
+      "help": "Profundizar en el motivo y cómo piensa afrontarlo.",
+      "type": "text",
+      "required": true,
+      "options": []
+    }
+  ]
+};

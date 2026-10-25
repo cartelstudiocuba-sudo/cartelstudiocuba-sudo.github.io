@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "tests": [
+    "Plaza 0: borrador bloqueado, publicar, iniciar idempotente, opciones, obligatorio/opcional, conflicto, snapshot estable, histórico intacto, cierre y cierre repetido",
+    "Plaza 1: borrador bloqueado, publicar, iniciar idempotente, opciones, obligatorio/opcional, conflicto, snapshot estable, histórico intacto, cierre y cierre repetido",
+    "Plaza 2: borrador bloqueado, publicar, iniciar idempotente, opciones, obligatorio/opcional, conflicto, snapshot estable, histórico intacto, cierre y cierre repetido",
+    "Plaza 3: borrador bloqueado, publicar, iniciar idempotente, opciones, obligatorio/opcional, conflicto, snapshot estable, histórico intacto, cierre y cierre repetido",
+    "Legado q0–q15: cierre compatible, sin snapshot ni reasignación; no convertir entrevista histórica cerrada"
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "width": 390,
+    "passed": true,
+    "roles": 5,
+    "cases": [
+      "published per role",
+      "draft blocked",
+      "literal 16 assistant questions",
+      "historical interpretation",
+      "answer persistence",
+      "real SQL closure",
+      "idempotent closure",
+      "reload closed",
+      "rapid candidate switch",
+      "print content",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 1440,
+    "passed": true,
+    "roles": 5,
+    "cases": [
+      "published per role",
+      "draft blocked",
+      "literal 16 assistant questions",
+      "historical interpretation",
+      "answer persistence",
+      "real SQL closure",
+      "idempotent closure",
+      "reload closed",
+      "rapid candidate switch",
+      "print content",
+      "no horizontal overflow"
+    ]
+  }
+]
