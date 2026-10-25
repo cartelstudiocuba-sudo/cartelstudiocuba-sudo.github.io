@@ -15,24 +15,38 @@ Nos gustaría continuar contigo en el proceso de incorporación a El Cartel Stud
 *¿Estás de acuerdo e interesado en continuar formando parte de nuestro equipo?*
 
 Confírmanos por esta vía para coordinar los próximos pasos de tu capacitación.`;
-function closureMessage(name, links, role) {
- return closureTemplate.replace('{NOMBRE}',String(name||'').trim().split(/\\s+/)[0]).replace('{PLAZA}',role||'la plaza correspondiente').replace('{CIERRE}',links.document_url);
+const closureFinishTemplate = `🎉 *¡Enhorabuena, {NOMBRE}!*
+
+Has completado satisfactoriamente tu período de prueba para la plaza de *{PLAZA}* en *El Cartel Studio*.
+
+Queremos agradecerte el esfuerzo, la disposición y el compromiso demostrado durante esta etapa.
+
+📄 *Acta de Cierre del Período de Prueba:*
+{CIERRE}
+
+Por favor, descarga el acta, imprímela, complétala y fírmala. Deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.
+
+En caso de que seas seleccionado para continuar hacia una contratación en nuestra empresa, te lo notificaremos oportunamente por esta misma vía.
+
+¡Muchas gracias por haber formado parte de esta etapa con nosotros!`;
+function closureMessage(name, links, role, mode) {
+ return (mode==='finish'?closureFinishTemplate:closureTemplate).replace('{NOMBRE}',String(name||'').trim().split(/\\s+/)[0]).replace('{PLAZA}',role||'la plaza correspondiente').replace('{CIERRE}',links.document_url);
 }
 const closureEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function closureRpc(name,args){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data;}
 async function openClosure(trial){location.href='/gestionar-cierre-prueba.html?trial='+encodeURIComponent(trial);}
 async function initClosureAdmin(){
- const id=new URLSearchParams(location.search).get('trial'),root=document.getElementById('closure');
+ const params=new URLSearchParams(location.search),id=params.get('trial'),mode=params.get('mode')==='finish'?'finish':'continue',root=document.getElementById('closure');
  const {data:t,error}=await sb.from('hr_trial_periods').select('*,hr_candidates(full_name,whatsapp)').eq('id',id).single();if(error)throw Error('Acceso autorizado requerido. '+error.message);
  let {data:c,error:ce}=await sb.from('hr_trial_closures').select('*').eq('trial_id',id).maybeSingle();if(ce)throw Error(ce.message);
  root.innerHTML='<h1>Cierre del período de prueba</h1><h2>'+closureEsc(t.hr_candidates.full_name)+'</h2><p>El cierre se verifica antes de preparar la capacitación y continuar a contratación.</p><div id="actions"></div>';
  const actions=document.getElementById('actions');
- if(!c){actions.innerHTML='<button id="prepare">Aprobar prueba y preparar cierre</button>';document.getElementById('prepare').onclick=async()=>{try{await closureRpc('hr_prepare_trial_closure',{p_trial:id});location.reload();}catch(e){alert(e.message)}};return;}
+ if(!c){actions.innerHTML='<button id="prepare">Preparar acta de cierre</button>';document.getElementById('prepare').onclick=async()=>{try{await closureRpc('hr_prepare_trial_closure',{p_trial:id});location.reload();}catch(e){alert(e.message)}};return;}
  const {data:events,error:ee}=await sb.from('hr_trial_closure_events').select('*').eq('trial_id',id).order('created_at');if(ee)throw Error(ee.message);
  const links=events.find(e=>e.action==='closure_prepared')?.payload;
  actions.innerHTML='<p>Expediente: '+(c.submitted_at?'Recibido':'Pendiente')+' · Cierre firmado: '+(c.signed_received_at?'Recibido':'Pendiente')+' · Verificación: '+(c.verified_at?'Completada':'Pendiente')+'</p><p>Enlaces válidos hasta '+closureEsc(new Date(c.expires_at).toLocaleString('es-CU'))+(c.revoked_at?' · REVOCADOS':'')+'</p><button id="preview">Ver documento de cierre</button> <button id="edit">Revisar mensaje para WhatsApp</button><div id="editor" hidden><label for="message">Mensaje completo para este candidato</label><textarea id="message" rows="18"></textarea><p>La edición solo se aplica a este envío. La plantilla predeterminada se conserva para futuros candidatos.</p><button id="send">Guardar revisión y abrir WhatsApp</button></div><h2>Expediente recibido</h2><div id="file"></div><button id="signed">Registrar cierre firmado recibido</button> <button id="verify">Confirmar verificación del expediente</button><h2>Preparar capacitación</h2><form id="training"><label>Duración en días<input name="days" type="number" min="1" max="365" required></label><label>Tutor<input name="tutor" required maxlength="200"></label><label>Fecha de inicio<input name="start" type="date" required></label><button>Guardar preparación</button></form><button id="hire">Continuar a contratación</button> <button id="revoke">Revocar enlaces</button><h2>Trazabilidad</h2><div id="history"></div>';
  document.getElementById('preview').onclick=()=>{if(links?.document_url)window.open(links.document_url,'_blank','noopener');};
- document.getElementById('edit').onclick=()=>{if(c.revoked_at||Date.parse(c.expires_at)<=Date.now())return alert('Los enlaces ya no están vigentes.');document.getElementById('editor').hidden=false;document.getElementById('message').value=events.filter(e=>e.action==='message_opened').at(-1)?.payload.message||closureMessage(t.hr_candidates.full_name,links,t.role_title);};
+ document.getElementById('edit').onclick=()=>{if(c.revoked_at||Date.parse(c.expires_at)<=Date.now())return alert('Los enlaces ya no están vigentes.');document.getElementById('editor').hidden=false;document.getElementById('message').value=events.filter(e=>e.action==='message_opened').at(-1)?.payload.message||closureMessage(t.hr_candidates.full_name,links,t.role_title,mode);};
  document.getElementById('send').onclick=async()=>{const message=document.getElementById('message').value;const phone=String(t.hr_candidates.whatsapp||'').replace(/\D/g,'');if(phone.length<8)return alert('El candidato no tiene teléfono válido.');if(!message.includes(links.document_url))return alert('Conserva el enlace individual al Acta de Cierre.');const button=document.getElementById('send');button.disabled=true;try{await closureRpc('hr_manage_trial_closure',{p_trial:id,p_action:'message_opened',p_payload:{message}});window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(message),'_blank','noopener');alert('Revisión guardada. Confirma el envío en WhatsApp; abrirlo no confirma entrega.');}catch(e){alert(e.message)}finally{button.disabled=false}};
  const file=document.getElementById('file');file.innerHTML=Object.entries(c.data).filter(([k])=>!k.endsWith('_path')).map(([k,v])=>'<p><b>'+closureEsc(k)+':</b> '+closureEsc(v)+'</p>').join('')||'<p>Aún no se ha enviado el formulario.</p>';
  for(const [key,label] of [['document_front_path','Ver frente privado'],['document_back_path','Ver reverso privado']]){if(c.data[key]){const b=document.createElement('button');b.textContent=label;b.onclick=async()=>{const {data,error}=await sb.storage.from('hr-identity-private').download(c.data[key]);if(error)return alert(error.message);const url=URL.createObjectURL(data);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);};file.append(b);}}
