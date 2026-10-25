@@ -1,5 +1,28 @@
 /* Runs in the existing interview page; RPCs retain its RLS authorization. */
 let publishedSaveError=null;
+let questionnaireAutoLoadCandidate='';
+async function ensurePublishedQuestionnaireForNewInterview(){
+ const target=String(current?.id||'');if(!target||questionnaireAutoLoadCandidate===target)return;
+ const iv=interviews.find(v=>String(v.candidate_id)===target);
+ if(!iv||iv.questionnaire_snapshot||iv.completed_at||InterviewQuestionnaire.historical(iv).length)return;
+ questionnaireAutoLoadCandidate=target;
+ const pane=document.getElementById('interviewStepQuestionnaire');
+ if(pane)pane.innerHTML='<p role="status">Cargando cuestionario vigente de esta plaza…</p>';
+ try{
+  const {data,error}=await sb.rpc('hr_begin_role_questionnaire',{p_candidate:target});
+  if(error)throw error;
+  const record=publishedInterviewRecord(data,target);
+  interviews=interviews.filter(v=>String(v.candidate_id)!==target).concat(record);
+  if(String(current?.id)===target&&pane?.isConnected){
+   pane.innerHTML=InterviewQuestionnaire.render(record,!record.completed_at);
+  }
+ }catch(e){
+  console.error('No se pudo cargar automáticamente el cuestionario',e);
+  if(String(current?.id)===target&&pane?.isConnected)pane.innerHTML='<p role="alert">No se pudo cargar el cuestionario publicado. Vuelve a entrar al paso Cuestionario o recarga la entrevista.</p>';
+  questionnaireAutoLoadCandidate='';
+ }
+}
+
 function publishedInterviewRecord(data,candidateId){
  const row=Array.isArray(data)&&data.length===1?data[0]:data;
  if(!row||Array.isArray(row)||String(row.candidate_id)!==String(candidateId))throw Error('La respuesta del servidor no corresponde a esta entrevista.');
