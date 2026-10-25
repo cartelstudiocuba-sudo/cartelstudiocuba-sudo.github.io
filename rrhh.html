@@ -2711,16 +2711,58 @@ async function openTrialClosureDecision(candidateId){
  modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Cierre del período de prueba" style="width:min(100%,460px);background:#142234;color:#f5f7fb;border:1px solid #42576c;border-radius:24px;padding:24px;box-shadow:0 20px 65px #0008"><h3 style="margin:0 0 12px;font-size:23px">Cierre del período de prueba</h3><p style="color:#cbd5e1;line-height:1.5">¿Cómo deseas continuar con este candidato?</p><button type="button" id="trialCloseContinue" style="display:block;width:100%;padding:16px;border:0;border-radius:14px;background:#ffda03;color:#151515;font-weight:800;margin:14px 0">Continuar a capacitación</button><button type="button" id="trialCloseFinish" style="display:block;width:100%;padding:16px;border:1px solid #536779;border-radius:14px;background:#243549;color:white;font-weight:700;margin:14px 0">Finalizar prueba sin avanzar</button><button type="button" id="trialCloseCancel" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#cbd5e1;padding:10px">Cancelar</button></div>';
  modal.querySelector('#trialCloseCancel').onclick=()=>modal.remove();
  const go=async(mode)=>{
-  const btn=modal.querySelector(mode==='continue'?'#trialCloseContinue':'#trialCloseFinish');btn.disabled=true;
+  const btn=modal.querySelector(mode==='continue'?'#trialCloseContinue':'#trialCloseFinish');
+  btn.disabled=true;
+  const whatsappWindow=window.open('about:blank','_blank');
   try{
-   if(trial.stage==='agreement_sent'||trial.stage==='agreement_accepted'){
+   const candidate=candidates.find(x=>String(x.id)===String(candidateId));
+   let phone=String(candidate?.whatsapp||candidate?.phone||'').replace(/\\D/g,'');
+   if(phone.length<8){
+    const {data:person,error:personError}=await sb.from('hr_candidates').select('full_name,whatsapp').eq('id',candidateId).single();
+    if(personError)throw Error(personError.message);
+    phone=String(person.whatsapp||'').replace(/\\D/g,'');
+   }
+   if(phone.length<8)throw Error('Este candidato no tiene un número de WhatsApp válido.');
+   let stage=trialPeriodsByCandidate[String(candidateId)]?.stage;
+   if(['agreement_sent','agreement_accepted'].includes(stage)){
     const now=new Date().toISOString();
-    const {data,error}=await sb.from('hr_trial_periods').update({stage:'evaluation_pending',updated_at:now}).eq('id',trial.id).eq('stage',trial.stage).select('id').maybeSingle();
+    const {data,error}=await sb.from('hr_trial_periods').update({stage:'evaluation_pending',updated_at:now}).eq('id',trial.id).eq('stage',stage).select('id').maybeSingle();
     if(error||!data)throw Error(error?.message||'No se pudo registrar la decisión de cierre.');
     trialPeriodsByCandidate[String(candidateId)]={...trial,stage:'evaluation_pending'};
    }
-   location.href='/gestionar-cierre-prueba.html?trial='+encodeURIComponent(trial.id)+'&mode='+mode;
-  }catch(e){btn.disabled=false;alert(e.message)}
+   let {data:closure,error:closureError}=await sb.from('hr_trial_closures').select('id').eq('trial_id',trial.id).maybeSingle();
+   if(closureError)throw Error(closureError.message);
+   let links;
+   if(!closure){
+    const {data,error}=await sb.rpc('hr_prepare_trial_closure',{p_trial:trial.id});
+    if(error)throw Error(error.message);
+    links=data;
+   }else{
+    const {data:ev,error:evError}=await sb.from('hr_trial_closure_events').select('payload').eq('trial_id',trial.id).eq('action','closure_prepared').order('created_at',{ascending:false}).limit(1).maybeSingle();
+    if(evError)throw Error(evError.message);
+    links=ev?.payload;
+   }
+   if(!links?.document_url)throw Error('No se pudo obtener el enlace del Acta de Cierre de esta plaza.');
+   const {data:person,error:personError}=await sb.from('hr_candidates').select('full_name,whatsapp').eq('id',candidateId).single();
+   if(personError)throw Error(personError.message);
+   const name=String(person.full_name||'').replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').trim().split(/\\s+/)[0]||'';
+   const role=trial.role_title||candidate?.role_title||'la plaza correspondiente';
+   const common='🎉 *¡Enhorabuena, '+name+'!*\\n\\nHas completado satisfactoriamente tu período de prueba para la plaza de *'+role+'* en *El Cartel Studio*.\\n\\n';
+   const docs='\\n\\n📄 *Acta de Cierre del Período de Prueba:*\\n'+links.document_url+'\\n\\nPor favor, descarga el acta, imprímela, complétala y fírmala. Deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.';
+   const message=mode==='finish'
+    ?common+'Queremos agradecerte el esfuerzo, la disposición y el compromiso demostrado durante esta etapa.'+docs+'\\n\\nEn caso de que seas seleccionado para continuar hacia una contratación en nuestra empresa, te lo notificaremos oportunamente por esta misma vía.\\n\\n¡Muchas gracias por haber formado parte de esta etapa con nosotros!'
+    :common+'Queremos felicitarte por esta primera etapa y agradecerte el esfuerzo, la disposición y el compromiso demostrado durante estos días.'+docs+'\\n\\nNos gustaría continuar contigo en el proceso de incorporación a El Cartel Studio y avanzar hacia la siguiente etapa de capacitación para tu plaza.\\n\\n*¿Estás de acuerdo e interesado en continuar formando parte de nuestro equipo?*\\n\\nConfírmanos por esta vía para coordinar los próximos pasos de tu capacitación.';
+   const {error:logError}=await sb.rpc('hr_manage_trial_closure',{p_trial:trial.id,p_action:'message_opened',p_payload:{message,decision:mode}});
+   if(logError)throw Error(logError.message);
+   const url='https://wa.me/'+phone+'?text='+encodeURIComponent(message);
+   if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.location.replace(url);
+   else window.location.href=url;
+   modal.remove();
+  }catch(e){
+   if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.close();
+   btn.disabled=false;
+   alert(e.message);
+  }
  };
  modal.querySelector('#trialCloseContinue').onclick=()=>go('continue');
  modal.querySelector('#trialCloseFinish').onclick=()=>go('finish');
