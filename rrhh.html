@@ -2741,8 +2741,12 @@ window.addEventListener('message',event=>{if(event.origin!==location.origin||eve
 function approvedInterviewSummary(iv){
  const icons={Estado:'◉','Fecha de entrevista':'▦',Entrevistador:'♙',Modalidad:'▣',Cierre:'◷'};
  const field=(label,value)=>'<div class="approved-field"><small><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:1.35em;margin-right:5px;color:#ffda03;font-size:1.15em">'+icons[label]+'</span>'+esc(label)+'</small><strong>'+esc(value||'No registrado')+'</strong></div>';
- const status=String(iv?.attendance_status||'').toLowerCase();
- const state=iv?.completed_at?'Realizada':status==='absent'||status==='no_show'?'Ausencia':iv?.interview_date?'Programada':'No registrado';
+ const candidateId=String(iv?.candidate_id||document.getElementById('detail')?.dataset.candidateId||'');
+ const hasSavedInterviewField=answers.some(a=>String(a.candidate_id)===candidateId&&String(a.question_key||'').startsWith('interview_')&&String(a.answer||'').trim()!=='');
+ const hasQuestionnaire=Object.values(iv?.interview_notes||{}).some(v=>v!=null&&String(v).trim()!=='');
+ const candidate=candidates.find(c=>String(c.id)===candidateId);
+ const hasEvaluation=!!String(candidate?.internal_notes||'').trim()||!!String(candidate?.internal_first_impression||'').trim()||!!String(candidate?.internal_role_fit||'').trim();
+ const state=iv?.completed_at||hasSavedInterviewField||hasQuestionnaire||hasEvaluation?'Realizado':'Pendiente';
  const mode=iv?.modality||iv?.interview_modality||iv?.interview_mode||iv?.mode||'No registrada';
  const rows=[field('Estado',state),field('Fecha de entrevista',iv?.interview_date||''),field('Entrevistador',iv?.interviewer||''),field('Modalidad',mode),field('Cierre',iv?.completed_at?new Date(iv.completed_at).toLocaleString('es-ES'):'Pendiente')];
  return '<div class="approved-grid">'+rows.join('')+'</div>';
