@@ -3059,6 +3059,16 @@ observer.observe(document.body,{subtree:true,childList:true,attributes:false});
 window.addEventListener('resize',init);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script></body></html>
+</script>
+<style id="candidate-hero-mobile-four-actions">
+@media(max-width:600px){
+#detail .approved-hero-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;align-self:stretch!important;width:100%!important}
+#detail .approved-hero-actions>.approved-hero-top{grid-column:1/-1!important;grid-row:auto!important}
+#detail .approved-hero-actions>button:not(.approved-hero-close){grid-column:auto!important;grid-row:auto!important;width:100%!important;min-width:0!important;min-height:56px!important;height:100%!important;box-sizing:border-box!important;justify-content:center!important;text-align:center!important;padding:10px 7px!important;font-size:12px!important;line-height:1.25!important;white-space:normal!important}
+#detail .approved-hero-actions>button:last-child{grid-column:2!important}
+#detail .approved-hero-actions .approved-action-icon{flex-shrink:0!important}
+}
+</style>
+</body></html>
 
 
