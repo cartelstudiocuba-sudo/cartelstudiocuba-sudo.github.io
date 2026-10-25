@@ -2725,8 +2725,6 @@ async function openCandidateStageBack(id){
   const arrow=document.createElement('span');arrow.className='candidate-back-icon';arrow.textContent='↶';
   const copy=document.createElement('span');const title=document.createElement('strong');title.textContent=option.title;const desc=document.createElement('small');desc.textContent=option.detail;copy.append(title,desc);button.append(arrow,copy);
   button.onclick=async()=>{
-   const confirmed=confirm('¿Confirmas que deseas '+option.title.toLowerCase()+'? El historial anterior se conservará.');
-   if(!confirmed)return;
    button.disabled=true;
    try{
     const update=option.stage==='pending_agreement'?{stage:'pending_agreement',proposal_sent_at:t.proposal_sent_at||new Date().toISOString(),agreement_sent_at:null,agreement_received_at:null,agreement_accepted_at:null}:{stage:'pending_confirmation',proposal_sent_at:null,agreement_sent_at:null,agreement_received_at:null,agreement_accepted_at:null};
