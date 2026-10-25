@@ -2738,6 +2738,19 @@ async function analyzeCandidateCv(force){
  }catch(err){if(document.getElementById('approvedCvSummary')?.dataset.path===path)document.getElementById('approvedCvSummaryContent').textContent='No fue posible generar el resumen: '+(err.message||'Error desconocido')}
 }
 window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='cartel-interview-completed')return;const id=String(event.data.candidateId);const c=candidates.find(x=>String(x.id)===id),iv=interviews.find(x=>String(x.candidate_id)===id);if(c)Object.assign(c,event.data.candidate);if(iv)Object.assign(iv,event.data.interview);render();if(document.getElementById('detail')?.dataset.candidateId===id)openDetail(id);});
+window.addEventListener('message',async event=>{
+ if(event.origin!==location.origin||event.data?.type!=='cartel-interview-progress-saved')return;
+ const id=String(event.data.candidateId||'');if(!id)return;
+ const [ivResult,answerResult,candidateResult]=await Promise.all([
+  sb.from('hr_interviews').select('*').eq('candidate_id',id).maybeSingle(),
+  sb.from('hr_candidate_answers').select('*').eq('candidate_id',id),
+  sb.from('hr_candidates').select('*').eq('id',id).maybeSingle()
+ ]);
+ if(!ivResult.error&&ivResult.data){interviews=interviews.filter(x=>String(x.candidate_id)!==id);interviews.push(ivResult.data)}
+ if(!answerResult.error){answers=answers.filter(x=>String(x.candidate_id)!==id).concat(answerResult.data||[])}
+ if(!candidateResult.error&&candidateResult.data){const c=candidates.find(x=>String(x.id)===id);if(c)Object.assign(c,candidateResult.data)}
+ if(document.getElementById('detail')?.dataset.candidateId===id)openDetail(id);
+});
 function approvedInterviewSummary(iv){
  const icons={Estado:'◉','Fecha de entrevista':'▦',Entrevistador:'♙',Modalidad:'▣',Cierre:'◷'};
  const field=(label,value)=>'<div class="approved-field"><small><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:1.35em;margin-right:5px;color:#ffda03;font-size:1.15em">'+icons[label]+'</span>'+esc(label)+'</small><strong>'+esc(value||'No registrado')+'</strong></div>';
