@@ -2714,7 +2714,7 @@ return '<section class="candidate-flow" aria-label="Ruta de incorporación"><div
 async function openCandidateStageBack(id){
  const c=candidates.find(x=>String(x.id)===String(id)),t=trialPeriodsByCandidate[String(id)];
  if(!c||!t)return alert('No hay una etapa anterior disponible.');
- const options=c.status==='trial'?[t.stage==='pending_agreement'?{stage:'pending_confirmation',title:'Volver a la propuesta de prueba',detail:'Regresar al paso inmediatamente anterior.'}:{stage:'pending_agreement',title:'Volver al envío del contrato',detail:'Regresar al paso inmediatamente anterior.'}]:c.status==='interviewed'&&t.proposal_sent_at?[{stage:'pending_confirmation',title:'Volver a la propuesta de prueba',detail:'Regresar al paso inmediatamente anterior.'}]:[];
+ const options=c.status==='trial'?[{stage:'pending_agreement',title:'Volver al envío del contrato',detail:'Regresar al paso inmediatamente anterior.'}]:c.status==='interviewed'&&t.proposal_sent_at?[{stage:'pending_confirmation',title:'Volver a la propuesta de prueba',detail:'Regresar al paso inmediatamente anterior.'}]:[];
  if(!options.length)return alert('No hay etapas anteriores disponibles.');
  document.getElementById('candidateBackOverlay')?.remove();
  const overlay=document.createElement('div');overlay.id='candidateBackOverlay';overlay.className='candidate-back-overlay';
