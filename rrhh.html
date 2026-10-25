@@ -2889,13 +2889,13 @@ function openDetail(id,preferredTab){$('detail').dataset.candidateId=String(id);
  if(!detail||String(detail.dataset.candidateId)!==String(candidateId))return;
  let row=answers.find(a=>String(a.candidate_id)===String(candidateId)&&a.question_key==='photo_path');
  if(!row?.answer){
-  const result=await sb.from('hr_candidate_answers').select('id,candidate_id,question_key,answer').eq('candidate_id',candidateId).eq('question_key','photo_path').maybeSingle();
+  const result=await sb.from('hr_candidate_answers').select('id,candidate_id,question_key,answer').eq('candidate_id',candidateId).eq('question_key','photo_path').limit(1);
   if(result.error){console.warn('No se pudo consultar la fotografía',result.error);return}
-  row=result.data;
+  row=result.data?.[0];
   if(row){const existing=answers.find(a=>String(a.id)===String(row.id));if(existing)Object.assign(existing,row);else answers.push(row)}
  }
  const path=String(row?.answer||'').trim();
- if(!path)return;
+ if(!path){console.info('El candidato no tiene photo_path accesible desde RRHH',candidateId);return;}
  const avatar=detail.querySelector('.approved-personal-avatar'),caption=detail.querySelector('.approved-photo-caption');
  if(!avatar)return;
  const {data,error}=await sb.storage.from('hr-candidate-files').createSignedUrl(path,3600);
