@@ -1,0 +1,13 @@
+#roleInterviewDraft{width:min(760px,calc(100% - 32px));max-height:85vh;box-sizing:border-box;border:1px solid #aaa;border-radius:16px;padding:22px;font:inherit;color:#172c40;background:#fff;overflow:auto}
+#roleInterviewDraft::backdrop{background:#0009}
+#roleInterviewDraft fieldset{min-width:0;margin:18px 0;padding:16px;border:1px solid #bbc7d0;border-radius:10px}
+#roleInterviewDraft label{display:block;margin:10px 0;font-size:14px}
+#roleInterviewDraft input:not([type=checkbox]),#roleInterviewDraft select,#roleInterviewDraft textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #8798a7;border-radius:6px;font:inherit}
+#roleInterviewDraft textarea{min-height:85px;resize:vertical}
+#roleInterviewDraft .draft-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#roleInterviewDraft button{font:inherit;border:1px solid #789;border-radius:7px;padding:10px;background:#eef2f6;color:#172c40;cursor:pointer}
+#roleInterviewDraft button:focus-visible{outline:3px solid #987800;outline-offset:2px}
+#roleInterviewDraft button:disabled{opacity:.5;cursor:wait}
+#roleInterviewDraftStatus{overflow-wrap:anywhere}
+.interview-draft-entry{margin-top:20px}
+@media(max-width:600px){#roleInterviewDraft{padding:14px}#roleInterviewDraft h2{font-size:20px}#roleInterviewDraft fieldset{padding:10px}}

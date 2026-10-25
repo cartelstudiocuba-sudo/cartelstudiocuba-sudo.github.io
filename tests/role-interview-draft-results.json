@@ -1,0 +1,40 @@
+[
+  {
+    "width": 390,
+    "passed": true,
+    "cases": [
+      "empty",
+      "validation",
+      "stable IDs",
+      "reorder",
+      "persistence",
+      "five roles",
+      "unrelated content",
+      "stale editor",
+      "concurrent write",
+      "rapid switch",
+      "double save",
+      "error",
+      "mobile overflow"
+    ]
+  },
+  {
+    "width": 1440,
+    "passed": true,
+    "cases": [
+      "empty",
+      "validation",
+      "stable IDs",
+      "reorder",
+      "persistence",
+      "five roles",
+      "unrelated content",
+      "stale editor",
+      "concurrent write",
+      "rapid switch",
+      "double save",
+      "error",
+      "mobile overflow"
+    ]
+  }
+]
