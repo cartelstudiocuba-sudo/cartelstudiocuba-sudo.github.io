@@ -4,11 +4,11 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function questions(iv){return iv?.questionnaire_snapshot?.status==='published' ? iv.questionnaire_snapshot.questions||[] : []}
  function historical(iv){
-  const entries=Object.entries(iv?.interview_notes||{}).filter(([k])=>/^q\\d+(_choice)?$/.test(k));
+  const entries=Object.entries(iv?.interview_notes||{}).filter(([k])=>/^q\d+(_choice)?$/.test(k));
   const legacy=global.InterviewQuestionnaireLegacy||{};
-  const usesFull=entries.some(([key])=>Number(key.match(/^q(\\d+)/)[1])>=5||key.endsWith('_choice'));
+  const usesFull=entries.some(([key])=>Number(key.match(/^q(\d+)/)[1])>=5||key.endsWith('_choice'));
   return entries.map(([key,value])=>{
-   const index=Number(key.match(/^q(\\d+)/)[1]);
+   const index=Number(key.match(/^q(\d+)/)[1]);
    const full=legacy.full?.[index],inline=legacy.inline?.[index];
    const question=usesFull?full?.text:(inline?.[0]||full?.text);
    const help=usesFull?full?.help:'';
