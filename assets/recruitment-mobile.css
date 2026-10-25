@@ -56,6 +56,9 @@
   .agenda-person,.agenda-state{min-width:0;overflow-wrap:anywhere;white-space:normal}
   .recruitment-nav-grid>.recruitment-history-card{grid-column:auto!important}
   .recruitment-nav-card,.recruitment-history-card{min-width:0;overflow-wrap:anywhere}
+  .recruitment-nav-copy b,.definition-nav-copy b{font-size:14px;line-height:1.35}
+  .recruitment-nav-copy small,.definition-nav-copy small{font-size:12px;line-height:1.4}
+  .recruitment-nav-copy em,.definition-nav-copy em{font-size:10px;line-height:1.4}
   .section-head:where(:not(.training-fixed-canvas):not(.training-fixed-canvas *)),.wc-head:where(:not(.training-fixed-canvas):not(.training-fixed-canvas *)){flex-wrap:wrap}
   .form-edit-main{min-width:0}
   .question-order-btn{width:44px!important;height:44px!important}
@@ -66,5 +69,8 @@
   #roleInterviewDraft .iq-option-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
   #roleInterviewDraft .iq-option-row input{grid-column:1/-1}
   #roleInterviewDraft .draft-actions{display:grid!important;grid-template-columns:1fr!important}
+}
+@media screen and (max-width:400px){
+  #roleInterviewDraft .iq-list-controls{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media screen and (min-width:701px) and (max-width:760px){.recruitment-nav-grid>.recruitment-history-card{grid-column:auto}}
