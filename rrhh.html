@@ -2689,7 +2689,7 @@ const labels={new:'Revisión inicial',preselected:'Confirmar disponibilidad y co
 const actions={new:'<button type="button" class="candidate-flow-action" onclick="openInitialDecision(\''+x.id+'\')">Tomar decisión →</button>',preselected:x.interview_availability_confirmed_at?'':'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'schedule\')">Confirmar disponibilidad →</button>',interview_scheduled:'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'attendance\')">Gestionar entrevista →</button>',interviewed:needsDocuments?'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'documentation\')">Enviar contrato →</button>':'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'trial\')">Confirmar disponibilidad →</button>',trial:needsDocuments?'<button type="button" class="candidate-flow-action" onclick="approvedJump(\''+x.id+'\',\'documentation\')">Enviar documentación →</button>':'<button type="button" class="candidate-flow-action" onclick="location.href=\'/periodo-prueba.html?embedded=1\'">Abrir período de prueba →</button>',hired:'<button type="button" class="candidate-flow-action" onclick="location.href=\'/contratados.html\'">Ver contratados →</button>'};
 if(st==='trial'&&trialStage==='agreement_sent'){
  labels.trial='Acuerdo de prueba enviado';
- actions.trial='<button type="button" class="candidate-flow-action" onclick="location.href=\'/periodo-prueba.html?embedded=1\'">Registrar recepción del acuerdo →</button>';
+ actions.trial='<button type="button" class="candidate-flow-action" onclick="registerTrialAgreementReceived(\''+x.id+'\')">Registrar recepción del acuerdo →</button>';
 }
 if(st==='trial'&&trialStage==='agreement_accepted'){
  labels.trial='Acuerdo firmado recibido';
@@ -2701,6 +2701,18 @@ if(st==='trial'&&['in_trial','evaluation_pending'].includes(trialStage)){
 }
 const help=st==='new'?'Revisa los datos de la candidatura y elige: preseleccionar, cantera, otra plaza o no seleccionar.':st==='preselected'?'Confirma la disponibilidad antes de coordinar la entrevista.':st==='interviewed'&&!needsDocuments?'Envía una propuesta de fechas y condiciones para consultar su disponibilidad e interés.':needsDocuments?'El siguiente paso es preparar el contrato de período de prueba.':'Las acciones disponibles dependen de la etapa actual.';
 return '<section class="candidate-flow" aria-label="Ruta de incorporación"><div class="candidate-flow-title">Ruta de incorporación</div><div class="candidate-flow-sub">Sigue el proceso de esta candidatura sin perder su historial.</div><div class="candidate-flow-steps">'+steps.map((label,i)=>'<div class="candidate-flow-step '+(phase>=0&&i<phase?'done':i===phase?'current':'')+'"><span class="route-icon">'+routeSvg(routeIcons[i])+'</span><span class="route-step-text"><b>'+(phase>=0&&i<phase?'✓':'0'+(i+1))+'</b><span>'+label+'</span></span></div>').join('')+'</div><div class="candidate-flow-next"><span class="route-next-icon">'+routeSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M9 10h6m-6 4h6m-6 4h4"/>')+'</span><div><strong>'+esc(labels[st]||'Consultar situación actual')+'</strong><small>'+esc(help)+'</small></div>'+(actions[st]||'')+'</div></section>';
+}
+async function registerTrialAgreementReceived(candidateId){
+ const trial=trialPeriodsByCandidate[String(candidateId)];
+ if(!trial||trial.stage!=='agreement_sent')return alert('No se encontró un acuerdo pendiente de recepción.');
+ if(!confirm('¿Confirmas que recibiste el contrato de período de prueba impreso y firmado?'))return;
+ const now=new Date().toISOString();
+ const {data,error}=await sb.from('hr_trial_periods').update({stage:'agreement_accepted',agreement_received_at:now,agreement_accepted_at:now,updated_at:now}).eq('id',trial.id).eq('stage','agreement_sent').select('id').maybeSingle();
+ if(error||!data)return alert(error?.message||'No se pudo registrar la recepción. Actualiza la ficha y comprueba su estado.');
+ trialPeriodsByCandidate[String(candidateId)]={...trial,stage:'agreement_accepted',agreement_received_at:now,agreement_accepted_at:now};
+ const candidate=candidates.find(x=>String(x.id)===String(candidateId));
+ if(candidate){const route=document.querySelector('.candidate-flow');if(route)route.outerHTML=candidateGuidedFlow(candidate)}
+ alert('Acuerdo firmado recibido. El siguiente paso es iniciar el período de prueba.');
 }
 function openInitialDecision(id){
  const x=candidates.find(c=>c.id===id);if(!x||x.status!=='new')return alert('Esta candidatura ya no está en revisión inicial.');
