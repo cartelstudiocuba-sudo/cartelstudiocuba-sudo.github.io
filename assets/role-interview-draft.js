@@ -88,7 +88,7 @@
     read();
     const q = editor.questions[editingIndex];
     if (q.options.length >= 30) return alert('Máximo 30 opciones.');
-    q.options.push('');
+    q.options.push('Nueva opción '+(q.options.length+1));
     render();
     document.querySelector('#roleInterviewDraft [data-option-index="'+(q.options.length-1)+'"]')?.focus();
   };
