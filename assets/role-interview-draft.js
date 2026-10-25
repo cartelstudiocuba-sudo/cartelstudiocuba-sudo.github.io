@@ -3,6 +3,7 @@
   'use strict';
   const KEY = 'interview_questionnaire_draft';
   let editor = null;
+  let editingIndex = null;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const copy = value => JSON.parse(JSON.stringify(value));
   const canonical = value => JSON.stringify(value, function (key, item) {
@@ -43,34 +44,63 @@
       dialog.addEventListener('cancel', event => { event.preventDefault(); closeRoleInterviewDraft(); });
       document.body.appendChild(dialog);
     }
+    editingIndex = null;
     render(); dialog.showModal();
   };
 
   function read() {
-    editor.questions = [...document.querySelectorAll('#roleInterviewDraft [data-question-id]')].map(row => ({
-      id:row.dataset.questionId, section:row.querySelector('[name=section]').value,
-      text:row.querySelector('[name=text]').value, help:row.querySelector('[name=help]').value,
-      type:row.querySelector('[name=type]').value, required:row.querySelector('[name=required]').checked,
-      options:row.querySelector('[name=options]').value.split('\n').map(x => x.trim()).filter(Boolean)
-    }));
+    if (!editor) return;
+    const row = document.querySelector('#roleInterviewDraft [data-edit-index]');
+    if (!row) return;
+    const index = Number(row.dataset.editIndex);
+    if (!Number.isInteger(index) || !editor.questions[index]) return;
+    editor.questions[index] = {
+      ...editor.questions[index],
+      section:row.querySelector('[name=section]').value,
+      text:row.querySelector('[name=text]').value,
+      help:row.querySelector('[name=help]').value,
+      type:row.querySelector('[name=type]').value,
+      required:row.querySelector('[name=required]').checked,
+      options:row.querySelector('[name=options]').value.split('\\n').map(x=>x.trim()).filter(Boolean)
+    };
   }
 
   function render() {
     const dialog = document.getElementById('roleInterviewDraft');
-    dialog.innerHTML = '<h2>Borrador de entrevista · '+escape(role.title)+'</h2><p>Revisa la propuesta y adapta las preguntas. Guardar no publica ni activa el borrador.</p><div id="roleInterviewDraftRows">'+editor.questions.map((q,i) => '<fieldset data-question-id="'+escape(q.id)+'"><legend>Pregunta '+(i+1)+'</legend><label>Sección<input name="section" maxlength="200" value="'+escape(q.section)+'"></label><label>Pregunta<textarea name="text" maxlength="4000">'+escape(q.text)+'</textarea></label><label>Orientación para quien entrevista<textarea name="help" maxlength="4000">'+escape(q.help)+'</textarea></label><label>Respuesta<select name="type"><option value="text" '+(q.type==='text'?'selected':'')+'>Texto libre</option><option value="select" '+(q.type==='select'?'selected':'')+'>Una opción</option></select></label><label>Opciones (una por línea; solo para respuesta de una opción)<textarea name="options">'+escape(q.options.join('\n'))+'</textarea></label><label><input name="required" type="checkbox" '+(q.required?'checked':'')+'> Obligatoria al activar el cuestionario</label><div class="draft-actions"><button type="button" onclick="changeRoleInterviewDraft('+i+',-1)" '+(i===0?'disabled':'')+'>Subir</button><button type="button" onclick="changeRoleInterviewDraft('+i+',1)" '+(i===editor.questions.length-1?'disabled':'')+'>Bajar</button><button type="button" onclick="changeRoleInterviewDraft('+i+',0)">Eliminar pregunta</button></div></fieldset>').join('')+'</div><p id="roleInterviewDraftStatus" role="status"></p><div class="draft-actions"><button type="button" onclick="addRoleInterviewDraftQuestion()">Añadir pregunta</button><button type="button" onclick="saveRoleInterviewDraft()">Guardar borrador</button><button type="button" onclick="publishRoleInterviewDraft()">Aprobar y publicar</button><button type="button" onclick="closeRoleInterviewDraft()">Cerrar</button></div>';
+    const rows = editor.questions.map((q,i) => {
+      const open = editingIndex === i;
+      return '<div class="iq-list-item"><div class="iq-list-row"><span class="iq-number">'+(i+1)+'</span><div class="iq-list-copy"><b>'+escape(q.text.trim()||'Nueva pregunta sin título')+'</b><small>'+escape(q.section||'Sin sección')+' · '+(q.type==='select'?'Selección':'Texto libre')+' · '+(q.required?'Obligatoria':'Opcional')+'</small></div><div class="iq-list-controls"><button type="button" onclick="changeRoleInterviewDraft('+i+',-1)" aria-label="Subir pregunta '+(i+1)+'" title="Subir" '+(i===0?'disabled':'')+'>↑</button><button type="button" onclick="changeRoleInterviewDraft('+i+',1)" aria-label="Bajar pregunta '+(i+1)+'" title="Bajar" '+(i===editor.questions.length-1?'disabled':'')+'>↓</button><button type="button" onclick="editRoleInterviewDraftQuestion('+i+')">'+(open?'Cerrar edición':'Editar')+'</button><button type="button" class="iq-delete" onclick="deleteRoleInterviewDraftQuestion('+i+')">Eliminar</button></div></div>'+(open?'<fieldset data-edit-index="'+i+'"><legend>Editar pregunta '+(i+1)+'</legend><label>Sección<input name="section" maxlength="200" value="'+escape(q.section)+'"></label><label>Pregunta<textarea name="text" maxlength="4000">'+escape(q.text)+'</textarea></label><label>Orientación para quien entrevista<textarea name="help" maxlength="4000">'+escape(q.help)+'</textarea></label><label>Respuesta<select name="type"><option value="text" '+(q.type==='text'?'selected':'')+'>Texto libre</option><option value="select" '+(q.type==='select'?'selected':'')+'>Una opción</option></select></label><label>Opciones (una por línea, para selección)<textarea name="options">'+escape(q.options.join('\\n'))+'</textarea></label><label><input name="required" type="checkbox" '+(q.required?'checked':'')+'> Obligatoria</label><button type="button" onclick="editRoleInterviewDraftQuestion('+i+')">Terminar edición</button></fieldset>':'')+'</div>';
+    }).join('');
+    dialog.innerHTML = '<style>#roleInterviewDraft{width:min(960px,96vw);max-height:90vh;overflow:auto;border:1px solid #e6e6e0;border-radius:18px;padding:22px}#roleInterviewDraft .iq-list-item{border:1px solid #e5e5e1;border-radius:13px;margin:8px 0;overflow:hidden;background:#fff}#roleInterviewDraft .iq-list-row{display:flex;align-items:center;gap:12px;padding:12px}#roleInterviewDraft .iq-number{flex:0 0 32px;height:32px;display:grid;place-items:center;border-radius:10px;background:#fff3bb;font-weight:800}#roleInterviewDraft .iq-list-copy{flex:1;min-width:0;overflow-wrap:anywhere}#roleInterviewDraft .iq-list-copy b{display:block;font-size:13px}#roleInterviewDraft .iq-list-copy small{display:block;color:#777;margin-top:4px}#roleInterviewDraft .iq-list-controls{display:flex;gap:5px;flex-wrap:wrap}#roleInterviewDraft .iq-list-controls button{border:1px solid #deded9;border-radius:8px;padding:7px 9px;background:#fafaf8;cursor:pointer}#roleInterviewDraft .iq-list-controls .iq-delete{color:#b33}#roleInterviewDraft fieldset{margin:0 12px 12px;padding:12px;border:1px solid #eee;border-radius:10px}#roleInterviewDraft fieldset label{display:block;margin:9px 0}#roleInterviewDraft fieldset textarea,#roleInterviewDraft fieldset input:not([type=checkbox]),#roleInterviewDraft fieldset select{display:block;width:100%;box-sizing:border-box;margin-top:5px}#roleInterviewDraft .draft-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}@media(max-width:700px){#roleInterviewDraft .iq-list-row{flex-wrap:wrap}#roleInterviewDraft .iq-list-controls{width:100%;justify-content:flex-end}}</style><h2>Borrador de entrevista · '+escape(role.title)+'</h2><p>Una pregunta por fila. Ordena, edita o elimina individualmente. Guardar no publica.</p><div id="roleInterviewDraftRows">'+(rows||'<p>No hay preguntas. Puedes añadir la primera.</p>')+'</div><p id="roleInterviewDraftStatus" role="status"></p><div class="draft-actions"><button type="button" onclick="addRoleInterviewDraftQuestion()">Añadir pregunta</button><button type="button" onclick="saveRoleInterviewDraft()">Guardar borrador</button><button type="button" onclick="publishRoleInterviewDraft()">Aprobar y publicar</button><button type="button" onclick="closeRoleInterviewDraft()">Cerrar</button></div>';
   }
 
+  window.editRoleInterviewDraftQuestion = function(index) {
+    if (!editor || editor.saving) return;
+    read();
+    editingIndex = editingIndex === index ? null : index;
+    render();
+    if (editingIndex !== null) document.querySelector('#roleInterviewDraft [data-edit-index] [name=text]')?.focus();
+  };
+  window.deleteRoleInterviewDraftQuestion = function(index) {
+    if (!editor || editor.saving || !confirm('¿Eliminar esta pregunta del borrador?')) return;
+    read();
+    editor.questions.splice(index,1);
+    editingIndex = null;
+    render();
+  };
   window.addRoleInterviewDraftQuestion = function () {
     if (!editor || editor.saving) return;
     read(); if (editor.questions.length >= 100) return alert('El borrador admite hasta 100 preguntas.');
     editor.questions.push({id:'iq_'+crypto.randomUUID(), section:'',text:'',help:'',type:'text',required:true,options:[]});
-    render(); document.querySelector('#roleInterviewDraft fieldset:last-child [name=text]').focus();
+    editingIndex = editor.questions.length-1;
+    render(); document.querySelector('#roleInterviewDraft [data-edit-index] [name=text]')?.focus();
   };
   window.changeRoleInterviewDraft = function (index, delta) {
     if (!editor || editor.saving) return;
     read();
     if (!delta) editor.questions.splice(index,1);
     else if (index+delta>=0 && index+delta<editor.questions.length) [editor.questions[index],editor.questions[index+delta]]=[editor.questions[index+delta],editor.questions[index]];
+    editingIndex = null;
     render();
   };
   window.closeRoleInterviewDraft = function () {
