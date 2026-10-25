@@ -2732,7 +2732,12 @@ async function openCandidateStageBack(id){
     if(error||!data)throw Error(error?.message||'No se pudo actualizar el período de prueba.');
     const {data:person,error:personError}=await sb.from('hr_candidates').update({status:'interviewed',decision_status:'consider'}).eq('id',id).select('id').maybeSingle();
     if(personError||!person)throw Error(personError?.message||'No se pudo actualizar la candidatura. Actualiza la ficha.');
-    location.reload();
+    trialPeriodsByCandidate[String(id)]={...t,...update};
+    c.status='interviewed';c.decision_status='consider';
+    overlay.remove();
+    const scrollY=window.scrollY;
+    openDetail(id);
+    window.scrollTo(0,scrollY);
    }catch(e){button.disabled=false;alert(e.message)}
   };
   dialog.appendChild(button);
