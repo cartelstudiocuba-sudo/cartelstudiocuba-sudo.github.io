@@ -468,10 +468,7 @@ function syncInterviewCompletion(){
  if(!status){status=document.createElement('p');status.id='closureRequirements';status.setAttribute('role','status');host.querySelector('.interview-quick-body').append(status)}
  const missing=interviewCompletionMissing();
  status.textContent=iv?.completed_at?'Realizada · Cierre: '+new Date(iv.completed_at).toLocaleString('es-ES'):missing.length?'Para completar la entrevista: '+missing.join(' · '):'Requisitos completos. Elige una acción para finalizar la entrevista.';
- let absence=document.getElementById('interviewAbsence');
- if(!absence){absence=document.createElement('button');absence.type='button';absence.id='interviewAbsence';absence.className='btn dark no-print';absence.onclick=toggleInterviewAbsence;document.querySelector('.interview-brief').append(absence)}
- absence.hidden=!!iv?.completed_at;absence.disabled=interviewDecisionSaving;
- absence.textContent=iv?.attendance_status==='absent'?'Restablecer programada':'Registrar ausencia';
+ document.getElementById('interviewAbsence')?.remove();
  syncInterviewQuickActions();
 }
 async function toggleInterviewAbsence(){const iv=interviews.find(v=>String(v.candidate_id)===String(current?.id));if(!iv||iv.completed_at||interviewDecisionSaving)return;interviewDecisionSaving=true;syncInterviewCompletion();try{const {data,error}=await sb.from('hr_interviews').update({attendance_status:iv.attendance_status==='absent'?'pending':'absent',updated_at:new Date().toISOString()}).eq('id',iv.id).select().single();if(error)throw error;Object.assign(iv,data);renderList()}catch(error){alert('No se pudo actualizar la asistencia: '+error.message)}finally{interviewDecisionSaving=false;syncInterviewCompletion()}}
