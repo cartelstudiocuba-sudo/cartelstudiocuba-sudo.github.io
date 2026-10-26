@@ -2928,17 +2928,9 @@ async function openTrialClosureDecision(candidateId){
    }
    preserveCandidateSheet(candidateId);
    // Keep the candidate sheet mounted on iOS/PWA; never replace the app with wa.me.
-   const opened=window.open(url,'_blank','noopener,noreferrer');
+   // iOS/Safari can return null for a successful noopener launch; never treat it as a blocked popup.
+   window.open(url,'_blank','noopener,noreferrer');
    modal.remove();
-   if(!opened){
-    const notice=document.createElement('div');notice.className='candidate-back-overlay';notice.id='trialWhatsAppFallback';
-    const dialog=document.createElement('div');dialog.className='candidate-back-dialog';
-    dialog.innerHTML='<h3>Mensaje preparado</h3><p>El navegador bloqueó la apertura automática de WhatsApp. Abre el enlace para continuar; tu ficha permanecerá disponible.</p>';
-    const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir WhatsApp ↗';link.style.cssText='display:block;text-align:center;background:#25d366;color:#102018;padding:15px;border-radius:14px;font-weight:700;margin:18px 0';
-    const close=document.createElement('button');close.type='button';close.className='candidate-back-cancel';close.textContent='Regresar a la ficha';close.onclick=()=>notice.remove();
-    link.addEventListener('click',()=>{notice.remove()});
-    dialog.append(link,close);notice.append(dialog);document.body.append(notice);
-   }
   }catch(e){
    btn.disabled=false;
    alert(e.message);
