@@ -2983,7 +2983,18 @@ async function openTrialFinishReceipt(id){
   const p=data.payload;content.textContent='';
   const status=document.createElement('div');status.className='trial-receipt-status';const label=document.createElement('span');label.textContent='Destino confirmado';const destination=document.createElement('strong');destination.textContent=({talent_pool:'Cantera',profiled:'Perfilado para otra plaza · Original archivada',not_selected:'No seleccionado'})[p.outcome]||'Destino guardado';status.append(label,destination);body.insertBefore(status,info);
   const tools=document.createElement('div');tools.className='trial-receipt-tools';const caption=document.createElement('label');caption.htmlFor='trialReceiptMessage';caption.textContent='Mensaje para el candidato';tools.append(caption);content.append(tools);
-  const message=document.createElement('textarea');message.id='trialReceiptMessage';message.readOnly=true;message.setAttribute('aria-label','Mensaje preparado');message.value=typeof p.message==='string'?p.message:'';content.append(message);
+  const message=document.createElement('textarea');message.id='trialReceiptMessage';message.readOnly=true;message.setAttribute('aria-label','Mensaje preparado');message.value=typeof p.message==='string'?p.message:'';
+  // Presentación actualizada del mensaje de cierre: conservar el enlace firmado original.
+  if(message.value){
+   const original=message.value;
+   const candidateName=(original.match(/(?:^|\\n)Hola[, ]+([^\\n,!.]+)/i)||[])[1]?.trim()||'CANDIDATO';
+   const role=(original.match(/(?:plaza de|plaza del|plaza)\\s+\\*?([^\\n*]+?)\\*?\\s+en\\s+\\*?El Cartel Studio/i)||[])[1]?.trim()||t.role_title||'la plaza correspondiente';
+   const documentUrl=(original.match(/https?:\\/\\/[^\\s<>]+/i)||[])[0];
+   if(documentUrl){
+    message.value='Hola, '+candidateName+'.\\n\\nQueremos agradecerte el tiempo, la dedicación y la disposición que mostraste durante esta etapa.\\n\\nHemos concluido tu período de prueba para la plaza de '+role+' en El Cartel Studio.\\n\\nPara completar el proceso, te solicitamos descargar el Acta de Cierre del Período de Prueba, imprimirla, completar los datos correspondientes y firmarla. Una vez lista, deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.\\n\\n📄 Descargar Acta de Cierre:\\n'+documentUrl+'\\n\\nUna vez concluida la evaluación correspondiente, en caso de ser seleccionado para incorporarte formalmente a nuestra empresa, te lo notificaremos por esta misma vía, junto con los próximos pasos del proceso de contratación.';
+   }
+  }
+  content.append(message);
   const feedback=document.createElement('p');feedback.className='trial-receipt-feedback';feedback.setAttribute('role','status');content.append(feedback);
   const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar';tools.append(copy);copy.onclick=async()=>{try{await navigator.clipboard.writeText(message.value);feedback.textContent='Mensaje copiado'}catch(_){message.focus();message.select();feedback.textContent='Selecciona y copia el mensaje desde el campo.'}};
   const edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.setAttribute('aria-pressed','false');tools.append(edit);edit.onclick=()=>{message.readOnly=!message.readOnly;edit.textContent=message.readOnly?'Editar':'Listo';edit.setAttribute('aria-pressed',String(!message.readOnly));feedback.textContent=message.readOnly?'Mensaje preparado para abrir en WhatsApp.':'Edita el texto para WhatsApp. El cierre guardado no cambia.';if(!message.readOnly)message.focus()};
