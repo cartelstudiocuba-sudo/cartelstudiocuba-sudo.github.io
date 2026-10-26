@@ -3105,10 +3105,11 @@ async function openTrialFinishReceipt(id){
   const rawPhone=digits(p.phone||candidate?.whatsapp||candidate?.phone||candidate?.telefono);
   const phone=rawPhone.length===8?'53'+rawPhone:rawPhone;
   const a=document.createElement('a');a.className='trial-receipt-whatsapp';a.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.2A8 8 0 1 1 20 11.5Z"/><path d="M9 8c0 4 3 7 7 7l1-2-3-1-1 1-2-2 1-1-1-3Z"/></svg><span>Abrir WhatsApp</span>';
-  const updateLink=()=>{const text=encodeURIComponent(message.value);a.href=phone.length>=10&&phone.length<=15?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
+  const updateLink=()=>{const text=encodeURIComponent(message.value);const valid=phone.length>=10&&phone.length<=15;a.href='whatsapp://send?'+(valid?'phone='+phone+'&':'')+'text='+text;webLink.href=valid?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
+  const webLink=document.createElement('a');webLink.className='trial-receipt-return';webLink.textContent='Abrir WhatsApp en navegador';webLink.target='_blank';webLink.rel='noopener noreferrer';
   updateLink();message.addEventListener('input',updateLink);a.target='_self';
-  a.addEventListener('click',event=>{event.preventDefault();updateLink();const url=a.href;feedback.textContent='Abriendo WhatsApp con el mensaje preparado…';window.location.assign(url);});
-  actions.prepend(a);
+  a.addEventListener('click',()=>{updateLink();feedback.textContent='Si WhatsApp no se abre, utiliza la opción «Abrir WhatsApp en navegador». La ficha permanecerá disponible.';});
+  actions.prepend(a,webLink);
   if(p.new_candidate_id){const link=document.createElement('a');link.textContent='Ver nueva candidatura →';link.className='trial-receipt-linked';link.href='/rrhh.html?embedded=1&candidate='+encodeURIComponent(p.new_candidate_id);content.append(link)}
  }catch(e){content.textContent=e.message+' Puedes volver a consultar el cierre desde esta ficha.'}
  close.focus();
