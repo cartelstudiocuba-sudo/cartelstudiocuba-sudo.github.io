@@ -78,7 +78,7 @@ async function initClosurePublic(documentMode){
     content=content.replace(/Cantidad\s*\|\s*Medio\s*\/\s*recurso[\s\S]*?(?=Cualquier incidencia)/i,'');
    }
    if(b.id==='tcl10'){
-    content=content.replace(/Resumen de asuntos pendientes u observaciones:[^]*/i,()=> 'Resumen de asuntos pendientes u observaciones:\\n'+(data.representative?.observations||'Sin asuntos pendientes declarados.'));
+    content=content.replace(/Resumen de asuntos pendientes u observaciones:[^]*/i,()=> 'Resumen de asuntos pendientes u observaciones:\\n'+(data.representative?.observations||'Sin asuntos pendientes ni excepciones declaradas.'));
    }
    if(b.id==='tcl11'){
     const declaration=content.split('PERSONA EVALUADA')[0].trim()||'Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.';
