@@ -66,7 +66,7 @@ async function initClosurePublic(documentMode){
   if(!template||template.key!=='trial_close'||!Array.isArray(template.blocks))throw Error('Esta acta fue creada con un formato anterior. Solicita a RR. HH. que verifique la plantilla de la plaza antes de enviarla.');
   const lines=v=>closureEsc(v).replace(/\\n|\n/g,'<br>');
   let clause=0; const ordinals=['PRIMERA','SEGUNDA','TERCERA','CUARTA','QUINTA','SEXTA','SÉPTIMA','OCTAVA','NOVENA'];
-  const blocks=template.blocks.filter(b=>b.included!==false).map(b=>{
+  const blocks=template.blocks.filter(b=>b.included!==false&&b.id!=='tcl10').map(b=>{
    let content=b.use_override&&b.override_text?b.override_text:b.text||'';
    // The evaluated person's identifying details are always completed by hand.
    if(b.id==='tcl2')content='Nombre y apellidos: ________________________________________________\\nCarné de Identidad: ________________________________________________';
@@ -76,9 +76,6 @@ async function initClosurePublic(documentMode){
    }
    if(b.id==='tcl7'){
     content=content.replace(/Cantidad\s*\|\s*Medio\s*\/\s*recurso[\s\S]*?(?=Cualquier incidencia)/i,'');
-   }
-   if(b.id==='tcl10'){
-    content=content.replace(/Resumen de asuntos pendientes u observaciones:[^]*/i,()=> 'Resumen de asuntos pendientes u observaciones:\\n'+(data.representative?.observations||'Sin asuntos pendientes ni excepciones declaradas.'));
    }
    if(b.id==='tcl11'){
     const declaration=content.split('PERSONA EVALUADA')[0].trim()||'Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.';
@@ -93,7 +90,7 @@ async function initClosurePublic(documentMode){
   }).join('');
   root.innerHTML='<div class="act-toolbar"><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button><button id="actClose" type="button">✕ Cerrar</button></div><article id="actDocument" class="act-document"><header><div class="act-logo" style="text-align:'+( ['left','center','right'].includes(template.presentation?.logo_align)?template.presentation.logo_align:'right')+'"><img id="actLogo" src="/assets/cartel-studio-lettering-black.svg" alt="El Cartel Studio" style="width:'+Math.round(74*Math.max(50,Math.min(180,Number(template.presentation?.logo_size)||100))/100)+'px"></div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc('En La Habana, a '+new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Havana'}).format(new Date()).replace(/ de (\d{4})$/,' de $1')+'.')+'</p></header>'+blocks+'</article>';
   if(template.presentation?.logo_path){const assetClient=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false},global:{headers:{'x-closure-token':token}}});const {data:logo}=await assetClient.storage.from('hr-role-documents').createSignedUrl(template.presentation.logo_path,3600);if(logo?.signedUrl)document.getElementById('actLogo').src=logo.signedUrl;}
-  document.getElementById('actClose').onclick=()=>{if(window.opener&&!window.opener.closed){window.close();return;}if(history.length>1){history.back();return;}window.location.replace('/');};
+  document.getElementById('actClose').onclick=()=>{window.close();setTimeout(()=>{if(!window.closed){const toolbar=document.querySelector('.act-toolbar');if(toolbar)toolbar.remove();root.innerHTML='<p style="text-align:center;padding:40px 16px">Documento cerrado. Ya puedes cerrar esta pestaña y regresar a la ficha del candidato.</p>'; }},150);};
   document.getElementById('actPrint').onclick=()=>window.print();
   document.getElementById('actDownload').onclick=()=>{alert('Para guardar el acta en PDF, selecciona «Guardar como PDF» en la ventana de impresión.');window.print()};
   return;
