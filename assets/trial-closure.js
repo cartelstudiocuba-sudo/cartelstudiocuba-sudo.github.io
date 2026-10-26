@@ -66,7 +66,7 @@ async function initClosurePublic(documentMode){
   if(!template||template.key!=='trial_close'||!Array.isArray(template.blocks))throw Error('Esta acta fue creada con un formato anterior. Solicita a RR. HH. que verifique la plantilla de la plaza antes de enviarla.');
   const lines=v=>closureEsc(v).replace(/\\n|\n/g,'<br>');
   let clause=0; const ordinals=['PRIMERA','SEGUNDA','TERCERA','CUARTA','QUINTA','SEXTA','SÉPTIMA','OCTAVA','NOVENA'];
-  const blocks=template.blocks.filter(b=>b.included!==false&&b.id!=='tcl10').map(b=>{
+  const blocks=template.blocks.filter(b=>b.included!==false).map(b=>{
    let content=b.use_override&&b.override_text?b.override_text:b.text||'';
    // The evaluated person's identifying details are always completed by hand.
    if(b.id==='tcl2')content='Nombre y apellidos: ________________________________________________\\nCarné de Identidad: ________________________________________________';
@@ -77,6 +77,7 @@ async function initClosurePublic(documentMode){
    if(b.id==='tcl7'){
     content=content.replace(/Cantidad\s*\|\s*Medio\s*\/\s*recurso[\s\S]*?(?=Cualquier incidencia)/i,'');
    }
+   if(b.id==='tcl10'){content=content.replace(/Resumen de asuntos pendientes u observaciones:\s*(?:Ninguna|Sin asuntos pendientes ni excepciones declaradas\.)?/gi,'').trim();}
    if(b.id==='tcl11'){
     const declaration=content.split('PERSONA EVALUADA')[0].trim()||'Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.';
     content=declaration+'\\n\\nPERSONA EVALUADA\\nNombre: ________________________________________________\\nCarné de Identidad: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________\\n\\nPOR EL CARTEL STUDIO\\nNombre: '+(data.representative?.name||'________________________________')+'\\nCarné de Identidad: '+(data.representative?.ci||'________________________')+'\\nCargo: '+(data.representative?.position||'______________________________')+'\\nFirma: ______________________________\\nFecha: ____ / ____ / ________';
@@ -88,15 +89,7 @@ async function initClosurePublic(documentMode){
    const heading=preamble?'':(ordinals[clause++]||'CLÁUSULA '+clause)+' – '+(b.heading_title_override||b.title);
    return (b.id==='tcl3'?'<p>'+lines(template.agreement_text||'')+'</p>':'')+'<section class="act-section">'+(heading?'<h2>'+closureEsc(heading)+'</h2>':'')+'<p>'+lines(content)+'</p></section>';
   }).join('');
-  root.innerHTML='<div class="act-toolbar"><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button><button id="actClose" type="button">✕ Cerrar</button></div><article id="actDocument" class="act-document"><header><div class="act-logo" style="text-align:'+( ['left','center','right'].includes(template.presentation?.logo_align)?template.presentation.logo_align:'right')+'"><img id="actLogo" src="/assets/cartel-studio-lettering-black.svg" alt="El Cartel Studio" style="width:'+Math.round(74*Math.max(50,Math.min(180,Number(template.presentation?.logo_size)||100))/100)+'px"></div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc('En La Habana, a '+new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Havana'}).format(new Date()).replace(/ de (\d{4})$/,' de $1')+'.')+'</p></header>'+blocks+'</article>';
-  // Bind controls before optional logo loading, so storage/network failures cannot disable Cerrar.
-  document.getElementById('actClose').onclick=()=>{
-   if(data.candidate_id){location.replace('/rrhh.html?embedded=1&candidate='+encodeURIComponent(data.candidate_id));return;}
-   // Legacy data without a candidate can only return to an explicit, same-origin candidate sheet.
-   try{const ref=new URL(document.referrer);if(ref.origin===location.origin&&ref.pathname==='/rrhh.html'&&ref.searchParams.has('candidate')){location.replace(ref.pathname+ref.search);return;}}catch(_){}
-   window.close();
-   setTimeout(()=>{if(!window.closed)root.innerHTML='<p>Documento cerrado. Puedes cerrar esta pestaña.</p>';},150);
-  };
+  root.innerHTML='<div class="act-toolbar"><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button></div><article id="actDocument" class="act-document"><header><div class="act-logo" style="text-align:'+( ['left','center','right'].includes(template.presentation?.logo_align)?template.presentation.logo_align:'right')+'"><img id="actLogo" src="/assets/cartel-studio-lettering-black.svg" alt="El Cartel Studio" style="width:'+Math.round(74*Math.max(50,Math.min(180,Number(template.presentation?.logo_size)||100))/100)+'px"></div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc('En La Habana, a '+new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Havana'}).format(new Date()).replace(/ de (\d{4})$/,' de $1')+'.')+'</p></header>'+blocks+'</article>';
   document.getElementById('actPrint').onclick=()=>window.print();
   document.getElementById('actDownload').onclick=()=>{alert('Para guardar el acta en PDF, selecciona «Guardar como PDF» en la ventana de impresión.');window.print()};
   if(template.presentation?.logo_path){try{const assetClient=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false},global:{headers:{'x-closure-token':token}}});const {data:logo}=await assetClient.storage.from('hr-role-documents').createSignedUrl(template.presentation.logo_path,3600);if(logo?.signedUrl)document.getElementById('actLogo').src=logo.signedUrl;}catch(e){console.warn('Se conserva el logotipo predeterminado.');}}
