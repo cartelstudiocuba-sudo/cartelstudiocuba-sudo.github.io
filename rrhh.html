@@ -2989,10 +2989,11 @@ async function openTrialFinishDestination(id,initial=''){
   if(!repStep){
    repStep=true;repForm.hidden=false;choices.style.display='none';vacancy.hidden=true;dialog.scrollTop=0;
    dialog.querySelector('.trial-finish-note').textContent='Completa los datos del representante para preparar el acta de cierre del período de prueba.';
-   let saved={};try{saved=JSON.parse(localStorage.getItem('cartel_trial_representative')||'{}')}catch(_){}
-   const {data:existing}=await sb.from('hr_trial_closures').select('document').eq('trial_id',trial.id).maybeSingle();const existingRep=existing?.document?.representative||{};saved={...saved,...Object.fromEntries(Object.entries(existingRep).filter(([,v])=>v!==null&&v!==undefined&&v!==''))};
    const defaults={name:'Julio Guillermo Martínez Travieso',ci:'90112703942',position:'CEO',address:'Calle Calzada entre E y F, No. 452, bajos, Vedado, municipio Plaza de la Revolución, La Habana, Cuba'};
-   for(const key of ['name','ci','position','address','start_date','end_date'])repForm.elements[key].value=saved[key]||defaults[key]||((key==='start_date')?trial.start_date:'')||((key==='end_date')?trial.end_date:'')||'';
+   let saved={};try{saved=JSON.parse(localStorage.getItem('cartel_trial_representative')||'{}')||{}}catch(_){}
+   const fill=(values)=>{for(const key of ['name','ci','position','address','start_date','end_date']){const field=repForm.querySelector('[name="'+key+'"]');if(field)field.value=values[key]||defaults[key]||(key==='start_date'?trial.start_date:'')||(key==='end_date'?trial.end_date:'')||'';}};
+   fill(saved);
+   try{const {data:existing,error:readError}=await sb.from('hr_trial_closures').select('document').eq('trial_id',trial.id).maybeSingle();if(!readError&&existing?.document?.representative){const previous=existing.document.representative;fill({...saved,...Object.fromEntries(Object.entries(previous).filter(([,v])=>v!==null&&v!==undefined&&v!==''))});}}catch(_){/* Keep editable defaults when offline. */}
    confirm.textContent='Guardar datos y confirmar cierre →';dialog.scrollTop=0;return;
   }
   if(!repForm.reportValidity())return;
