@@ -72,7 +72,7 @@ async function initClosurePublic(documentMode){
    if(b.id==='tcl2')content='Nombre y apellidos: ________________________________________________\\nCarné de Identidad: ________________________________________________';
    if(b.id==='tcl3'&&data.representative?.start_date&&data.representative?.end_date){
     const fmt=x=>x.split('-').reverse().join(' / ');
-    content=content.replace(/desde el [^]*?hasta el [^]*?\. La fecha efectiva/, 'desde el '+fmt(data.representative.start_date)+' hasta el '+fmt(data.representative.end_date)+'. La fecha efectiva');
+    content=content.replace(/desde el [^]*?hasta el [^]*?\. La fecha efectiva de cierre de esta etapa es el[^.]*\./i, 'desde el '+fmt(data.representative.start_date)+' hasta el '+fmt(data.representative.end_date)+'. La fecha efectiva de cierre de esta etapa es el '+fmt(data.representative.end_date)+'.');
    }
    if(b.id==='tcl7'){
     content=content.replace(/Cantidad\s*\|\s*Medio\s*\/\s*recurso[\s\S]*?(?=Cualquier incidencia)/i,'');
