@@ -62,7 +62,7 @@ async function initClosurePublic(documentMode){
  const root=document.getElementById('closure'),token=new URLSearchParams(location.hash.slice(1)).get('token');
  const data=await closureRpc('hr_read_trial_closure',{p_token:token,p_document:documentMode});if(!data)throw Error('Enlace no válido, caducado o revocado. Solicita ayuda a Recursos Humanos.');
  if(documentMode){
-  const template=data.template;
+  const template=cleanTrialClosureTemplate(data.template);
   if(!template||template.key!=='trial_close'||!Array.isArray(template.blocks))throw Error('Esta acta fue creada con un formato anterior. Solicita a RR. HH. que verifique la plantilla de la plaza antes de enviarla.');
   const lines=v=>closureEsc(v).replace(/\\n|\n/g,'<br>');
   let clause=0; const ordinals=['PRIMERA','SEGUNDA','TERCERA','CUARTA','QUINTA','SEXTA','SÉPTIMA','OCTAVA','NOVENA'];
@@ -89,10 +89,17 @@ async function initClosurePublic(documentMode){
    return (b.id==='tcl3'?'<p>'+lines(template.agreement_text||'')+'</p>':'')+'<section class="act-section">'+(heading?'<h2>'+closureEsc(heading)+'</h2>':'')+'<p>'+lines(content)+'</p></section>';
   }).join('');
   root.innerHTML='<div class="act-toolbar"><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button><button id="actClose" type="button">✕ Cerrar</button></div><article id="actDocument" class="act-document"><header><div class="act-logo" style="text-align:'+( ['left','center','right'].includes(template.presentation?.logo_align)?template.presentation.logo_align:'right')+'"><img id="actLogo" src="/assets/cartel-studio-lettering-black.svg" alt="El Cartel Studio" style="width:'+Math.round(74*Math.max(50,Math.min(180,Number(template.presentation?.logo_size)||100))/100)+'px"></div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc('En La Habana, a '+new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Havana'}).format(new Date()).replace(/ de (\d{4})$/,' de $1')+'.')+'</p></header>'+blocks+'</article>';
-  if(template.presentation?.logo_path){const assetClient=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false},global:{headers:{'x-closure-token':token}}});const {data:logo}=await assetClient.storage.from('hr-role-documents').createSignedUrl(template.presentation.logo_path,3600);if(logo?.signedUrl)document.getElementById('actLogo').src=logo.signedUrl;}
-  document.getElementById('actClose').onclick=()=>{window.close();setTimeout(()=>{if(!window.closed){const toolbar=document.querySelector('.act-toolbar');if(toolbar)toolbar.remove();root.innerHTML='<p style="text-align:center;padding:40px 16px">Documento cerrado. Ya puedes cerrar esta pestaña y regresar a la ficha del candidato.</p>'; }},150);};
+  // Bind controls before optional logo loading, so storage/network failures cannot disable Cerrar.
+  document.getElementById('actClose').onclick=()=>{
+   if(data.candidate_id){location.replace('/rrhh.html?embedded=1&candidate='+encodeURIComponent(data.candidate_id));return;}
+   // Legacy data without a candidate can only return to an explicit, same-origin candidate sheet.
+   try{const ref=new URL(document.referrer);if(ref.origin===location.origin&&ref.pathname==='/rrhh.html'&&ref.searchParams.has('candidate')){location.replace(ref.pathname+ref.search);return;}}catch(_){}
+   window.close();
+   setTimeout(()=>{if(!window.closed)root.innerHTML='<p>Documento cerrado. Puedes cerrar esta pestaña.</p>';},150);
+  };
   document.getElementById('actPrint').onclick=()=>window.print();
   document.getElementById('actDownload').onclick=()=>{alert('Para guardar el acta en PDF, selecciona «Guardar como PDF» en la ventana de impresión.');window.print()};
+  if(template.presentation?.logo_path){try{const assetClient=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false},global:{headers:{'x-closure-token':token}}});const {data:logo}=await assetClient.storage.from('hr-role-documents').createSignedUrl(template.presentation.logo_path,3600);if(logo?.signedUrl)document.getElementById('actLogo').src=logo.signedUrl;}catch(e){console.warn('Se conserva el logotipo predeterminado.');}}
   return;
  }
  if(data.submitted){root.textContent='Tu expediente fue recibido. Espera las instrucciones de Recursos Humanos tras la verificación y entrega del cierre firmado.';return;}
