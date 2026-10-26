@@ -3073,8 +3073,17 @@ async function openTrialFinishReceipt(id){
  const info=document.createElement('p');info.className='trial-receipt-note';info.textContent='El destino ya quedó guardado. Abrir WhatsApp no confirma envío ni entrega.';body.append(info);
  const content=document.createElement('div');content.textContent='Consultando el cierre…';dialog.append(content);
  body.append(content);const actions=document.createElement('footer');actions.className='trial-receipt-actions';dialog.append(actions);
- const dismiss=()=>{overlay.remove();if(previousFocus?.isConnected)previousFocus.focus()};
- const close=document.createElement('button');close.type='button';close.className='candidate-back-cancel trial-receipt-return';close.textContent='Regresar a la ficha';close.onclick=dismiss;actions.append(close);
+ let whatsappOpened=false;
+ const dismiss=()=>{overlay.remove();if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true})};
+ const syncReturn=async()=>{if(!whatsappOpened||!overlay.isConnected)return;whatsappOpened=false;dismiss();preserveCandidateSheet(id);await refreshCandidateAfterStatusChange(id);openDetail(id)};
+ const onReturn=()=>{if(document.visibilityState==='visible')syncReturn()};
+ const onFocus=()=>{if(whatsappOpened)syncReturn()};
+ window.addEventListener('pageshow',onFocus,{once:true});
+ document.addEventListener('visibilitychange',onReturn);
+ window.addEventListener('focus',onFocus);
+ const cleanup=()=>{document.removeEventListener('visibilitychange',onReturn);window.removeEventListener('focus',onFocus);window.removeEventListener('pageshow',onFocus)};
+ const oldDismiss=dismiss;
+ const close=document.createElement('button');close.type='button';close.className='candidate-back-cancel trial-receipt-return';close.textContent='Regresar a la ficha';close.onclick=()=>{cleanup();oldDismiss();preserveCandidateSheet(id);refreshCandidateAfterStatusChange(id)};actions.append(close);
  overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();dismiss()}if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,a[href],textarea')].filter(x=>!x.disabled);const first=items[0],last=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
  close.focus();
  try{
@@ -3109,6 +3118,7 @@ async function openTrialFinishReceipt(id){
   webLink.target='_blank';webLink.rel='noopener noreferrer';
   const updateLink=()=>{const text=encodeURIComponent(message.value);webLink.href=phone.length>=10&&phone.length<=15?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
   updateLink();message.addEventListener('input',updateLink);
+  webLink.addEventListener('click',()=>{whatsappOpened=true;preserveCandidateSheet(id)});
   actions.prepend(webLink);
   if(p.new_candidate_id){const link=document.createElement('a');link.textContent='Ver nueva candidatura →';link.className='trial-receipt-linked';link.href='/rrhh.html?embedded=1&candidate='+encodeURIComponent(p.new_candidate_id);content.append(link)}
  }catch(e){content.textContent=e.message+' Puedes volver a consultar el cierre desde esta ficha.'}
