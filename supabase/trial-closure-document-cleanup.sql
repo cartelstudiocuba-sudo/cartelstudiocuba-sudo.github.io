@@ -6,9 +6,9 @@ as $clean$
  jsonb_set(doc,'{blocks}',coalesce((
  select jsonb_agg(
  b || (select coalesce(jsonb_object_agg(k,
- to_jsonb(regexp_replace(regexp_replace(b->>k,
- E'(\\\\n|\\n)*Resumen de asuntos pendientes u observaciones:[\\s\\S]*$','','i'),
- ' De existir alguna excepción o asunto económico pendiente, deberá quedar expresamente consignado en la cláusula «Asuntos pendientes u observaciones» de esta acta\\.','','g'))),'{}'::jsonb)
+ to_jsonb(replace(regexp_replace(b->>k,
+ 'Resumen de asuntos pendientes u observaciones:.*$','','is'),
+ ' De existir alguna excepción o asunto económico pendiente, deberá quedar expresamente consignado en la cláusula «Asuntos pendientes u observaciones» de esta acta.',''))),'{}'::jsonb)
  from unnest(array['text','override_text']) k where jsonb_typeof(b->k)='string')
  order by ord)
  from jsonb_array_elements(doc->'blocks') with ordinality x(b,ord)
