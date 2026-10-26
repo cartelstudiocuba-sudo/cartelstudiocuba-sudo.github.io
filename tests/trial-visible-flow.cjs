@@ -7,7 +7,7 @@ async function database(){
  const db=new PGlite();await db.exec(`create schema auth;create schema studio_access_private;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function studio_access_private.is_owner() returns boolean language sql stable as $$select auth.uid()='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6'::uuid$$;set test.uid='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6';`);
  await db.exec(fs.readFileSync(root+'/tests/fixtures/trial-schema.sql','utf8'));
  await db.exec(`create table hr_candidate_answers(id uuid default gen_random_uuid(),candidate_id uuid,question_key text,question_text text,answer jsonb);create table hr_interviews(id uuid,candidate_id uuid);create table hr_recruitment_cycles(id uuid,role_id uuid,status text,opens_at timestamptz,closes_at timestamptz,updated_at timestamptz);`);
- await db.exec(fs.readFileSync(root+'/supabase/trial-visible-flow.sql','utf8'));return db;
+ await db.exec(fs.readFileSync(root+'/supabase/trial-attempts.sql','utf8').replace(/(?:revoke all|grant execute)[^;]+;/g,''));await db.exec(fs.readFileSync(root+'/supabase/trial-visible-flow.sql','utf8'));return db;
 }
 async function seed(db,stage='evaluation_pending'){
  await db.exec('truncate hr_candidates,hr_trial_periods,hr_trial_closures,hr_trial_closure_events,hr_candidate_history,hr_vacancies,hr_roles,hr_employees,hr_candidate_answers;');
@@ -53,10 +53,29 @@ async function backend(db){
  await db.exec(fs.readFileSync(root+'/supabase/trial-closure-state-guard.sql','utf8').replace(/revoke all[^;]+;/g,''));
  await assert.rejects(()=>db.query("update hr_trial_periods set stage='in_trial' where id=$1",[ids.t]),/cierre confirmado/);
  assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,'completed');
+
+ const closedBefore=await row(db,'hr_trial_periods',ids.t),closureBefore=(await db.query('select * from hr_trial_closures')).rows;
+ await db.query("update hr_candidates set status='interviewed' where id=$1",[ids.a]);
+ const terms={role_title:'Plaza ficticia',start_date:'2026-10-26',duration_days:7,schedule:'Horario nuevo',compensation:'10000',location:'Sede',notes:'Segundo intento'};
+ await assert.rejects(()=>db.query('select hr_request_trial($1,$2,$3)',[ids.a,ids.t,{...terms,duration_days:0}]));
+ assert.equal((await row(db,'hr_trial_periods',ids.t)).superseded_at,null);
+ const next=(await db.query('select hr_request_trial($1,$2,$3) data',[ids.a,ids.t,terms])).rows[0].data;
+ assert.notEqual(next.id,ids.t);assert.equal(next.stage,'pending_agreement');assert.equal(next.agreement_url,null);assert.equal(next.completed_at,null);
+ assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,closedBefore.stage);assert((await row(db,'hr_trial_periods',ids.t)).superseded_at);
+ assert.deepEqual((await db.query('select * from hr_trial_closures')).rows,closureBefore);
+ await assert.rejects(()=>db.query('select hr_request_trial($1,$2,$3)',[ids.a,ids.t,terms]));
+ await assert.rejects(()=>rpc(db,'finish_without_advance',{outcome:'talent_pool'}),/intento anterior/);
+ await db.query("update hr_trial_periods set stage='in_trial' where id=$1",[next.id]);
+ await db.query("update hr_candidates set status='trial' where id=$1",[ids.a]);
+ await db.query('select hr_manage_trial_closure($1,$2,$3)',[next.id,'finish_without_advance',{outcome:'not_selected',reason:'No es el candidato idóneo'}]);
+ assert.equal((await row(db,'hr_candidates')).status,'not_selected');
+ assert.equal((await db.query("select count(*)::int n from hr_trial_closure_events where action='finish_without_advance'")).rows[0].n,2);
+ assert.equal((await db.query('select count(*)::int n from hr_trial_periods where superseded_at is null')).rows[0].n,1);
+ report.push('restart retains original act and events; new attempt closes independently; stale and invalid requests rejected');
  report.push('closed trial cannot reopen','three outcomes reconcile legacy state without duplicate decisions');
  report.push('four internal stages → contract → availability','stale request rejected','missing reason rejected','same vacancy rejected','duplicate open application rejected','late failure rolls back act/new application/status/history','non-owner rejected');return report;
 }
-const mock=`(()=>{window.alerts=[];window.alert=m=>alerts.push(m);window.confirm=()=>true;const api=async payload=>{const r=await fetch('/synthetic-api',{method:'POST',body:JSON.stringify(payload)});return r.json()};window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{user:{email:'cartelstudiocuba@gmail.com'},access_token:'fake'}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},storage:{from:()=>({createSignedUrl:async()=>({data:null})})},rpc:(name,args)=>api({name,args}),from(table){let filters=[],patch,orders=[],limit,one=false;const q={select(){return q},update(v){patch=v;return q},eq(k,v){filters.push([k,v]);return q},in(){return q},order(k,o){orders.push([k,o]);return q},range(){return q},limit(n){limit=n;return q},single(){one=true;return q},maybeSingle(){one=true;return q},then(ok,bad){return api({table,filters,patch,orders,limit,one}).then(ok,bad)}};return q}})};})();`;
+const mock=`(()=>{window.alerts=[];window.alert=m=>alerts.push(m);window.confirm=()=>true;const api=async payload=>{const r=await fetch('/synthetic-api',{method:'POST',body:JSON.stringify(payload)});return r.json()};window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{user:{email:'cartelstudiocuba@gmail.com'},access_token:'fake'}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},storage:{from:()=>({createSignedUrl:async()=>({data:null})})},rpc:(name,args)=>api({name,args}),from(table){let filters=[],patch,orders=[],limit,one=false;const q={select(){return q},update(v){patch=v;return q},eq(k,v){filters.push([k,v]);return q},is(k,v){filters.push([k,v]);return q},in(){return q},order(k,o){orders.push([k,o]);return q},range(){return q},limit(n){limit=n;return q},single(){one=true;return q},maybeSingle(){one=true;return q},then(ok,bad){return api({table,filters,patch,orders,limit,one}).then(ok,bad)}};return q}})};})();`;
 async function browserTests(db){const browser=await chromium.launch({headless:true,channel:'msedge'}),report=[];
 try{for(const width of [390,1440]){
  await seed(db);const context=await browser.newContext({viewport:{width,height:950}});let realRequests=0,lostResponse=false,failRead=false;const calls=[];
@@ -66,8 +85,8 @@ try{for(const width of [390,1440]){
   if(u.pathname==='/synthetic-api'){
    const p=route.request().postDataJSON();calls.push(p);
    try{let result;
-    if(p.name==='hr_set_trial_closure_representative')return route.fulfill({json:{data:null,error:null}});if(p.name){assert.equal(p.name,'hr_manage_trial_closure');await db.query('select hr_manage_trial_closure($1,$2,$3)',[p.args.p_trial,p.args.p_action,p.args.p_payload]);result={data:null,error:null};if(lostResponse){lostResponse=false;return route.fulfill({json:{data:null,error:{message:'Respuesta perdida simulada'}}})}}
-    else {assert(/^[a-z_]+$/.test(p.table));let values=[],where=p.filters.map(([key,value])=>{assert(/^[a-z_]+$/.test(key));values.push(value);return key+'=$'+values.length}).join(' and ');if(failRead&&p.table==='hr_trial_closure_events'){failRead=false;throw Error('Lectura fallida simulada')};
+    if(p.name==='hr_request_trial'){const result=await db.query('select hr_request_trial($1,$2,$3) data',[p.args.p_candidate,p.args.p_expected_trial,p.args.p_terms]);return route.fulfill({json:{data:result.rows[0].data,error:null}})}if(p.name==='hr_set_trial_closure_representative')return route.fulfill({json:{data:null,error:null}});if(p.name){assert.equal(p.name,'hr_manage_trial_closure');await db.query('select hr_manage_trial_closure($1,$2,$3)',[p.args.p_trial,p.args.p_action,p.args.p_payload]);result={data:null,error:null};if(lostResponse){lostResponse=false;return route.fulfill({json:{data:null,error:{message:'Respuesta perdida simulada'}}})}}
+    else {assert(/^[a-z_]+$/.test(p.table));let values=[],where=p.filters.map(([key,value])=>{assert(/^[a-z_]+$/.test(key));if(value===null)return key+' is null';values.push(value);return key+'=$'+values.length}).join(' and ');if(failRead&&p.table==='hr_trial_closure_events'){failRead=false;throw Error('Lectura fallida simulada')};
      let query='select * from '+p.table;if(p.patch){const sets=Object.entries(p.patch).map(([key,v])=>{assert(/^[a-z_]+$/.test(key));values.push(v);return key+'=$'+values.length});query='update '+p.table+' set '+sets.join(',')}
      if(where)query+=' where '+where;if(p.patch)query+=' returning *';else{if(p.orders.length)query+=' order by '+p.orders.map(([k,o])=>{assert(/^[a-z_]+$/.test(k));return k+(o?.ascending===false?' desc':' asc')}).join(',');if(p.limit)query+=' limit '+Number(p.limit)}const rows=(await db.query(query,values)).rows;result={data:p.one?(rows[0]||null):rows,error:null}}
     return route.fulfill({json:result});
@@ -99,6 +118,14 @@ try{for(const width of [390,1440]){
   assert.equal(await page.locator('#trialFinishOverlay').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true);
   fs.mkdirSync(root+'/../outputs/cierre-seguro',{recursive:true});await page.screenshot({path:root+'/../outputs/cierre-seguro/'+outcome+'-'+width+'.png'});
  }
+ await seed(db);await rpc(db,'finish_without_advance',{outcome:'talent_pool'});await db.query("update hr_candidates set status='interviewed' where id=$1",[ids.a]);await open();
+ await page.evaluate(id=>toggleTrialForm(id),ids.a);await page.waitForFunction(id=>document.getElementById('trialStart-'+id)?.value,ids.a);
+ await page.evaluate(()=>{window.waOpen=()=>{};localStorage.setItem('cartel-training-start-'+"10000000-0000-0000-0000-000000000001",'1')});
+ await page.evaluate(id=>submitTrialRequest(id),ids.a);
+ assert.equal((await db.query('select count(*)::int n from hr_trial_periods')).rows[0].n,2);
+ assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,'completed');
+ assert((await page.locator('#detail .candidate-flow').innerText()).includes('Enviar contrato'));
+ await open();assert((await page.locator('#detail .candidate-flow').innerText()).includes('Enviar contrato'));
  // Cancel the existing rejection reason dialog without any mutation.
  await seed(db);await open();await page.evaluate(id=>openTrialFinishDestination(id,'not_selected'),ids.a);await page.locator('#trialFinishRepresentative [name=start_date]').fill('2026-10-20');await page.locator('#trialFinishRepresentative [name=end_date]').fill('2026-10-26');await page.locator('#trialFinishConfirm').click();await page.locator('#rejectionReasonOverlay [data-action="cancel"]').click();assert.equal((await row(db,'hr_candidates')).status,'trial');await page.locator('#trialFinishOverlay .candidate-back-cancel').click();
  // Early interview navigation keeps its existing behavior.

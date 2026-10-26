@@ -10,6 +10,7 @@ begin
  if p_action in ('visible_step_back','finish_without_advance') then
   select * into t from public.hr_trial_periods where id=p_trial for update;
   if not found then raise exception 'Prueba no encontrada'; end if;
+  if t.superseded_at is not null then raise exception 'Esta prueba pertenece a un intento anterior. Actualiza la ficha'; end if;
   select * into person from public.hr_candidates where id=t.candidate_id for update;
   if not found then raise exception 'Candidatura no encontrada'; end if;
   if p_action='finish_without_advance' then

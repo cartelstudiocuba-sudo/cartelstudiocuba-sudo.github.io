@@ -3,7 +3,7 @@
 create or replace function public.hr_guard_closed_trial_stage() returns trigger
 language plpgsql set search_path='' as $$
 begin
- if new.stage<>'completed' and exists(select 1 from public.hr_trial_closure_events where trial_id=old.id and action='finish_without_advance') then
+ if old.superseded_at is not null or new.stage<>'completed' and exists(select 1 from public.hr_trial_closure_events where trial_id=old.id and action='finish_without_advance') then
   raise exception 'Esta prueba ya tiene un cierre confirmado. Actualiza la ficha' using errcode='23514';
  end if;
  return new;
