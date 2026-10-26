@@ -12,10 +12,10 @@ for(const width of [390,1280])for(const admin of [false,true]){
  await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:html.replace(/<script src="[^"]+"><\/script>/g,'')}));
  await page.addInitScript(d=>{window.CartelLoad={createClient:()=>({rpc:async()=>({data:d})}),run:(k,f)=>f()};},data);
  await page.goto('https://agreement.test/acuerdo-periodo-prueba.html'+(admin?'?candidate=test':'#token='+'a'.repeat(64)));
- await page.locator('#doc h1').waitFor();assert.equal(await page.locator('.bar').isVisible(),admin);
+ await page.locator('#doc h1').waitFor();assert.equal(await page.locator('#adminActions').isVisible(),admin);
  assert.equal(await page.locator('#doc h2').count(),14);
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:root+'/../outputs/contrato-vistas/'+(admin?'rrhh':'candidato')+'-'+width+'.jpg',type:'jpeg',quality:50,fullPage:true});
- if(width===1280&&!admin){await page.emulateMedia({media:'print'});assert.equal(await page.locator('.bar').isVisible(),false);await page.pdf({path:root+'/../outputs/contrato-vistas/contrato-prueba.pdf',format:'A4'});}
+ if(width===1280&&!admin){await page.emulateMedia({media:'print'});assert.equal(await page.locator('#adminActions').isVisible(),false);assert.equal(await page.locator('#candidateActions').isVisible(),false);await page.pdf({path:root+'/../outputs/contrato-vistas/contrato-prueba.pdf',format:'A4'});}
  await page.close();
 }await browser.close();console.log('PASS browser: mobile/desktop, admin/candidate, printable PDF, unchanged full contract template.');})().catch(e=>{console.error(e);process.exitCode=1});

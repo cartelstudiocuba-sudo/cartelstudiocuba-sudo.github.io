@@ -31,17 +31,26 @@ vm.runInContext(extract('function approvedCandidatePanel(', 'function approvedOp
   const updates = [];
   context.candidates = [{id: 'synthetic', status: 'trial'}];
   context.closeDetail = context.render = () => {};
+  context.requestRejectionReason = async () => 'No es el candidato idóneo';
+  const trialRoutes=[];
+  context.openTrialFinishDestination = (id,decision) => trialRoutes.push({id,decision});
   context.sb = {from(table) { assert.equal(table, 'hr_candidates'); return {update(patch) { updates.push(patch); return {eq: async () => ({error: null})}; }}; }};
   vm.runInContext(extract('async function postDecision(', 'async function toggleTrialForm'), context);
   for (const status of statuses) for (const decision of ['talent_pool', 'not_selected']) {
     context.candidates[0].status = status;
+    const previousCount=updates.length;
     await context.postDecision('synthetic', decision);
+    if(status==='trial'){
+      assert.equal(updates.length,previousCount);
+      assert.equal(trialRoutes.at(-1).decision,decision);
+      continue;
+    }
     const patch = updates.at(-1);
     assert.equal(patch.status, decision);
-    assert.deepEqual(Object.keys(patch).sort(), ['decision_status', 'decision_updated_at', 'status']);
+    assert.deepEqual(Object.keys(patch).sort(), (decision==='not_selected'?['decision_note','decision_status','decision_updated_at','status']:['decision_status', 'decision_updated_at', 'status']));
   }
-  const reprofile = extract('async function openReprofile(', 'const inlineInterviewQuestions');
+  const reprofile = extract('async function openReprofile(', 'function showCandidateInterviewInline');
   assert(!reprofile.includes("['hired','trial']"));
   assert(reprofile.includes("update({vacancy_id:v.id,status:'new',decision_status:null,interview_availability_confirmed_at:null})"));
-  console.log('PASS: existing actions enabled in all 9 statuses, original handlers, continuity, files/history access, isolated decision updates, existing reprofile flow');
+  console.log('PASS: actions in all 9 statuses, trial destinations use transactional closure, rejection reason retained, files/history, other reprofile flow unchanged');
 })().catch(error => { console.error(error); process.exitCode = 1; });

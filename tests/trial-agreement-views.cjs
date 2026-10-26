@@ -8,6 +8,9 @@ async function run(token,allowed=true){
  const calls=[],bar={style:{display:'none'}},doc={textContent:'',innerHTML:''};let init;
  const client={rpc:async(name,args)=>{calls.push({name,args});return allowed?{data:structuredClone(data)}:{error:{code:'42501'}}}};
  const ctx={URLSearchParams,location:{hash:token?'#token='+ 'a'.repeat(64):'',search:'?candidate=other-id'},localStorage:{getItem:()=>'{"name":"WRONG LOCAL REPRESENTATIVE"}'},document:{getElementById:()=>bar},doc,console,alert:()=>{},window:{print:()=>calls.push('print'),open:()=>calls.push('open')},CartelLoad:{createClient:()=>client,run:(k,f)=>init=f}};
+ ctx.window.addEventListener=()=>{};ctx.document.addEventListener=()=>{};
+ ctx.document.getElementById=id=>id==='adminActions'?bar:{style:{}};
+ ctx.sessionStorage={getItem:()=>null,removeItem:()=>{}};
  vm.createContext(ctx);vm.runInContext([...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].at(-1)[1],ctx);await init();
  return {ctx,calls,bar,doc};
 }
