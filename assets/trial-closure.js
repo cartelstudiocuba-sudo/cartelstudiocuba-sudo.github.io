@@ -66,7 +66,13 @@ async function initClosurePublic(documentMode){
   const lines=v=>closureEsc(v).replace(/\\n/g,'<br>');
   const blocks=template.blocks.filter(b=>b.included!==false).map(b=>{
    let content=b.use_override&&b.override_text?b.override_text:b.text||'';
-   if(b.source==='candidate'&&!content)content=b.id==='tcl11'?'PERSONA EVALUADA\\nNombre: ______________________________\\nCarné de Identidad: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________\\n\\nPOR EL CARTEL STUDIO\\nNombre: ______________________________\\nCargo: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________':'Nombre: ______________________________\\nCarné de Identidad: ______________________________';
+   // The evaluated person's identifying details are always completed by hand.
+   if(b.id==='tcl2')content='Nombre y apellidos: ________________________________________________\\nCarné de Identidad: ________________________________________________';
+   if(b.id==='tcl11'){
+    content='Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.\\n\\nPERSONA EVALUADA\\nNombre: ________________________________________________\\nCarné de Identidad: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________\\n\\nPOR EL CARTEL STUDIO\\nNombre: '+(data.representative?.name||'________________________________')+'\\nCarné de Identidad: '+(data.representative?.ci||'________________________')+'\\nCargo: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________';
+   }
+   if(b.id==='tcl1')content='El Cartel Studio'+(data.representative?.address?'\\nDirección de la sede: '+data.representative.address:'');
+   if(b.source==='candidate'&&!content)content='Nombre: ________________________________________________\\nCarné de Identidad: ______________________________';
    if(b.source==='company'&&!content)content='El Cartel Studio';
    return '<section class="act-section"><h2>'+closureEsc(b.title)+'</h2><p>'+lines(content)+'</p></section>';
   }).join('');
