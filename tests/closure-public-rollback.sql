@@ -1,0 +1,20 @@
+begin;
+select set_config('request.jwt.claims','{"sub":"6418ad20-d0e8-49c0-8d9a-e1da3daf71b6","role":"authenticated"}',true);
+do $$ declare cid uuid; tid uuid; links jsonb; doc_token text; logo text; rep jsonb:=jsonb_build_object('name','Representante Sintético','ci','11111111111','position','Dirección','address','Sede sintética','start_date','2026-10-01','end_date','2026-10-25','observations','Observación sintética');
+begin
+insert into public.hr_candidates(vacancy_id,full_name,whatsapp,status) values((select id from public.hr_vacancies limit 1),'TEST ACTA ROLLBACK','00000000','trial') returning id into cid;
+insert into public.hr_trial_periods(candidate_id,role_title,start_date,duration_days,stage) values(cid,(select title from public.hr_roles where work_content#>'{contract_templates,trial,documents}' @> '[{"key":"trial_close"}]' limit 1),current_date,7,'evaluation_pending') returning id into tid;
+links:=public.hr_prepare_trial_closure(tid);
+doc_token:=split_part(links->>'document_url','#token=',2);
+perform public.hr_set_trial_closure_representative(tid,rep);
+if public.hr_read_trial_closure(doc_token,true)->'representative' is distinct from rep then raise exception 'Persistence mismatch';end if;
+begin perform public.hr_set_trial_closure_representative(tid,rep-'position');raise exception 'Missing position accepted';exception when raise_exception then if sqlerrm='Missing position accepted' then raise;end if;end;
+select document#>>'{template,presentation,logo_path}' into logo from public.hr_trial_closures where trial_id=tid;
+perform set_config('request.headers',jsonb_build_object('x-closure-token',doc_token)::text,true);
+if not public.hr_closure_presentation_allowed(logo) or public.hr_closure_presentation_allowed('unrelated/path') then raise exception 'Logo scope failed';end if;
+perform set_config('request.headers','{}',true);
+if public.hr_closure_presentation_allowed(logo) then raise exception 'Public logo access accepted';end if;
+update public.hr_trial_closures set signed_received_at=now() where trial_id=tid;
+begin perform public.hr_set_trial_closure_representative(tid,rep);raise exception 'Signed modification accepted';exception when raise_exception then if sqlerrm='Signed modification accepted' then raise;end if;end;
+end $$;
+rollback;
