@@ -2971,25 +2971,38 @@ async function openTrialFinishDestination(id,initial=''){
 }
 async function openTrialClosureReview(id){
  const trial=trialPeriodsByCandidate[String(id)];if(!trial)return alert('No se encontró el período de prueba.');
+ if(!document.getElementById('trialClosureReviewStyles')){
+  const style=document.createElement('style');style.id='trialClosureReviewStyles';
+  style.textContent=`
+  .trial-review-dialog{width:min(92vw,620px)!important;max-height:88dvh;overflow:auto;padding:26px!important;border-radius:25px!important;background:linear-gradient(145deg,#183754,#0d2239)!important;color:#fff!important;border:1px solid #326b9b!important;box-shadow:0 28px 75px #0009!important}
+  .trial-review-head{display:flex;align-items:center;gap:15px;margin-bottom:20px}.trial-review-symbol{width:58px;height:58px;display:grid;place-items:center;flex:none;border-radius:17px;background:#68333d;color:#ff9aa3;font-size:30px}.trial-review-heading{flex:1;min-width:0}.trial-review-heading small{font-size:11px;letter-spacing:.13em;color:#b9cbe0;font-weight:800}.trial-review-heading h3{font-size:23px!important;color:#fff!important;margin:5px 0!important;line-height:1.2}.trial-review-heading p{font-size:12px;color:#b9cbe0;line-height:1.45;margin:0}.trial-review-x{width:35px;height:35px;border:1px solid #436783;border-radius:50%;background:#1e4263;color:white;font-size:24px;cursor:pointer;align-self:flex-start;transition:transform .2s}.trial-review-x:hover{transform:rotate(90deg)}
+  .trial-review-body{display:grid;gap:10px}.trial-review-row{display:flex;align-items:center;gap:13px;border:1px solid #345775;border-radius:16px;background:#193754;padding:13px}.trial-review-icon{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;background:#31516d;font-size:21px}.trial-review-icon.outcome{background:#573645;color:#ff9ba8}.trial-review-label{color:#bed0e2;font-size:13px;flex:1}.trial-review-value{font-size:14px;text-align:right;font-weight:800;color:#fff;max-width:54%;overflow-wrap:anywhere}.trial-review-value.outcome{color:#ffb2bb;background:#512d40;border:1px solid #c45a6e;border-radius:100px;padding:8px 12px}
+  .trial-review-whatsapp{display:flex;align-items:center;gap:14px;border:1px solid #366b70;border-left:4px solid #2fd38e;background:#173d50;border-radius:16px;padding:17px;margin-top:8px}.trial-review-whatsapp-icon{font-size:30px;color:#43e49e}.trial-review-whatsapp strong{display:block;font-size:15px}.trial-review-whatsapp p{font-size:12px;color:#c4d5e2;line-height:1.45;margin:5px 0 0}
+  .trial-review-back{display:block;width:100%;margin-top:20px;border:0;border-radius:14px;background:#ffda03;color:#121b27;font-size:15px;font-weight:800;padding:15px;cursor:pointer;transition:transform .2s,filter .2s}.trial-review-back:hover{transform:translateY(-2px);filter:brightness(1.06)}
+  @media(max-width:520px){.trial-review-dialog{padding:17px!important}.trial-review-heading h3{font-size:19px!important}.trial-review-row{flex-wrap:wrap}.trial-review-value{max-width:100%}.trial-review-label{flex-basis:45%}}@media(prefers-reduced-motion:reduce){.trial-review-x,.trial-review-back{transition:none!important}}
+  `;document.head.append(style);
+ }
  const {overlay,dialog}=trialFinishDialog('Consultar cierre');
- dialog.style.cssText='width:min(92vw,560px);max-height:88dvh;overflow:auto;padding:26px;border-radius:24px;background:linear-gradient(145deg,#24445d,#102338);color:#fff;border:1px solid #49749a';
- dialog.textContent='';
- const heading=document.createElement('h3');heading.textContent='Cierre del período de prueba';heading.style.cssText='color:white;font-size:24px;margin:0 0 8px';dialog.append(heading);
- const intro=document.createElement('p');intro.textContent='Consulta del cierre registrado. No modifica el expediente ni envía mensajes.';intro.style.cssText='font-size:13px;color:#c5d6e2';dialog.append(intro);
- const body=document.createElement('div');body.textContent='Consultando cierre…';dialog.append(body);
- const back=document.createElement('button');back.type='button';back.textContent='Regresar a la ficha';back.className='candidate-back-option';back.style.cssText='width:100%;background:#ffda03;color:#171717;border:0;border-radius:13px;padding:14px;font-weight:800;margin-top:18px';back.onclick=()=>overlay.remove();dialog.append(back);
+ dialog.classList.add('trial-review-dialog');dialog.textContent='';
+ const head=document.createElement('header');head.className='trial-review-head';dialog.append(head);
+ const symbol=document.createElement('span');symbol.className='trial-review-symbol';symbol.textContent='⊗';symbol.setAttribute('aria-hidden','true');head.append(symbol);
+ const titleBox=document.createElement('div');titleBox.className='trial-review-heading';head.append(titleBox);
+ const eyebrow=document.createElement('small');eyebrow.textContent='PERÍODO DE PRUEBA';titleBox.append(eyebrow);
+ const heading=document.createElement('h3');heading.textContent='Cierre del período de prueba';titleBox.append(heading);
+ const intro=document.createElement('p');intro.textContent='Consulta del cierre registrado. No modifica el expediente ni envía mensajes.';titleBox.append(intro);
+ const x=document.createElement('button');x.type='button';x.className='trial-review-x';x.textContent='×';x.setAttribute('aria-label','Cerrar consulta');x.onclick=()=>overlay.remove();head.append(x);
+ const body=document.createElement('div');body.className='trial-review-body';body.textContent='Consultando cierre…';dialog.append(body);
+ const back=document.createElement('button');back.type='button';back.textContent='Regresar a la ficha';back.className='trial-review-back';back.onclick=()=>overlay.remove();dialog.append(back);
  try{
   const {data,error}=await sb.from('hr_trial_closure_events').select('payload,created_at').eq('trial_id',trial.id).eq('action','finish_without_advance').order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(error||!data?.payload)throw Error(error?.message||'No se encontró una decisión registrada.');
   const p=data.payload;body.replaceChildren();
-  const row=(label,value)=>{const el=document.createElement('div');el.style.cssText='display:flex;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid #ffffff26';const l=document.createElement('span');l.textContent=label;l.style.color='#c5d6e2';const v=document.createElement('strong');v.textContent=value||'No registrado';v.style.textAlign='right';el.append(l,v);body.append(el)};
-  row('Destino confirmado',({not_selected:'No seleccionado',talent_pool:'Cantera',profiled:'Perfilado a otra plaza'})[p.outcome]||'Registrado');
-  if(p.reason)row('Motivo',p.reason);
-  row('Fecha del cierre',new Date(data.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'}));
-  const doc=p.document_url;
-  if(doc){const link=document.createElement('a');link.href=doc;link.target='_blank';link.rel='noopener';link.textContent='📄 Ver Acta de Cierre ↗';link.style.cssText='display:block;text-align:center;margin-top:18px;padding:14px;border:1px solid #7293ab;border-radius:13px;color:white;text-decoration:none;font-weight:700';body.append(link)}
+  const row=(icon,label,value,outcome=false)=>{const el=document.createElement('div');el.className='trial-review-row';const pict=document.createElement('span');pict.className='trial-review-icon'+(outcome?' outcome':'');pict.textContent=icon;const l=document.createElement('span');l.className='trial-review-label';l.textContent=label;const v=document.createElement('strong');v.className='trial-review-value'+(outcome?' outcome':'');v.textContent=value||'No registrado';el.append(pict,l,v);body.append(el)};
+  row('◎','Destino confirmado',({not_selected:'No seleccionado',talent_pool:'Cantera',profiled:'Perfilado a otra plaza'})[p.outcome]||'Registrado',true);
+  if(p.reason)row('▤','Motivo',p.reason);
+  row('▦','Fecha del cierre',new Date(data.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'}));
   const {data:opened}=await sb.from('hr_trial_closure_events').select('created_at').eq('trial_id',trial.id).eq('action','message_opened').order('created_at',{ascending:false}).limit(1).maybeSingle();
-  const note=document.createElement('p');note.style.cssText='font-size:13px;line-height:1.5;color:#c5d6e2;margin-top:16px';note.textContent=opened?'Última apertura de WhatsApp registrada: '+new Date(opened.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'})+'. No confirma envío ni entrega.':'No consta una apertura de WhatsApp registrada. Esto no confirma si el mensaje se envió por otro medio.';body.append(note);
+  const wa=document.createElement('section');wa.className='trial-review-whatsapp';const waIcon=document.createElement('span');waIcon.className='trial-review-whatsapp-icon';waIcon.textContent='◉';const waText=document.createElement('div');const waTitle=document.createElement('strong');waTitle.textContent='Notificación por WhatsApp';const note=document.createElement('p');note.textContent=opened?'Última apertura registrada: '+new Date(opened.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'})+'. No confirma envío ni entrega.':'No consta apertura de WhatsApp registrada. Esto no confirma si el mensaje se envió por otro medio.';waText.append(waTitle,note);wa.append(waIcon,waText);body.append(wa);
  }catch(e){body.textContent='No se pudo consultar el cierre: '+e.message}
  back.focus({preventScroll:true});
 }
