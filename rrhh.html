@@ -2748,7 +2748,7 @@ const actions={new:'<button type="button" class="candidate-flow-action" onclick=
 // Contract receipt and trial start remain internal states, not extra steps in the sheet.
 if(st==='trial'&&['agreement_sent','agreement_accepted','in_trial','evaluation_pending'].includes(trialStage)){
  labels.trial='Cierre del período de prueba';
- actions.trial='<button type="button" class="candidate-flow-action" onclick="openTrialClosureDecision(\''+x.id+'\')">Gestionar cierre →</button>';
+ actions.trial='<button type="button" class="candidate-flow-action" onclick="openTrialClosureDecision(\''+x.id+'\')">Notificar al candidato →</button>';
 }
 if(trialStage==='completed'&&['talent_pool','not_selected','archived'].includes(st)){
  actions[st]='<button type="button" class="candidate-flow-action" onclick="openTrialFinishReceipt(\''+x.id+'\')">Consultar cierre y WhatsApp →</button>';
