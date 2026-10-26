@@ -3101,12 +3101,13 @@ async function openTrialFinishReceipt(id){
   // WhatsApp must be available even when the saved event has no phone.
   // Link directly from the user gesture; never await network or save again on click.
   const candidate=candidates.find(x=>String(x.id)===String(id));
-  const digits=value=>String(value||'').replace(/\\D/g,'');
-  const phone=digits(p.phone||candidate?.whatsapp||candidate?.phone||candidate?.telefono);
+  const digits=value=>String(value||'').replace(/[^0-9]/g,'');
+  const rawPhone=digits(p.phone||candidate?.whatsapp||candidate?.phone||candidate?.telefono);
+  const phone=rawPhone.length===8?'53'+rawPhone:rawPhone;
   const a=document.createElement('a');a.className='trial-receipt-whatsapp';a.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.2A8 8 0 1 1 20 11.5Z"/><path d="M9 8c0 4 3 7 7 7l1-2-3-1-1 1-2-2 1-1-1-3Z"/></svg><span>Abrir WhatsApp</span>';
-  const updateLink=()=>{const text=encodeURIComponent(message.value);a.href=phone.length>=8&&phone.length<=15?'https://api.whatsapp.com/send?phone='+phone+'&text='+text:'https://api.whatsapp.com/send?text='+text;};
+  const updateLink=()=>{const text=encodeURIComponent(message.value);a.href=phone.length>=10&&phone.length<=15?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
   updateLink();message.addEventListener('input',updateLink);a.target='_self';
-  a.addEventListener('click',()=>{feedback.textContent='Abriendo WhatsApp con el mensaje preparado…';});
+  a.addEventListener('click',event=>{event.preventDefault();updateLink();const url=a.href;feedback.textContent='Abriendo WhatsApp con el mensaje preparado…';window.location.assign(url);});
   actions.prepend(a);
   if(p.new_candidate_id){const link=document.createElement('a');link.textContent='Ver nueva candidatura →';link.className='trial-receipt-linked';link.href='/rrhh.html?embedded=1&candidate='+encodeURIComponent(p.new_candidate_id);content.append(link)}
  }catch(e){content.textContent=e.message+' Puedes volver a consultar el cierre desde esta ficha.'}
