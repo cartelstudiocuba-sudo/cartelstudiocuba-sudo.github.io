@@ -3104,20 +3104,12 @@ async function openTrialFinishReceipt(id){
   const digits=value=>String(value||'').replace(/[^0-9]/g,'');
   const rawPhone=digits(p.phone||candidate?.whatsapp||candidate?.phone||candidate?.telefono);
   const phone=rawPhone.length===8?'53'+rawPhone:rawPhone;
-  const a=document.createElement('a');a.className='trial-receipt-whatsapp';a.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.2A8 8 0 1 1 20 11.5Z"/><path d="M9 8c0 4 3 7 7 7l1-2-3-1-1 1-2-2 1-1-1-3Z"/></svg><span>Abrir WhatsApp</span>';
-  const updateLink=()=>{const text=encodeURIComponent(message.value);const valid=phone.length>=10&&phone.length<=15;a.href='whatsapp://send?'+(valid?'phone='+phone+'&':'')+'text='+text;webLink.href=valid?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
-  const webLink=document.createElement('a');webLink.className='trial-receipt-return';webLink.textContent='Abrir WhatsApp en navegador';webLink.target='_blank';webLink.rel='noopener noreferrer';
-  updateLink();message.addEventListener('input',updateLink);a.target='_self';
-  a.addEventListener('click',async event=>{event.preventDefault();
-   const text=message.value;
-   if(typeof navigator.share==='function'){
-    try{await navigator.share({text});feedback.textContent='Selecciona WhatsApp en el menú de compartir.';return}
-    catch(err){if(err?.name==='AbortError'){feedback.textContent='Compartir cancelado.';return}}
-   }
-   updateLink();feedback.textContent='No se pudo abrir el menú de compartir. Usa el enlace alternativo o copia el mensaje.';
-  });
-  a.querySelector('span').textContent='Compartir por WhatsApp';
-  actions.prepend(a,webLink);
+  const webLink=document.createElement('a');webLink.className='trial-receipt-whatsapp';
+  webLink.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.2A8 8 0 1 1 20 11.5Z"/><path d="M9 8c0 4 3 7 7 7l1-2-3-1-1 1-1-3Z"/></svg><span>Enviar por WhatsApp</span>';
+  webLink.target='_blank';webLink.rel='noopener noreferrer';
+  const updateLink=()=>{const text=encodeURIComponent(message.value);webLink.href=phone.length>=10&&phone.length<=15?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
+  updateLink();message.addEventListener('input',updateLink);
+  actions.prepend(webLink);
   if(p.new_candidate_id){const link=document.createElement('a');link.textContent='Ver nueva candidatura →';link.className='trial-receipt-linked';link.href='/rrhh.html?embedded=1&candidate='+encodeURIComponent(p.new_candidate_id);content.append(link)}
  }catch(e){content.textContent=e.message+' Puedes volver a consultar el cierre desde esta ficha.'}
  close.focus();
