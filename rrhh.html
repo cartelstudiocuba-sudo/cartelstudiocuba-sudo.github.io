@@ -2752,7 +2752,7 @@ if(st==='trial'&&['agreement_sent','agreement_accepted','in_trial','evaluation_p
  labels.trial='Cierre del período de prueba';
  actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="openTrialClosureDecision(\''+x.id+'\')">Notificar al candidato →</button>';
 }
-if(trainingStarted&&st==='trial'&&!trialClosed){labels.trial='Comienzo de capacitación';actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="alert(\\'La función Enviar documentación estará disponible próximamente.\\')">Enviar documentación →</button>';}
+if(trainingStarted&&st==='trial'&&!trialClosed){labels.trial='Comienzo de capacitación';actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="alert(\'La función Enviar documentación estará disponible próximamente.\')">Enviar documentación →</button>';}
 if(trialClosed){
  labels[st]='Período de prueba finalizado';
  actions[st]='<button type="button" class="candidate-flow-action" onclick="openTrialClosureReview(\''+x.id+'\')">Ver cierre del período de prueba →</button>';
