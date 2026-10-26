@@ -3118,7 +3118,7 @@ async function openTrialFinishReceipt(id){
   webLink.target='_blank';webLink.rel='noopener noreferrer';
   const updateLink=()=>{const text=encodeURIComponent(message.value);webLink.href=phone.length>=10&&phone.length<=15?'https://wa.me/'+phone+'?text='+text:'https://api.whatsapp.com/send?text='+text;};
   updateLink();message.addEventListener('input',updateLink);
-  webLink.addEventListener('click',()=>{whatsappOpened=true;preserveCandidateSheet(id)});
+  webLink.addEventListener('click',()=>{whatsappOpened=true;preserveCandidateSheet(id);if(window.self!==window.top){setTimeout(()=>{if(overlay.isConnected){whatsappOpened=false;cleanup();dismiss();refreshCandidateAfterStatusChange(id).then(()=>openDetail(id));}},100)} });
   actions.prepend(webLink);
   if(p.new_candidate_id){const link=document.createElement('a');link.textContent='Ver nueva candidatura →';link.className='trial-receipt-linked';link.href='/rrhh.html?embedded=1&candidate='+encodeURIComponent(p.new_candidate_id);content.append(link)}
  }catch(e){content.textContent=e.message+' Puedes volver a consultar el cierre desde esta ficha.'}
