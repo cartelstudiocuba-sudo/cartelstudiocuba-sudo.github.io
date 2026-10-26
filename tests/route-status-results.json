@@ -1,0 +1,170 @@
+[
+  {
+    "width": 320,
+    "mode": "not_selected",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 320,
+    "mode": "talent_pool",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 320,
+    "mode": "total",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 390,
+    "mode": "not_selected",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 390,
+    "mode": "talent_pool",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 390,
+    "mode": "total",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 430,
+    "mode": "not_selected",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 430,
+    "mode": "talent_pool",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 430,
+    "mode": "total",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": true,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 1440,
+    "mode": "not_selected",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": false,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 1440,
+    "mode": "talent_pool",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": false,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  },
+  {
+    "width": 1440,
+    "mode": "total",
+    "rows": [
+      0,
+      5,
+      11
+    ],
+    "touch": false,
+    "keyboard": true,
+    "cancel": true,
+    "retry": true,
+    "filters": true
+  }
+]
