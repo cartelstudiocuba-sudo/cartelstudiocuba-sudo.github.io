@@ -43,8 +43,11 @@
  for(const type of ['beforeinput','input','change','click'])root.addEventListener(type,blockPartialEdit,true);
  function resizeFrame(frame){try{const body=frame.contentDocument&&frame.contentDocument.body;if(!body)return false;const height=Math.ceil(Math.max(body.scrollHeight,body.offsetHeight,body.getBoundingClientRect().height));if(height<=0)return false;const target=(height+8)+'px';if(frame.style.height!==target)frame.style.height=target;return true;}catch(_){return false;}}
  root.CartelLoad={resizeFrame,clearNotice:()=>{const bar=document.getElementById('cartel-load-notice');if(bar)bar.remove();},publicRead,setReadOnly:value=>{readonly=!!value;},createClient,wrap,fetch:guardedFetch,run,read,required,deadline,fail,notice,limits:LIMITS,diagnostics:()=>diagnostics.map(x=>({...x}))};
- root.addEventListener('unhandledrejection',()=>fail(failure('load_failed')));
- root.addEventListener('error',event=>{if(['ResizeObserver loop completed with undelivered notifications.','ResizeObserver loop limit exceeded'].includes(event.message)){record('layout','observer_deferred',0);return;}if(event.target&&event.target.tagName==='SCRIPT'||event instanceof ErrorEvent)fail(failure('load_failed'));},true);
+ // Nonfatal background errors should not cover a usable dashboard with a global banner.
+ // CartelLoad.run/read continue to report real screen-loading failures and offer retry.
+ root.addEventListener('unhandledrejection',event=>{record('background',event.reason?.code||'promise_failed',0);});
+ root.addEventListener('error',event=>{
+  if(['ResizeObserver loop completed with undelivered notifications.','ResizeObserver loop limit exceeded'].includes(event.message)){record('layout','observer_deferred',0);return;}
+  record('background',event.target?.tagName==='SCRIPT'?'script_failed':'runtime_failed',0);
+ },true);
 })(window);
-
-
