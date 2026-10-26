@@ -46,7 +46,7 @@ begin
    return;
   end if;
   if t.stage not in ('agreement_sent','agreement_accepted','in_trial','evaluation_pending') then raise exception 'Etapa no válida para cerrar'; end if;
-  if outcome='not_selected' and coalesce(p_payload->>'reason','') not in ('No asistió a la entrevista','No es el candidato idóneo') then raise exception 'Selecciona el motivo de no selección'; end if;
+  if outcome='not_selected' and length(btrim(coalesce(p_payload->>'reason',''))) not between 1 and 1000 then raise exception 'Selecciona el motivo de no selección'; end if;
   if outcome='profiled' then
    select * into dest from public.hr_vacancies where id=target for share;
    if not found or dest.status<>'active' or dest.id=person.vacancy_id then raise exception 'Selecciona otra convocatoria activa'; end if;

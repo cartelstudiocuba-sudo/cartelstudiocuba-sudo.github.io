@@ -23,7 +23,7 @@ async function backend(db){
  const report=[];
  for(const outcome of ['talent_pool','not_selected','profiled']){
   await seed(db);const beforeB=await row(db,'hr_candidates',ids.b),before=await row(db,'hr_candidates');
-  const payload={outcome,vacancy_id:outcome==='profiled'?ids.w:null,reason:outcome==='not_selected'?'No es el candidato idóneo':null};
+  const payload={outcome,vacancy_id:outcome==='profiled'?ids.w:null,reason:outcome==='not_selected'?'Disponibilidad incompatible con los horarios':null};
   await rpc(db,'finish_without_advance',payload);
   // Reproduce legacy reopening: retry must reconcile the persisted decision without duplicates.
   await db.query("update hr_candidates set status='trial',decision_status='selected' where id=$1",[ids.a]);
@@ -42,7 +42,7 @@ async function backend(db){
   await rpc(db,'visible_step_back',{expected_stage:'pending_agreement',expected_status:'interviewed'});assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,'pending_confirmation');assert.equal((await row(db,'hr_trial_periods',ids.t)).proposal_sent_at,null);
  }
  await seed(db);await assert.rejects(()=>rpc(db,'visible_step_back',{expected_stage:'agreement_sent',expected_status:'trial'}));assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,'evaluation_pending');
- for(const payload of [{outcome:'not_selected'},{outcome:'profiled',vacancy_id:ids.v}]){await seed(db);await assert.rejects(()=>rpc(db,'finish_without_advance',payload));assert.equal((await row(db,'hr_candidates')).status,'trial')}
+ for(const payload of [{outcome:'not_selected',reason:'   '},{outcome:'not_selected',reason:'x'.repeat(1001)},{outcome:'not_selected'},{outcome:'profiled',vacancy_id:ids.v}]){await seed(db);await assert.rejects(()=>rpc(db,'finish_without_advance',payload));assert.equal((await row(db,'hr_candidates')).status,'trial')}
  await seed(db);await db.query('update hr_candidates set vacancy_id=$1,whatsapp=$2 where id=$3',[ids.w,'5350000001',ids.b]);await assert.rejects(()=>rpc(db,'finish_without_advance',{outcome:'profiled',vacancy_id:ids.w}));assert.equal((await row(db,'hr_candidates')).status,'trial');
  // Failure after act preparation and candidate insertion must undo the entire operation.
  await seed(db);await db.exec(`create function test_fail_history() returns trigger language plpgsql as $$begin if new.event_type='trial_closed' then raise exception 'Synthetic failure';end if;return new;end$$;create trigger test_fail after insert on hr_candidate_history for each row execute function test_fail_history();`);
@@ -108,9 +108,9 @@ try{for(const width of [390,1440]){
   await page.evaluate(id=>openTrialClosureDecision(id),ids.a);await page.locator('#trialCloseFinish').click();await page.locator('.trial-finish-choice[data-value="'+outcome+'"]').click();
   if(outcome==='profiled')await page.locator('#trialFinishVacancy').selectOption(ids.w);
   await page.locator('#trialFinishRepresentative [name=start_date]').fill('2026-10-20');await page.locator('#trialFinishRepresentative [name=end_date]').fill('2026-10-26');await page.locator('#trialFinishConfirm').click();
-  if(outcome==='not_selected'){await page.locator('input[value="No es el candidato idóneo"]').check();await page.locator('#rejectionReasonOverlay [data-action="confirm"]').click()}
+  if(outcome==='not_selected'){await page.locator('input[value="other"]').check();const confirm=page.locator('#rejectionReasonOverlay [data-action="confirm"]');assert(await confirm.isDisabled());await page.locator('#rejectionReasonCustom').fill('   ');assert(await confirm.isDisabled());await page.locator('#rejectionReasonCustom').fill('  Disponibilidad incompatible con los horarios  ');await confirm.click()}
   await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).waitFor();
-  assert.equal((await row(db,'hr_candidates')).status,outcome==='profiled'?'archived':outcome);assert(!/Cierre del período de prueba|Recepción del acuerdo|Volver al inicio/.test(await page.locator('#detail .candidate-flow').innerText()));
+  assert.equal((await row(db,'hr_candidates')).status,outcome==='profiled'?'archived':outcome);if(outcome==='not_selected')assert.equal((await row(db,'hr_candidates')).decision_note,'Disponibilidad incompatible con los horarios');assert(!/Cierre del período de prueba|Recepción del acuerdo|Volver al inicio/.test(await page.locator('#detail .candidate-flow').innerText()));
   const popupPromise=context.waitForEvent('page');await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).click();const popup=await popupPromise;await popup.waitForLoadState();assert(popup.url().startsWith('https://wa.me/5350000001'));await popup.close();if(await page.locator('#trialFinishOverlay .candidate-back-cancel').isVisible())await page.locator('#trialFinishOverlay .candidate-back-cancel').click();await open();
   await page.waitForFunction(()=>document.querySelector('[data-trial-history]')?.textContent.includes('Prueba finalizada'));
   if(outcome==='profiled'){await page.locator('[data-trial-history] a').waitFor({state:'attached'});assert((await page.locator('[data-trial-history]').innerText()).includes('Perfilado'));}
