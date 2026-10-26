@@ -2978,12 +2978,24 @@ async function openTrialFinishDestination(id,initial=''){
  const vacancy=document.createElement('select');vacancy.id='trialFinishVacancy';vacancy.setAttribute('aria-label','Plaza de destino');vacancy.hidden=true;
  const empty=document.createElement('option');empty.value='';empty.textContent='Selecciona plaza activa…';vacancy.append(empty);
  vacancies.filter(v=>v.status==='active'&&String(v.id)!==String(candidate.vacancy_id)).forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.title;vacancy.append(o)});dialog.append(vacancy);
+ const repForm=document.createElement('form');repForm.id='trialFinishRepresentative';repForm.hidden=true;repForm.style.cssText='display:grid;gap:12px;padding:16px;margin:12px 0;border:1px solid #54728a;border-radius:16px;background:#142d43';repForm.innerHTML='<strong>Datos del representante de El Cartel Studio</strong><small>Completa estos datos antes de preparar el acta y el mensaje.</small><label>Nombre y apellidos<input name="name" required autocomplete="name"></label><label>Carné de identidad<input name="ci" required inputmode="numeric" pattern="[0-9]{11}" maxlength="11"></label><label>Cargo<input name="position" required></label><label>Dirección de la sede<textarea name="address" required rows="3"></textarea></label><label>Inicio del período de prueba<input name="start_date" type="date" required></label><label>Fin del período de prueba<input name="end_date" type="date" required></label>';repForm.querySelectorAll('input,textarea').forEach(el=>el.style.cssText='width:100%;box-sizing:border-box;padding:12px;border-radius:9px;color:#151515;background:white');dialog.append(repForm);let repStep=false;
  const error=document.createElement('p');error.setAttribute('role','alert');dialog.append(error);
  const confirm=document.createElement('button');confirm.id='trialFinishConfirm';confirm.className='candidate-back-option';confirm.textContent='Confirmar cierre y destino';confirm.disabled=true;dialog.append(confirm);
  const cancel=document.createElement('button');cancel.className='candidate-back-cancel';cancel.textContent='Cancelar';cancel.onclick=()=>overlay.remove();dialog.append(cancel);
  select.onchange=()=>{vacancy.hidden=select.value!=='profiled';confirm.disabled=!select.value||(select.value==='profiled'&&!vacancy.value);choices.querySelectorAll('.trial-finish-choice').forEach(btn=>{const active=btn.dataset.value===select.value;btn.setAttribute('aria-pressed',String(active));btn.querySelector('.trial-finish-check').textContent=active?'✓':'○'});error.textContent=''};
  vacancy.onchange=()=>{confirm.disabled=!vacancy.value};
  confirm.onclick=async()=>{
+  if(!repStep){
+   repStep=true;repForm.hidden=false;choices.hidden=true;vacancy.hidden=true;
+   dialog.querySelector('.trial-finish-note').textContent='Completa los datos del representante para preparar el acta de cierre del período de prueba.';
+   let saved={};try{saved=JSON.parse(localStorage.getItem('cartel_trial_representative')||'{}')}catch(_){}
+   const {data:existing}=await sb.from('hr_trial_closures').select('document').eq('trial_id',trial.id).maybeSingle();saved={...saved,...(existing?.document?.representative||{})};
+   for(const key of ['name','ci','position','address','start_date','end_date'])repForm.elements[key].value=saved[key]||((key==='start_date')?trial.start_date:'')||'';
+   confirm.textContent='Guardar datos y confirmar cierre →';repForm.scrollIntoView({block:'nearest',behavior:'smooth'});return;
+  }
+  if(!repForm.reportValidity())return;
+  if(repForm.elements.end_date.value<repForm.elements.start_date.value){error.textContent='La fecha de fin no puede ser anterior al inicio.';return;}
+  const representative=Object.fromEntries(new FormData(repForm));representative.ci=representative.ci.replace(/\\D/g,'');
   confirm.disabled=true;select.disabled=true;vacancy.disabled=true;cancel.disabled=true;
   let committed=false;
   try{
@@ -2992,6 +3004,11 @@ async function openTrialFinishDestination(id,initial=''){
    const {error:rpcError}=await sb.rpc('hr_manage_trial_closure',{p_trial:trial.id,p_action:'finish_without_advance',p_payload:{outcome:select.value,vacancy_id:select.value==='profiled'?vacancy.value:null,reason}});
    if(rpcError)throw Error(rpcError.message);
    committed=true;
+   try{
+    localStorage.setItem('cartel_trial_representative',JSON.stringify(representative));
+    const {error:repError}=await sb.rpc('hr_set_trial_closure_representative',{p_trial:trial.id,p_representative:representative});
+    if(repError)throw Error(repError.message);
+   }catch(repFailure){error.textContent='El destino quedó guardado, pero no se pudieron guardar los datos del acta: '+repFailure.message;}
    // Apply the confirmed result immediately; a later read failure cannot show the old closure step.
    Object.assign(candidate,{status:select.value==='profiled'?'archived':select.value,decision_status:select.value,...(reason?{decision_note:reason}:{})});
    trialPeriodsByCandidate[String(id)]={...trial,stage:'completed'};
