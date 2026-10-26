@@ -68,8 +68,18 @@ async function initClosurePublic(documentMode){
    let content=b.use_override&&b.override_text?b.override_text:b.text||'';
    // The evaluated person's identifying details are always completed by hand.
    if(b.id==='tcl2')content='Nombre y apellidos: ________________________________________________\\nCarné de Identidad: ________________________________________________';
+   if(b.id==='tcl3'&&data.representative?.start_date&&data.representative?.end_date){
+    const fmt=x=>x.split('-').reverse().join(' / ');
+    content=content.replace(/desde el [^]*?hasta el [^]*?\. La fecha efectiva/, 'desde el '+fmt(data.representative.start_date)+' hasta el '+fmt(data.representative.end_date)+'. La fecha efectiva');
+   }
+   if(b.id==='tcl7'){
+    content=content.replace(/Cantidad \\| Medio \\/ recurso[^]*?(?=Cualquier incidencia)/i,'');
+   }
+   if(b.id==='tcl10'){
+    content=content.replace(/Resumen de asuntos pendientes u observaciones:[^]*/i,'Resumen de asuntos pendientes u observaciones:\\n'+(data.representative?.observations||'Sin asuntos pendientes declarados.'));
+   }
    if(b.id==='tcl11'){
-    content='Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.\\n\\nPERSONA EVALUADA\\nNombre: ________________________________________________\\nCarné de Identidad: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________\\n\\nPOR EL CARTEL STUDIO\\nNombre: '+(data.representative?.name||'________________________________')+'\\nCarné de Identidad: '+(data.representative?.ci||'________________________')+'\\nCargo: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________';
+    content='Las partes manifiestan haber revisado el contenido de la presente acta y firman en señal de constancia del cierre del período de prueba.\\n\\nPERSONA EVALUADA\\nNombre: ________________________________________________\\nCarné de Identidad: ______________________________\\nFirma: ______________________________\\nFecha: ____ / ____ / ________\\n\\nPOR EL CARTEL STUDIO\\nNombre: '+(data.representative?.name||'________________________________')+'\\nCarné de Identidad: '+(data.representative?.ci||'________________________')+'\\nCargo: '+(data.representative?.position||'______________________________')+'\\nFirma: ______________________________\\nFecha: ____ / ____ / ________';
    }
    if(b.id==='tcl1')content='El Cartel Studio'+(data.representative?.address?'\\nDirección de la sede: '+data.representative.address:'');
    if(b.source==='candidate'&&!content)content='Nombre: ________________________________________________\\nCarné de Identidad: ______________________________';
