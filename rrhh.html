@@ -2753,7 +2753,7 @@ if(st==='trial'&&['agreement_sent','agreement_accepted','in_trial','evaluation_p
 }
 if(trialClosed){
  labels[st]='Período de prueba finalizado';
- actions[st]='<button type="button" class="candidate-flow-action" onclick="openTrialFinishReceipt(\''+x.id+'\')">Ver cierre del período de prueba →</button>';
+ actions[st]='<button type="button" class="candidate-flow-action" onclick="openTrialClosureReview(\''+x.id+'\')">Ver cierre del período de prueba →</button>';
 }
 const help=st==='new'?'Revisa los datos de la candidatura y elige: preseleccionar, cantera, otra plaza o no seleccionar.':st==='preselected'?'Confirma la disponibilidad antes de coordinar la entrevista.':st==='interviewed'&&!needsDocuments?'Envía una propuesta de fechas y condiciones para consultar su disponibilidad e interés.':needsDocuments?'El siguiente paso es preparar el contrato de período de prueba.':'Las acciones disponibles dependen de la etapa actual.';
 return '<section class="candidate-flow" aria-label="Ruta de incorporación"><div class="candidate-flow-title">Ruta de incorporación</div><div class="candidate-flow-sub">Sigue el proceso de esta candidatura sin perder su historial.</div><div class="candidate-flow-steps">'+steps.map((label,i)=>'<div class="candidate-flow-step '+(ended?(i<exitPhase?'done':i===exitPhase?'ended':'not-started'):(phase>=0&&i<phase?'done':i===phase?'current':''))+'"><span class="route-icon">'+routeSvg(routeIcons[i])+'</span><span class="route-step-text"><b>'+((ended?i<exitPhase:phase>=0&&i<phase)?'✓':'0'+(i+1))+'</b><span>'+label+'</span>'+(ended?'<small class="route-stage-status">'+(i<exitPhase?'Completada':i===exitPhase?'Finalizó aquí':'No iniciada')+'</small>':'')+'</span></div>').join('')+'</div><div class="candidate-flow-next"><span class="route-next-icon">'+routeSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M9 10h6m-6 4h6m-6 4h4"/>')+'</span><div><strong>'+esc(labels[st]||'Consultar situación actual')+'</strong><small>'+esc(trialClosed?'Destino confirmado: '+(st==='not_selected'?'No seleccionado':st==='talent_pool'?'Cantera':st==='archived'?'Perfilado a otra plaza':'Cierre registrado'):ended?'Proceso finalizado en '+steps[exitPhase]:st==='trial'?'':help)+'</small></div>'+(actions[st]?'<div class="candidate-route-controls">'+(candidatePreviousStep(x,trialPeriodsByCandidate[String(x.id)])?'<button type="button" class="candidate-route-back" title="Retroceder etapa" aria-label="Retroceder etapa" onclick="openCandidateStageBack(\''+x.id+'\')">←</button>':'')+actions[st]+'</div>':'')+'</div></section>';
@@ -2968,6 +2968,30 @@ async function openTrialFinishDestination(id,initial=''){
  };
  if(initial){select.value=initial;select.onchange()}
  (choices.querySelector('.trial-finish-choice[aria-pressed="true"]')||choices.querySelector('.trial-finish-choice'))?.focus({preventScroll:true});
+}
+async function openTrialClosureReview(id){
+ const trial=trialPeriodsByCandidate[String(id)];if(!trial)return alert('No se encontró el período de prueba.');
+ const {overlay,dialog}=trialFinishDialog('Consultar cierre');
+ dialog.style.cssText='width:min(92vw,560px);max-height:88dvh;overflow:auto;padding:26px;border-radius:24px;background:linear-gradient(145deg,#24445d,#102338);color:#fff;border:1px solid #49749a';
+ dialog.textContent='';
+ const heading=document.createElement('h3');heading.textContent='Cierre del período de prueba';heading.style.cssText='color:white;font-size:24px;margin:0 0 8px';dialog.append(heading);
+ const intro=document.createElement('p');intro.textContent='Consulta del cierre registrado. No modifica el expediente ni envía mensajes.';intro.style.cssText='font-size:13px;color:#c5d6e2';dialog.append(intro);
+ const body=document.createElement('div');body.textContent='Consultando cierre…';dialog.append(body);
+ const back=document.createElement('button');back.type='button';back.textContent='Regresar a la ficha';back.className='candidate-back-option';back.style.cssText='width:100%;background:#ffda03;color:#171717;border:0;border-radius:13px;padding:14px;font-weight:800;margin-top:18px';back.onclick=()=>overlay.remove();dialog.append(back);
+ try{
+  const {data,error}=await sb.from('hr_trial_closure_events').select('payload,created_at').eq('trial_id',trial.id).eq('action','finish_without_advance').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(error||!data?.payload)throw Error(error?.message||'No se encontró una decisión registrada.');
+  const p=data.payload;body.replaceChildren();
+  const row=(label,value)=>{const el=document.createElement('div');el.style.cssText='display:flex;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid #ffffff26';const l=document.createElement('span');l.textContent=label;l.style.color='#c5d6e2';const v=document.createElement('strong');v.textContent=value||'No registrado';v.style.textAlign='right';el.append(l,v);body.append(el)};
+  row('Destino confirmado',({not_selected:'No seleccionado',talent_pool:'Cantera',profiled:'Perfilado a otra plaza'})[p.outcome]||'Registrado');
+  if(p.reason)row('Motivo',p.reason);
+  row('Fecha del cierre',new Date(data.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'}));
+  const doc=p.document_url;
+  if(doc){const link=document.createElement('a');link.href=doc;link.target='_blank';link.rel='noopener';link.textContent='📄 Ver Acta de Cierre ↗';link.style.cssText='display:block;text-align:center;margin-top:18px;padding:14px;border:1px solid #7293ab;border-radius:13px;color:white;text-decoration:none;font-weight:700';body.append(link)}
+  const {data:opened}=await sb.from('hr_trial_closure_events').select('created_at').eq('trial_id',trial.id).eq('action','message_opened').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  const note=document.createElement('p');note.style.cssText='font-size:13px;line-height:1.5;color:#c5d6e2;margin-top:16px';note.textContent=opened?'Última apertura de WhatsApp registrada: '+new Date(opened.created_at).toLocaleString('es',{dateStyle:'medium',timeStyle:'short'})+'. No confirma envío ni entrega.':'No consta una apertura de WhatsApp registrada. Esto no confirma si el mensaje se envió por otro medio.';body.append(note);
+ }catch(e){body.textContent='No se pudo consultar el cierre: '+e.message}
+ back.focus({preventScroll:true});
 }
 async function openTrialFinishReceipt(id){
  const t=trialPeriodsByCandidate[String(id)];if(!t)return;
