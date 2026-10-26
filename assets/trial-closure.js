@@ -70,8 +70,8 @@ async function initClosurePublic(documentMode){
    if(b.source==='company'&&!content)content='El Cartel Studio';
    return '<section class="act-section"><h2>'+closureEsc(b.title)+'</h2><p>'+lines(content)+'</p></section>';
   }).join('');
-  root.innerHTML='<div class="act-toolbar"><button id="actView" type="button">◉ Visualizar</button><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button></div><article id="actDocument" class="act-document"><header><div class="act-brand">EL CARTEL STUDIO</div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc(template.presentation?.date_line||'')+'</p></header><p>'+lines(template.agreement_text||'')+'</p>'+blocks+'</article>';
-  document.getElementById('actView').onclick=()=>document.getElementById('actDocument').scrollIntoView({behavior:'smooth'});
+  root.innerHTML='<div class="act-toolbar"><button id="actBack" type="button">← Regresar a la ficha</button><button id="actDownload" type="button">↓ Descargar</button><button id="actPrint" type="button">▤ Imprimir</button></div><article id="actDocument" class="act-document"><header><div class="act-brand">EL CARTEL STUDIO</div><h1>'+closureEsc(template.presentation?.title||template.title)+'</h1><p>'+closureEsc(template.presentation?.plaza_line||('Plaza: '+data.role_title))+'</p><p>'+closureEsc(template.presentation?.date_line||'')+'</p></header><p>'+lines(template.agreement_text||'')+'</p>'+blocks+'</article>';
+  document.getElementById('actBack').onclick=()=>{if(window.history.length>1){window.history.back();}else{window.location.assign('/dashboard.html');}};
   document.getElementById('actPrint').onclick=()=>window.print();
   document.getElementById('actDownload').onclick=()=>{alert('Para guardar el acta en PDF, selecciona «Guardar como PDF» en la ventana de impresión.');window.print()};
   return;
