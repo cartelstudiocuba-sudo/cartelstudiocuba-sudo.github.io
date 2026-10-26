@@ -2897,6 +2897,12 @@ async function openTrialClosureDecision(candidateId){
     links=ev?.payload;
    }
    if(!links?.document_url)throw Error('No se pudo obtener el enlace del Acta de Cierre de esta plaza.');
+   if(mode==='continue'){
+    const form=modal.querySelector('#trialClosureRepresentative');
+    const representative={name:form.elements.name.value.trim(),ci:form.elements.ci.value.replace(/\\D/g,''),address:form.elements.address.value.trim()};
+    const {error:representativeError}=await sb.rpc('hr_set_trial_closure_representative',{p_trial:trial.id,p_representative:representative});
+    if(representativeError)throw Error('No se pudieron guardar los datos del representante en el acta: '+representativeError.message);
+   }
    const {data:person,error:personError}=await sb.from('hr_candidates').select('full_name,whatsapp').eq('id',candidateId).single();
    if(personError)throw Error(personError.message);
    const rawName=String(person.full_name||candidate?.full_name||'').trim();
