@@ -2767,6 +2767,7 @@ function preserveCandidateSheet(id){
 }
 function candidatePreviousStep(candidate,trial){
  if(!candidate)return null;
+ if(localStorage.getItem('cartel-training-start-'+String(candidate.id))==='1'&&candidate.status==='trial')return {trainingBack:true,title:'Volver al cierre del período de prueba'};
  if(candidate.status==='preselected')return candidate.interview_availability_confirmed_at
   ?{status:'preselected',title:'Volver a confirmar disponibilidad para entrevista',candidatePatch:{interview_availability_confirmed_at:null}}
   :{status:'new',title:'Volver a la revisión inicial'};
@@ -2803,6 +2804,12 @@ async function openCandidateStageBack(id){
  title.textContent=option.title;desc.textContent='Regresar al paso inmediatamente anterior.';copy.append(title,desc);const chevron=document.createElement('span');chevron.className='candidate-back-chevron';chevron.textContent='›';button.append(arrow,copy,chevron);
  button.onclick=async()=>{
   button.disabled=true;
+  if(option.trainingBack){
+   localStorage.removeItem('cartel-training-start-'+String(id));
+   preserveCandidateSheet(id);overlay.remove();
+   const scrollY=window.scrollY;openDetail(id);window.scrollTo(0,scrollY);
+   return;
+  }
   const update=option.stage?{...option.patch,stage:option.stage,updated_at:new Date().toISOString()}:null;
   try{
    if(update){
