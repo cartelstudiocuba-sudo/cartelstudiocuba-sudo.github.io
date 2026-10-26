@@ -24,7 +24,11 @@ async function backend(db){
  for(const outcome of ['talent_pool','not_selected','profiled']){
   await seed(db);const beforeB=await row(db,'hr_candidates',ids.b),before=await row(db,'hr_candidates');
   const payload={outcome,vacancy_id:outcome==='profiled'?ids.w:null,reason:outcome==='not_selected'?'No es el candidato idóneo':null};
-  await rpc(db,'finish_without_advance',payload);await rpc(db,'finish_without_advance',payload);
+  await rpc(db,'finish_without_advance',payload);
+  // Reproduce legacy reopening: retry must reconcile the persisted decision without duplicates.
+  await db.query("update hr_candidates set status='trial',decision_status='selected' where id=$1",[ids.a]);
+  await db.query("update hr_trial_periods set stage='evaluation_pending' where id=$1",[ids.t]);
+  await rpc(db,'finish_without_advance',payload);
   const original=await row(db,'hr_candidates'),trial=await row(db,'hr_trial_periods',ids.t);
   assert.equal(original.status,outcome==='profiled'?'archived':outcome);assert.equal(original.vacancy_id,before.vacancy_id);assert.equal(original.internal_notes,before.internal_notes);assert.equal(trial.stage,'completed');
   assert.deepEqual(await row(db,'hr_candidates',ids.b),beforeB);
@@ -44,6 +48,12 @@ async function backend(db){
  await seed(db);await db.exec(`create function test_fail_history() returns trigger language plpgsql as $$begin if new.event_type='trial_closed' then raise exception 'Synthetic failure';end if;return new;end$$;create trigger test_fail after insert on hr_candidate_history for each row execute function test_fail_history();`);
  await assert.rejects(()=>rpc(db,'finish_without_advance',{outcome:'profiled',vacancy_id:ids.w}));assert.equal((await row(db,'hr_candidates')).status,'trial');assert.equal((await db.query('select count(*)::int n from hr_candidates')).rows[0].n,2);assert.equal((await db.query('select count(*)::int n from hr_trial_closures')).rows[0].n,0);await db.exec('drop trigger test_fail on hr_candidate_history;drop function test_fail_history();');
  await db.exec("set test.uid='00000000-0000-0000-0000-000000000001'");await assert.rejects(()=>rpc(db,'finish_without_advance',{outcome:'talent_pool'}),/No autorizado/);await db.exec("set test.uid='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6'");
+ await seed(db);await rpc(db,'finish_without_advance',{outcome:'talent_pool'});
+ await assert.rejects(()=>rpc(db,'visible_step_back',{expected_stage:'completed',expected_status:'talent_pool'}));
+ await db.exec(fs.readFileSync(root+'/supabase/trial-closure-state-guard.sql','utf8').replace(/revoke all[^;]+;/g,''));
+ await assert.rejects(()=>db.query("update hr_trial_periods set stage='in_trial' where id=$1",[ids.t]),/cierre confirmado/);
+ assert.equal((await row(db,'hr_trial_periods',ids.t)).stage,'completed');
+ report.push('closed trial cannot reopen','three outcomes reconcile legacy state without duplicate decisions');
  report.push('four internal stages → contract → availability','stale request rejected','missing reason rejected','same vacancy rejected','duplicate open application rejected','late failure rolls back act/new application/status/history','non-owner rejected');return report;
 }
 const mock=`(()=>{window.alerts=[];window.alert=m=>alerts.push(m);window.confirm=()=>true;const api=async payload=>{const r=await fetch('/synthetic-api',{method:'POST',body:JSON.stringify(payload)});return r.json()};window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{user:{email:'cartelstudiocuba@gmail.com'},access_token:'fake'}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},storage:{from:()=>({createSignedUrl:async()=>({data:null})})},rpc:(name,args)=>api({name,args}),from(table){let filters=[],patch,orders=[],limit,one=false;const q={select(){return q},update(v){patch=v;return q},eq(k,v){filters.push([k,v]);return q},in(){return q},order(k,o){orders.push([k,o]);return q},range(){return q},limit(n){limit=n;return q},single(){one=true;return q},maybeSingle(){one=true;return q},then(ok,bad){return api({table,filters,patch,orders,limit,one}).then(ok,bad)}};return q}})};})();`;
@@ -56,7 +66,7 @@ try{for(const width of [390,1440]){
   if(u.pathname==='/synthetic-api'){
    const p=route.request().postDataJSON();calls.push(p);
    try{let result;
-    if(p.name){assert.equal(p.name,'hr_manage_trial_closure');await db.query('select hr_manage_trial_closure($1,$2,$3)',[p.args.p_trial,p.args.p_action,p.args.p_payload]);result={data:null,error:null};if(lostResponse){lostResponse=false;return route.fulfill({json:{data:null,error:{message:'Respuesta perdida simulada'}}})}}
+    if(p.name==='hr_set_trial_closure_representative')return route.fulfill({json:{data:null,error:null}});if(p.name){assert.equal(p.name,'hr_manage_trial_closure');await db.query('select hr_manage_trial_closure($1,$2,$3)',[p.args.p_trial,p.args.p_action,p.args.p_payload]);result={data:null,error:null};if(lostResponse){lostResponse=false;return route.fulfill({json:{data:null,error:{message:'Respuesta perdida simulada'}}})}}
     else {assert(/^[a-z_]+$/.test(p.table));let values=[],where=p.filters.map(([key,value])=>{assert(/^[a-z_]+$/.test(key));values.push(value);return key+'=$'+values.length}).join(' and ');if(failRead&&p.table==='hr_trial_closure_events'){failRead=false;throw Error('Lectura fallida simulada')};
      let query='select * from '+p.table;if(p.patch){const sets=Object.entries(p.patch).map(([key,v])=>{assert(/^[a-z_]+$/.test(key));values.push(v);return key+'=$'+values.length});query='update '+p.table+' set '+sets.join(',')}
      if(where)query+=' where '+where;if(p.patch)query+=' returning *';else{if(p.orders.length)query+=' order by '+p.orders.map(([k,o])=>{assert(/^[a-z_]+$/.test(k));return k+(o?.ascending===false?' desc':' asc')}).join(',');if(p.limit)query+=' limit '+Number(p.limit)}const rows=(await db.query(query,values)).rows;result={data:p.one?(rows[0]||null):rows,error:null}}
@@ -76,25 +86,25 @@ try{for(const width of [390,1440]){
  for(const outcome of ['talent_pool','not_selected','profiled']){
   await seed(db);await open();const before=calls.length;
   await page.evaluate(id=>openTrialClosureDecision(id),ids.a);await page.locator('#trialCloseFinish').click();await page.locator('#trialFinishOverlay .candidate-back-cancel').click();assert.equal(calls.slice(before).filter(x=>x.name||x.patch).length,0);
-  await page.evaluate(id=>openTrialClosureDecision(id),ids.a);await page.locator('#trialCloseFinish').click();await page.locator('#trialFinishDestination').selectOption(outcome);
+  await page.evaluate(id=>openTrialClosureDecision(id),ids.a);await page.locator('#trialCloseFinish').click();await page.locator('.trial-finish-choice[data-value="'+outcome+'"]').click();
   if(outcome==='profiled')await page.locator('#trialFinishVacancy').selectOption(ids.w);
-  await page.locator('#trialFinishConfirm').click();
+  await page.locator('#trialFinishRepresentative [name=start_date]').fill('2026-10-20');await page.locator('#trialFinishRepresentative [name=end_date]').fill('2026-10-26');await page.locator('#trialFinishConfirm').click();
   if(outcome==='not_selected'){await page.locator('input[value="No es el candidato idóneo"]').check();await page.locator('#rejectionReasonOverlay [data-action="confirm"]').click()}
-  await page.getByRole('link',{name:'Abrir WhatsApp',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).waitFor();
   assert.equal((await row(db,'hr_candidates')).status,outcome==='profiled'?'archived':outcome);assert(!/Cierre del período de prueba|Recepción del acuerdo|Volver al inicio/.test(await page.locator('#detail .candidate-flow').innerText()));
-  const popupPromise=context.waitForEvent('page');await page.getByRole('link',{name:'Abrir WhatsApp',exact:true}).click();const popup=await popupPromise;await popup.waitForLoadState();assert(popup.url().startsWith('https://wa.me/5350000001'));await popup.close();await page.locator('#trialFinishOverlay .candidate-back-cancel').click();await open();
+  const popupPromise=context.waitForEvent('page');await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).click();const popup=await popupPromise;await popup.waitForLoadState();assert(popup.url().startsWith('https://wa.me/5350000001'));await popup.close();if(await page.locator('#trialFinishOverlay .candidate-back-cancel').isVisible())await page.locator('#trialFinishOverlay .candidate-back-cancel').click();await open();
   await page.waitForFunction(()=>document.querySelector('[data-trial-history]')?.textContent.includes('Prueba finalizada'));
   if(outcome==='profiled'){await page.locator('[data-trial-history] a').waitFor({state:'attached'});assert((await page.locator('[data-trial-history]').innerText()).includes('Perfilado'));}
-  await page.getByRole('button',{name:'Consultar cierre y WhatsApp →'}).click();await page.getByRole('link',{name:'Abrir WhatsApp',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Ver cierre del período de prueba →'}).click();await page.locator('.trial-review-back').click();await page.evaluate(id=>openTrialClosureDecision(id),ids.a);await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).waitFor();
   assert.equal(await page.locator('#trialFinishOverlay').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true);
   fs.mkdirSync(root+'/../outputs/cierre-seguro',{recursive:true});await page.screenshot({path:root+'/../outputs/cierre-seguro/'+outcome+'-'+width+'.png'});
  }
  // Cancel the existing rejection reason dialog without any mutation.
- await seed(db);await open();await page.evaluate(id=>openTrialFinishDestination(id,'not_selected'),ids.a);await page.locator('#trialFinishConfirm').click();await page.locator('#rejectionReasonOverlay [data-action="cancel"]').click();assert.equal((await row(db,'hr_candidates')).status,'trial');await page.locator('#trialFinishOverlay .candidate-back-cancel').click();
+ await seed(db);await open();await page.evaluate(id=>openTrialFinishDestination(id,'not_selected'),ids.a);await page.locator('#trialFinishRepresentative [name=start_date]').fill('2026-10-20');await page.locator('#trialFinishRepresentative [name=end_date]').fill('2026-10-26');await page.locator('#trialFinishConfirm').click();await page.locator('#rejectionReasonOverlay [data-action="cancel"]').click();assert.equal((await row(db,'hr_candidates')).status,'trial');await page.locator('#trialFinishOverlay .candidate-back-cancel').click();
  // Early interview navigation keeps its existing behavior.
  await db.query("update hr_candidates set status='preselected',interview_availability_confirmed_at=now() where id=$1",[ids.a]);await open();await page.evaluate(id=>openCandidateStageBack(id),ids.a);assert((await page.locator('.candidate-back-option').innerText()).includes('confirmar disponibilidad para entrevista'));await page.locator('.candidate-back-option').click();await page.locator('#candidateBackOverlay').waitFor({state:'detached'});assert.equal((await row(db,'hr_candidates')).interview_availability_confirmed_at,null);
  // A failed acknowledgment must reconcile the real committed state and preserve recovery on reload.
- await seed(db);await open();lostResponse=true;await page.evaluate(id=>openTrialFinishDestination(id),ids.a);await page.locator('#trialFinishDestination').selectOption('talent_pool');await page.locator('#trialFinishConfirm').click();await page.waitForFunction(()=>document.querySelector('#detail .candidate-flow')?.textContent.includes('Candidatura en cantera'));await open();failRead=true;await page.evaluate(id=>openTrialFinishReceipt(id),ids.a);await page.getByText('Lectura fallida simulada',{exact:false}).waitFor();await page.locator('#trialFinishOverlay .candidate-back-cancel').click();await page.evaluate(id=>openTrialFinishReceipt(id),ids.a);await page.getByRole('link',{name:'Abrir WhatsApp',exact:true}).waitFor();
+ await seed(db);await open();lostResponse=true;await page.evaluate(id=>openTrialFinishDestination(id),ids.a);await page.locator('.trial-finish-choice[data-value="talent_pool"]').click();await page.locator('#trialFinishRepresentative [name=start_date]').fill('2026-10-20');await page.locator('#trialFinishRepresentative [name=end_date]').fill('2026-10-26');await page.locator('#trialFinishConfirm').click();await page.waitForFunction(()=>document.querySelector('#detail .candidate-flow')?.textContent.includes('Candidatura en cantera'));await open();failRead=true;await page.evaluate(id=>openTrialFinishReceipt(id),ids.a);await page.getByText('Lectura fallida simulada',{exact:false}).waitFor();await page.locator('#trialFinishOverlay .candidate-back-cancel').click();await page.evaluate(id=>openTrialFinishReceipt(id),ids.a);await page.getByRole('link',{name:'Enviar por WhatsApp',exact:true}).waitFor();
  assert.deepEqual(errors,[]);report.push({width,decisions:3,navigation:true,cancelNoWrites:true,whatsAppUnconfirmed:true,reloadRecovery:true,lostResponse:true,readFailureRecovery:true,realDatabaseRequests:0,blockedExternalRequests:realRequests});await context.close();
 }}finally{await browser.close()}return report}
 (async()=>{const db=await database();try{const results={backend:await backend(db),browser:await browserTests(db)};console.log(JSON.stringify(results,null,2));fs.mkdirSync(root+'/../outputs/cierre-seguro',{recursive:true});fs.writeFileSync(root+'/../outputs/cierre-seguro/results.json',JSON.stringify(results,null,2))}finally{await db.close()}})().catch(e=>{console.error(e);process.exit(1)});

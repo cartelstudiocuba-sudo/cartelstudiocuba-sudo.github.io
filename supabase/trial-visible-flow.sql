@@ -19,7 +19,17 @@ begin
    select payload into previous from public.hr_trial_closure_events where trial_id=p_trial and action='finish_without_advance' order by created_at desc limit 1;
    if previous is not null then
     if previous->>'outcome'=outcome and (previous->>'vacancy_id') is not distinct from (target::text)
-     and coalesce(previous->>'reason','')=coalesce(p_payload->>'reason','') then return; end if;
+     and coalesce(previous->>'reason','')=coalesce(p_payload->>'reason','') then
+     next_status:=case outcome when 'profiled' then 'archived' else outcome end;
+     if person.status not in ('trial','interviewed',next_status) or exists(select 1 from public.hr_employees where candidate_id=person.id and status='active') then
+      raise exception 'La candidatura cambió después del cierre. Revisa su historial';
+     end if;
+     update public.hr_candidates set status=next_status,decision_status=outcome,
+      decision_note=case when outcome='not_selected' then previous->>'reason' else decision_note end
+      where id=person.id and (status is distinct from next_status or decision_status is distinct from outcome);
+     update public.hr_trial_periods set stage='completed',updated_at=now() where id=p_trial and stage<>'completed';
+     return;
+    end if;
     raise exception 'La prueba ya tiene una decisión de cierre. Actualiza la ficha';
    end if;
   end if;
