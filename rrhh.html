@@ -2987,11 +2987,11 @@ async function openTrialFinishReceipt(id){
   // Presentación actualizada del mensaje de cierre: conservar el enlace firmado original.
   if(message.value){
    const original=message.value;
-   const candidateName=(original.match(/(?:^|\\n)Hola[, ]+([^\\n,!.]+)/i)||[])[1]?.trim()||'CANDIDATO';
-   const role=(original.match(/(?:plaza de|plaza del|plaza)\\s+\\*?([^\\n*]+?)\\*?\\s+en\\s+\\*?El Cartel Studio/i)||[])[1]?.trim()||t.role_title||'la plaza correspondiente';
-   const documentUrl=(original.match(/https?:\\/\\/[^\\s<>]+/i)||[])[0];
+   const candidateName=(original.match(/(?:^|\n)Hola[, ]+([^\n,!.]+)/i)||[])[1]?.trim()||'CANDIDATO';
+   const role=(original.match(/(?:plaza de|plaza del|plaza)\s+\*?([^\n*]+?)\*?\s+en\s+\*?El Cartel Studio/i)||[])[1]?.trim()||t.role_title||'la plaza correspondiente';
+   const documentUrl=(original.match(/https?:\/\/[^\s<>]+/i)||[])[0];
    if(documentUrl){
-    message.value='Hola, '+candidateName+'.\\n\\nQueremos agradecerte el tiempo, la dedicación y la disposición que mostraste durante esta etapa.\\n\\nHemos concluido tu período de prueba para la plaza de '+role+' en El Cartel Studio.\\n\\nPara completar el proceso, te solicitamos descargar el Acta de Cierre del Período de Prueba, imprimirla, completar los datos correspondientes y firmarla. Una vez lista, deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.\\n\\n📄 Descargar Acta de Cierre:\\n'+documentUrl+'\\n\\nUna vez concluida la evaluación correspondiente, en caso de ser seleccionado para incorporarte formalmente a nuestra empresa, te lo notificaremos por esta misma vía, junto con los próximos pasos del proceso de contratación.';
+    message.value='Hola, '+candidateName+'.\n\nQueremos agradecerte el tiempo, la dedicación y la disposición que mostraste durante esta etapa.\n\nHemos concluido tu período de prueba para la plaza de '+role+' en El Cartel Studio.\n\nPara completar el proceso, te solicitamos descargar el Acta de Cierre del Período de Prueba, imprimirla, completar los datos correspondientes y firmarla. Una vez lista, deberás entregarla a tu jefe inmediato para formalizar el cierre de esta etapa.\n\n📄 Descargar Acta de Cierre:\n'+documentUrl+'\n\nUna vez concluida la evaluación correspondiente, en caso de ser seleccionado para incorporarte formalmente a nuestra empresa, te lo notificaremos por esta misma vía, junto con los próximos pasos del proceso de contratación.';
    }
   }
   content.append(message);
