@@ -1,0 +1,27 @@
+.candidate-back-overlay.trial-receipt-overlay{box-sizing:border-box;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));overflow:auto;background:#050a12d9}
+.trial-receipt-overlay .trial-receipt{box-sizing:border-box;width:100%;max-width:520px;max-height:100%;max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:0;overflow:hidden;display:flex;flex-direction:column;background:#142030;border:1px solid #354355;border-radius:24px;box-shadow:0 24px 80px #0009;color:#f5f7fa}
+.trial-receipt *{box-sizing:border-box}
+.trial-receipt-head{display:flex;gap:14px;align-items:center;padding:24px 24px 18px;flex:none}
+.trial-receipt-check{width:44px;height:44px;display:grid;place-items:center;border:1px solid #ffda0340;border-radius:15px;background:#ffda0312;color:#ffda03;flex:none}
+.trial-receipt svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.trial-receipt-head small{font-size:10px;letter-spacing:.14em;color:#aab6c5;font-weight:700}
+.trial-receipt-head>div{min-width:0;text-align:left;flex:1}
+.trial-receipt-head h3{font-size:22px;line-height:1.2;margin:5px 0 0;color:#fff}
+.trial-receipt-body{padding:0 24px 20px;overflow:auto;overscroll-behavior:contain;min-height:0;flex:1}
+.trial-receipt-status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border:1px solid #ffffff14;border-radius:12px;background:#ffffff04;font-size:12px;color:#aab6c5;margin-bottom:14px}
+.trial-receipt-status strong{color:#ffda03;font-size:13px;overflow-wrap:anywhere}
+.trial-receipt-note{color:#b8c3d1;font-size:13px;line-height:1.6;margin:0 0 20px}
+.trial-receipt-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.trial-receipt-tools label{flex:1;font-size:13px;font-weight:600;color:#e6ebf2}
+.trial-receipt-tools button{font:inherit;font-size:12px;min-height:36px;padding:7px 10px;color:#e2e8f1;background:#253347;border:1px solid #405065;border-radius:10px;cursor:pointer}
+.trial-receipt textarea{display:block;width:100%;height:230px;min-height:100px;max-height:35dvh;resize:vertical;padding:16px;background:#0c1624;color:#dce5ef;border:1px solid #344357;border-radius:14px;font:inherit;font-size:13px;line-height:1.7;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.trial-receipt textarea:not([readonly]){border-color:#ffda03}
+.trial-receipt-feedback{min-height:18px;font-size:12px;color:#b8c3d1;margin:8px 0 0}
+.trial-receipt-linked{display:inline-block;color:#ffda03;font-size:13px;padding:10px 0;overflow-wrap:anywhere}
+.trial-receipt-actions{padding:16px 24px 20px;border-top:1px solid #ffffff12;background:#142030;display:grid;gap:10px;flex:none}
+.trial-receipt-actions .trial-receipt-whatsapp,.trial-receipt-actions .trial-receipt-return{display:flex;justify-content:center;align-items:center;gap:10px;min-height:48px;width:100%;border-radius:13px;padding:12px;font:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;margin:0}
+.trial-receipt-actions .trial-receipt-whatsapp{background:#25d366;color:#052d15;border:1px solid #25d366}
+.trial-receipt-actions .trial-receipt-return{background:#ffffff04;color:#e6ebf2;border:1px solid #3b4b60}
+.trial-receipt :is(button,a,textarea):focus-visible{outline:3px solid #ffda03;outline-offset:3px}
+.trial-receipt-actions a:hover{filter:brightness(1.08)}
+@media(max-width:380px),(max-height:600px){.trial-receipt-head{padding:16px 16px 12px}.trial-receipt-body{padding:0 16px 12px}.trial-receipt-actions{padding:12px 16px}.trial-receipt-head h3{font-size:20px}.trial-receipt-note{margin-bottom:12px}.trial-receipt textarea{height:180px}}
