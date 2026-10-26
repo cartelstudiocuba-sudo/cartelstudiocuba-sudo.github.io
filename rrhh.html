@@ -2857,6 +2857,16 @@ async function openTrialClosureDecision(candidateId){
  modal.querySelector('#trialCloseX').onclick=()=>modal.remove();
  const go=async(mode)=>{
   const btn=modal.querySelector(mode==='continue'?'#trialCloseContinue':'#trialCloseFinish');
+  if(mode==='continue'&&!modal.querySelector('#trialClosureRepresentative')){
+   const saved=JSON.parse(localStorage.getItem('cartel_trial_representative')||'{}');
+   const form=document.createElement('form');form.id='trialClosureRepresentative';form.style.cssText='display:grid;gap:12px;padding:16px;margin:12px 0;border:1px solid #54728a;border-radius:16px;background:#142d43';
+   form.innerHTML='<strong style="font-size:16px">Datos del representante de El Cartel Studio</strong><small>Completa estos datos antes de preparar el acta y el mensaje.</small><label>Nombre y apellidos<input name="name" required autocomplete="name" placeholder="Nombre y apellidos" style="width:100%;box-sizing:border-box;padding:12px;border-radius:9px"></label><label>Carné de identidad<input name="ci" required inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="11 dígitos" style="width:100%;box-sizing:border-box;padding:12px;border-radius:9px"></label><label>Dirección de la sede<textarea name="address" required rows="3" placeholder="Dirección de la sede" style="width:100%;box-sizing:border-box;padding:12px;border-radius:9px"></textarea></label><button type="submit" style="background:#ffda03;color:#161616;padding:14px;border:0;border-radius:12px;font-weight:800">Guardar datos y continuar →</button>';
+   form.elements.name.value=saved.name||'';form.elements.ci.value=saved.ci||'';form.elements.address.value=saved.address||'';
+   form.onsubmit=event=>{event.preventDefault();const info={name:form.elements.name.value.trim(),ci:form.elements.ci.value.replace(/\\D/g,''),address:form.elements.address.value.trim()};if(info.ci.length!==11)return alert('El carné de identidad debe tener 11 dígitos.');localStorage.setItem('cartel_trial_representative',JSON.stringify(info));form.dataset.confirmed='1';go(mode)};
+   btn.insertAdjacentElement('afterend',form);form.scrollIntoView({block:'nearest',behavior:'smooth'});return;
+  }
+  if(mode==='continue'&&modal.querySelector('#trialClosureRepresentative')?.dataset.confirmed!=='1')return;
+
   btn.disabled=true;
   try{
    const candidate=candidates.find(x=>String(x.id)===String(candidateId));
@@ -2919,6 +2929,7 @@ async function openTrialClosureDecision(candidateId){
     dialog.innerHTML='<h3>Mensaje preparado</h3><p>El navegador bloqueó la apertura automática de WhatsApp. Abre el enlace para continuar; tu ficha permanecerá disponible.</p>';
     const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir WhatsApp ↗';link.style.cssText='display:block;text-align:center;background:#25d366;color:#102018;padding:15px;border-radius:14px;font-weight:700;margin:18px 0';
     const close=document.createElement('button');close.type='button';close.className='candidate-back-cancel';close.textContent='Regresar a la ficha';close.onclick=()=>notice.remove();
+    link.addEventListener('click',()=>{notice.remove()});
     dialog.append(link,close);notice.append(dialog);document.body.append(notice);
    }
   }catch(e){
