@@ -2760,14 +2760,14 @@ async function openTrainingDocumentation(candidateId){
  const options={workdays:['De lunes a sábado','De lunes a viernes','Por llamado'],hours:['De 9:00 a. m. a 6:00 p. m.'],frequency:['Diaria','Semanal','Quincenal','Mensual','Por llamado']};
  const style='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;max-width:100%;width:100%;box-sizing:border-box;font:inherit';
  for(const [key,label,type] of fields){
-  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed;min-width:0;max-width:100%';wrap.append(document.createTextNode(label));
+  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed;min-width:0;max-width:100%;width:100%;box-sizing:border-box;overflow:hidden';wrap.append(document.createTextNode(label));
   if(type==='select'){
    const sel=document.createElement('select');sel.name=key;sel.required=true;sel.style.cssText=style;
    for(const value of ['',...options[key],'__other__']){const opt=document.createElement('option');opt.value=value;opt.textContent=value===''?'Seleccionar':value==='__other__'?'Otro…':value;sel.append(opt);}
    const extra=document.createElement('input');extra.name=key+'Other';extra.type='text';extra.placeholder='Especificar '+label.toLowerCase();extra.style.cssText=style+';display:none';extra.disabled=true;
    if(key==='workdays')sel.value='De lunes a sábado';else if(key==='hours')sel.value='De 9:00 a. m. a 6:00 p. m.';else if(key==='frequency')sel.value='Semanal';
    sel.addEventListener('change',()=>{const other=sel.value==='__other__';extra.disabled=!other;extra.required=other;extra.style.display=other?'block':'none';if(!other)extra.value='';});wrap.append(sel,extra);
-  }else{const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText=style;if(key==='days')input.min='1';wrap.append(input);}
+  }else{const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText=style;if(type==='date'){input.style.setProperty('display','block','important');input.style.setProperty('width','100%','important');input.style.setProperty('max-width','100%','important');input.style.setProperty('min-width','0','important');input.style.setProperty('box-sizing','border-box','important');input.style.setProperty('-webkit-appearance','none');input.style.setProperty('appearance','none');input.style.setProperty('overflow','hidden');}if(key==='days')input.min='1';wrap.append(input);}
   form.append(wrap);
  }
  const button=document.createElement('button');button.type='submit';button.textContent='Preparar mensaje y enlaces →';button.style.cssText='grid-column:1/-1;background:#ffda03;color:#101820;border:0;border-radius:14px;padding:15px;font-weight:800;cursor:pointer';form.append(button);
