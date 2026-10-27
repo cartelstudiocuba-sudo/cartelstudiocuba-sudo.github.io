@@ -1,0 +1,53 @@
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
+const url=Deno.env.get('SUPABASE_URL')!;
+const admin=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
+const bucket='hr-tutor-presentations';
+const origins=new Set(['https://gestion.elcartelstudio.com','https://cartelstudiocuba-sudo.github.io']);
+const types:Record<string,string>={pdf:'application/pdf',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',ppsx:'application/vnd.openxmlformats-officedocument.presentationml.slideshow'};
+const max=50*1024*1024;
+Deno.serve(async req=>{
+ const origin=req.headers.get('origin')||'';
+ const headers:Record<string,string>={'Cache-Control':'no-store, private','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':origins.has(origin)?origin:'https://gestion.elcartelstudio.com','Vary':'Origin','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Expose-Headers':'Content-Disposition,Content-Type'};
+ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...headers,'Content-Type':'application/json'}});
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
+ if(req.method!=='POST')return json({error:'Método no permitido'},405);
+ if(origin&&!origins.has(origin))return json({error:'Origen no permitido'},403);
+ try{
+  if((req.headers.get('content-type')||'').startsWith('multipart/form-data')){
+   const bearer=req.headers.get('authorization')||'';
+   const {data:{user},error:authError}=await admin.auth.getUser(bearer.replace(/^Bearer\s+/i,''));
+   if(authError||!user)return json({error:'Sesión no válida'},401);
+   const client=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:bearer}},auth:{persistSession:false}});
+   if(Number(req.headers.get('content-length')||0)>max+8192)return json({error:'La presentación supera 50 MB'},413);
+   // Bound multipart input even when the client uses chunked transfer encoding.
+   const reader=req.body?.getReader();if(!reader)return json({error:'Archivo no válido'},400);
+   const chunks:Uint8Array[]=[];let total=0;
+   while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>max+8192){await reader.cancel();return json({error:'La presentación supera 50 MB'},413);}chunks.push(value);}
+   const input=new Uint8Array(total);let offset=0;for(const chunk of chunks){input.set(chunk,offset);offset+=chunk.length;}
+   const form=await new Response(input,{headers:{'Content-Type':req.headers.get('content-type')!}}).formData(),trial=String(form.get('trial_id')||''),file=form.get('file'),version=String(form.get('version')||'');
+   const {data:ctx,error:contextError}=await client.rpc('hr_tutor_context',{p_trial:trial});
+   if(contextError||!ctx)return json({error:'No autorizado o capacitación no vigente'},403);
+   if(!(file instanceof File)||file.size<8||file.size>max)return json({error:'Archivo vacío o demasiado grande'},400);
+   const ext=file.name.split('.').pop()?.toLowerCase()||'',magic=new Uint8Array(await file.slice(0,8).arrayBuffer());
+   const valid=ext==='pdf'?new TextDecoder().decode(magic).startsWith('%PDF-'):ext==='ppt'?magic.slice(0,4).join(',')==='208,207,17,224':['pptx','ppsx'].includes(ext)&&magic[0]===80&&magic[1]===75;
+   if(!types[ext]||!valid)return json({error:'Formato de presentación no válido'},400);
+   const path=ctx.role_id+'/'+crypto.randomUUID()+'.'+ext;
+   const {error:uploadError}=await admin.storage.from(bucket).upload(path,file,{contentType:types[ext],upsert:false});
+   if(uploadError)return json({error:'No se pudo publicar el archivo privado. Reintenta.'},502);
+   const {data:link,error:publishError}=await client.rpc('hr_publish_tutor',{p_trial:trial,p_path:path,p_ext:ext,p_version:version});
+   if(publishError){await admin.storage.from(bucket).remove([path]);return json({error:'La plaza o la capacitación cambió. Vuelve a preparar el mensaje.'},409);}
+   return json(link);
+  }
+  const body=await req.json();
+  if(!['info','read','download'].includes(body.action)||!/^([a-f0-9]{64})$/.test(body.token||''))return json({error:'Enlace no válido o caducado'},404);
+  const {data:link,error}=await admin.rpc('hr_resolve_tutor',{p_token:body.token});
+  if(error||!link)return json({error:'Enlace no válido o caducado. Solicita uno nuevo a Recursos Humanos.'},404);
+  if(body.action==='info')return json({ext:link.ext,expires_at:link.expires_at});
+  const {data:file,error:readError}=await admin.storage.from(bucket).download(link.path);
+  if(readError||!file)return json({error:'La presentación no está disponible. Solicita un enlace nuevo.'},404);
+  // Revalidate after storage I/O; expired/revoked capabilities never start a download.
+  const {data:stillValid}=await admin.rpc('hr_resolve_tutor',{p_token:body.token});
+  if(!stillValid)return json({error:'Enlace no válido o caducado'},404);
+  return new Response(file,{headers:{...headers,'Content-Type':types[link.ext],'Content-Disposition':(body.action==='download'||link.ext!=='pdf'?'attachment':'inline')+'; filename="Presentacion-capacitacion.'+link.ext+'"'}});
+ }catch{return json({error:'No se pudo completar la operación. Reintenta.'},400);}
+});

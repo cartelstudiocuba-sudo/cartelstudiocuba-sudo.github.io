@@ -2177,7 +2177,7 @@
  ];
  const results=await Promise.allSettled(tasks.map(async([label,query,assign])=>{const result=await CartelLoad.read(label,query,{optional:true});if(!result.unavailable){assign(result.data||[]);render();}return result;}));
  if(results.some(x=>x.status==="rejected"||x.value.unavailable))throw Object.assign(new Error('secondary_unavailable'),{code:'read_failed'});
- CartelLoad.setReadOnly(false);CartelLoad.clearNotice();
+ CartelLoad.setReadOnly(false);CartelLoad.clearNotice();window.tutorExportReady=true;
 }
 function render(){const sub=subordinateWorkersLabel(),updated=role.updated_at?historyDateLabel(role.updated_at):'Sin fecha',completion=roleCompletionItems(),ready=completion.filter(x=>x.ok).length,all=ready===completion.length;document.getElementById('hero').innerHTML='<div class="role-hero-fixed-label"><span></span> Resumen fijo de la plaza</div><div class="role-hero-top"><div class="role-hero-icon" aria-hidden="true">'+((role.title||'').trim().toLowerCase()==='gestor operativo'&&String(role.area||'').toLowerCase().includes('audiovisual')?'<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="17" rx="2"></rect><rect x="9" y="2.5" width="6" height="4" rx="1"></rect><path d="M8.5 11.5l1.5 1.5 2.5-3"></path><path d="M14 12h2.5"></path><path d="M8.5 17l1.5 1.5 2.5-3"></path><path d="M14 17.5h2.5"></path></svg>':'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M8.5 5V3.5h7V5"></path><path d="M3.5 10.5h17"></path><path d="M10 10.5v2h4v-2"></path></svg>')+'</div><div class="role-hero-title"><div class="role-hero-kicker">'+e(role.area||'Área por definir')+'</div><h1>'+e(role.title)+'</h1><span class="role-hero-master">Modelo Maestro de Plaza · v1</span></div><div class="role-hero-status '+(all?'ready':'pending')+'"><small>ESTADO GENERAL</small><b>'+ready+' <i>/ '+completion.length+'</i></b><span>'+(all?'Completa':'En revisión')+'</span></div></div><div class="role-hero-meta-grid"><div class="role-meta-card"><span class="role-meta-icon">↳</span><div><small>Jefe directo</small><b>'+e(role.direct_manager||'Por definir')+'</b></div></div><div class="role-meta-card"><span class="role-meta-icon">⌂</span><div><small>Modalidad</small><b>'+e(role.modality||'Por definir')+'</b></div></div><div class="role-meta-card"><span class="role-meta-icon">♙</span><div><small>Subordinados</small><b>'+e(sub)+'</b></div></div><div class="role-meta-card"><span class="role-meta-icon">↻</span><div><small>Última actualización</small><b>'+e(updated)+'</b></div></div></div>'+roleCompletionHtml();const tabIcons={'Definición de la plaza':'▤','Convocatoria':'📣','Contratación':'✓','Capacitación':'◇','Protocolos':'☷','Evaluación':'◎','Documentación':'▱','Historial':'↺'};document.getElementById('tabs').innerHTML=tabs.map(t=>'<button class="tab '+(active===t?'active':'')+'" onclick="showTab(\''+t+'\')"><span class="tab-icon">'+(tabIcons[t]||'•')+'</span>'+t+'</button>').join('');renderPanel()}function showTab(t){if(t==='Contratación'){contractActiveDoc=null;contractActiveBlock=null}if(t==='Convocatoria')recruitmentActiveSection=null;if(t==='Definición de la plaza')definitionActiveSection=null;active=t;contractEditingBlock=null;render();if(t==='Historial')refreshRoleHistory(true)}function renderPanel(){let h='',panel=document.getElementById('panel');if(active==='Definición de la plaza')h=renderCombinedWorkContent();else if(active==='Protocolos')h=renderProtocols();else if(active==='Capacitación')h=renderTraining();else if(active==='Convocatoria')h=renderHiring();else if(active==='Contratación')h=renderContract();else if(active==='Evaluación')h=renderEvaluation();else if(active==='Documentación')h=renderDocumentation();else if(active==='Historial')h=renderRoleHistory();else h='<div class="role-tab-empty"><span class="role-tab-empty-icon">▤</span><div><h2>Selecciona una sección</h2><p>Elige una de las pestañas superiores para consultar o editar la información de esta plaza.</p></div></div>';panel.className='panel'+(!active?' role-tab-empty-panel':'');panel.innerHTML=h}async function refreshRoleHistory(rerender=false){return CartelLoad.run('role_history',async()=>{historyLoading=true;if(rerender&&active==='Historial')renderPanel();try{const result=await CartelLoad.read('history',()=>sb.from('hr_role_history').select('id,role_id,section,event_type,title,summary,actor_email,created_at').eq('role_id',role.id).order('created_at',{ascending:false}).limit(400));roleHistory=result.data||[];historyLoaded=true;}finally{historyLoading=false;if(rerender&&active==='Historial')renderPanel();}})}
 async function logRoleHistoryEvent(section,eventType,title,summary,metadata){if(new URLSearchParams(location.search).get("documento")==="contenido")return true;const payload={role_id:role.id,section,event_type:eventType,title,summary,metadata:metadata||{},actor_email:MAIL};const{data,error}=await sb.from('hr_role_history').insert(payload).select().single();if(!error&&data)roleHistory=[data,...roleHistory];return !error}
@@ -3866,8 +3866,8 @@ function previewTrainingSupport(type){
  if(type==='video')requestAnimationFrame(()=>requestAnimationFrame(()=>paginateTrainingVideoStoryboard(body)))
 }
 function closeTrainingSupportPreview(){const modal=document.getElementById('trainingSupportModal');if(modal)modal.classList.remove('open');document.body.classList.remove('protocol-preview-open')}
-async function exportTrainingSupportPdf(type){
- if(!window.html2canvas||!window.jspdf?.jsPDF){alert('No se cargó el generador de PDF.');return}
+async function exportTrainingSupportPdf(type,publication=false){
+ if(!window.html2canvas||!window.jspdf?.jsPDF){if(publication)throw Error('No se cargó el generador de PDF.');alert('No se cargó el generador de PDF.');return}
  let stage=document.getElementById('trainingPdfStage');
  if(!stage){stage=document.createElement('div');stage.id='trainingPdfStage';stage.className='training-pdf-stage';document.body.appendChild(stage)}
  stage.className='training-pdf-stage '+type;
@@ -3918,7 +3918,7 @@ async function exportTrainingSupportPdf(type){
    if(imgs.length)await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,1500)})));
    if(!page.isConnected)throw new Error('La diapositiva temporal no está conectada al documento.');
    return await html2canvas(page,{
-    scale:isPresentation?2.25:2,
+    scale:publication?1.5:isPresentation?2.25:2,
     useCORS:true,
     backgroundColor:'#ffffff',
     logging:false,
@@ -3949,7 +3949,7 @@ async function exportTrainingSupportPdf(type){
    if(i)pdf.addPage(isPresentation?[slideW,slideH]:'letter',isPresentation?'landscape':'portrait');
    const canvas=await capturePage(sourcePages[i],isPresentation);
    if(isPresentation){
-    pdf.addImage(canvas.toDataURL('image/jpeg',.97),'JPEG',0,0,slideW,slideH,undefined,'FAST')
+    pdf.addImage(canvas.toDataURL('image/jpeg',publication ? .85 : .97),'JPEG',0,0,slideW,slideH,undefined,'FAST')
    }else{
     pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,215.9,279.4,undefined,'FAST')
    }
@@ -3957,6 +3957,7 @@ async function exportTrainingSupportPdf(type){
 
   const label=isPresentation?'Presentación capacitación 16-9':type==='guide'?'Guía del capacitador':'Guion onboarding';
   const safe=String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-').trim();
+  if(publication)return pdf.output('blob');
   pdf.save(label+' - '+safe+'.pdf');
   await logRoleHistoryEvent(
    'Capacitación',
@@ -3967,6 +3968,7 @@ async function exportTrainingSupportPdf(type){
   );
   if(type==='presentation'||type==='guide')await trainingMarkExportSnapshot(type)
  }catch(err){
+  if(publication)throw err;
   console.error('Error exportando capacitación:',err);
   alert('No se pudo generar el PDF: '+(err?.message||err))
  }finally{
@@ -4290,6 +4292,19 @@ async function exportTrainingPresentationDocument(){
  const a=document.createElement('a');a.href=data.signedUrl;a.download=fileName;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
  await logRoleHistoryEvent('Capacitación','presentation_document_exported','Documento de capacitación exportado','Se exportó la presentación externa cargada.',{file_name:fileName,file_path:d.path})
 }
+window.exportTutorPresentationFile=async function(expectedRole){
+ if(!window.tutorExportReady||String(role?.id)!==String(expectedRole))throw Error('La ficha de la plaza no está lista.');
+ const cfg=trainingMasterData(),version=role.updated_at;
+ if(cfg.presentation_mode==='uploaded'){
+  const d=trainingExternalPresentationData(cfg);if(!d.path)throw Error('La plaza está configurada para una presentación cargada, pero no tiene archivo.');
+  const {data,error}=await sb.storage.from('hr-role-documents').download(d.path);
+  if(error||!data)throw Error('No se pudo obtener la presentación cargada.');
+  return {file:data,name:'Presentacion.'+d.ext,version};
+ }
+ const file=await exportTrainingSupportPdf('presentation',true);
+ if(!file?.size)throw Error('El generador no produjo la presentación.');
+ return {file,name:'Presentacion.pdf',version};
+};
 function trainingStableSerialize(value){
  if(value===null||value===undefined)return String(value);
  if(Array.isArray(value))return '['+value.map(trainingStableSerialize).join(',')+']';

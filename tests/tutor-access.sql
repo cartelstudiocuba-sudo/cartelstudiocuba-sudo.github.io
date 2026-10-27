@@ -1,0 +1,51 @@
+begin;
+select set_config('request.jwt.claims','{"sub":"6418ad20-d0e8-49c0-8d9a-e1da3daf71b6","role":"authenticated"}',true);
+do $$ declare cid uuid; tid uuid; rid uuid; title text; ctx jsonb; link jsonb; tok text; oldtok text; path text; content_token text;
+begin
+ select r.id,r.title into rid,title from public.hr_roles r order by created_at limit 1;
+ insert into public.hr_candidates(vacancy_id,full_name,whatsapp,status) values((select id from public.hr_vacancies limit 1),'TEST TUTOR ROLLBACK','00000000','trial') returning id into cid;
+ insert into public.hr_trial_periods(candidate_id,role_title,start_date,duration_days,stage) values(cid,title,current_date,7,'evaluation_pending') returning id into tid;
+ begin perform public.hr_tutor_context(tid); raise exception 'premature access'; exception when raise_exception then if sqlerrm='premature access' then raise; end if; end;
+ insert into public.hr_trial_closures(trial_id,token_hash,document_token_hash,document) values(tid,encode(sha256(convert_to(gen_random_uuid()::text,'UTF8')),'hex'),encode(sha256(convert_to(gen_random_uuid()::text,'UTF8')),'hex'),'{}');
+ insert into public.hr_trial_closure_events(trial_id,action,payload) values(tid,'message_opened','{"decision":"continue"}');
+ ctx:=public.hr_tutor_context(tid);
+ if ctx->>'role_id'<>rid::text then raise exception 'wrong role'; end if;
+ path:=rid::text||'/'||gen_random_uuid()::text||'.pdf';
+ -- Metadata only, inside rollback: no persistent fixture or storage bytes.
+ insert into storage.objects(bucket_id,name) values('hr-tutor-presentations',path);
+ begin perform public.hr_publish_tutor(tid,path,'pdf','stale'); raise exception 'stale accepted'; exception when raise_exception then if sqlerrm='stale accepted' then raise; end if; end;
+ begin perform public.hr_publish_tutor(tid,'../../secret.pdf','pdf',ctx->>'version'); raise exception 'path accepted'; exception when raise_exception then if sqlerrm='path accepted' then raise; end if; end;
+ link:=public.hr_publish_tutor(tid,path,'pdf',ctx->>'version');tok:=split_part(link->>'url','#token=',2);
+ if length(tok)<>64 or public.hr_resolve_tutor(tok)->>'path'<>path then raise exception 'resolve failed'; end if;
+ if link ? 'path' or link ? 'storage_path' then raise exception 'path leaked'; end if;
+ if exists(select 1 from hr_training_private.tutor_links where token_hash=tok) then raise exception 'plaintext token'; end if;
+ content_token:=split_part(public.hr_issue_training_content(tid)->>'url','#token=',2);
+ if public.hr_resolve_tutor(content_token) is not null or public.hr_read_training_content(tok) is not null then raise exception 'documents mixed'; end if;
+ if public.hr_resolve_tutor(repeat('0',64)) is not null then raise exception 'guessed'; end if;
+ update hr_training_private.tutor_links set expires_at=now()-interval '1 second' where trial_id=tid;
+ if public.hr_resolve_tutor(tok) is not null then raise exception 'expired'; end if;
+ oldtok:=tok;path:=rid::text||'/'||gen_random_uuid()::text||'.pdf';insert into storage.objects(bucket_id,name) values('hr-tutor-presentations',path);
+ link:=public.hr_publish_tutor(tid,path,'pdf',ctx->>'version');tok:=split_part(link->>'url','#token=',2);
+ if public.hr_resolve_tutor(oldtok) is not null then raise exception 'rotation'; end if;
+ perform public.hr_revoke_tutor(tid);if public.hr_resolve_tutor(tok) is not null then raise exception 'revocation'; end if;
+ if public.hr_read_training_content(content_token) is null then raise exception 'content revoked by tutor'; end if;
+ update hr_training_private.tutor_links set revoked_at=null where token_hash=encode(sha256(convert_to(tok,'UTF8')),'hex');
+ update public.hr_trial_periods set superseded_at=now() where id=tid;
+ if public.hr_resolve_tutor(tok) is not null then raise exception 'superseded'; end if;
+end $$;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+do $$ begin
+ begin perform public.hr_tutor_context(gen_random_uuid()); raise exception 'nonowner'; exception when raise_exception then if sqlerrm='nonowner' then raise; end if; end;
+ begin perform public.hr_resolve_tutor(repeat('a',64)); raise exception 'resolver exposed'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+set local role anon;
+do $$ begin
+ begin perform public.hr_tutor_context(gen_random_uuid()); raise exception 'anon context'; exception when insufficient_privilege then null; end;
+ begin perform public.hr_resolve_tutor(repeat('a',64)); raise exception 'anon resolver'; exception when insufficient_privilege then null; end;
+ begin perform 1 from hr_training_private.tutor_links; raise exception 'anon table'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+rollback;
+select 'PASS authorization, file scope, version, token hash, isolation, expiry, rotation, revocation, superseded trial; all fixtures rolled back' result;
