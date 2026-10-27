@@ -2754,12 +2754,22 @@ async function openTrainingDocumentation(candidateId){
  panel.querySelector('[data-close]').onclick=()=>overlay.remove();
  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
  const form=panel.querySelector('form');
- const fields=[['start','Fecha de inicio','date'],['days','Duración de la capacitación (días)','number'],['workdays','Días laborables','text'],['hours','Horario','text'],['salary','Remuneración de la plaza','text'],['tutor','Nombre del tutor','text'],['phone','Teléfono del tutor','tel']];
+ const fields=[['start','Fecha de inicio','date'],['days','Duración de la capacitación (días)','number'],['workdays','Días laborables','select'],['hours','Horario','select'],['salary','Remuneración de la plaza','text'],['frequency','Frecuencia','select'],['tutor','Nombre del tutor','text'],['phone','Teléfono del tutor','tel']];
  const today=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T12:00:00Z');today.setUTCDate(today.getUTCDate()+1);
- const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||'').match(/\d+/)?.[0]||'',workdays:role.work_days||'',hours:role.schedule||'',salary:[role.compensation,role.currency,role.payment_frequency].filter(Boolean).join(' · '),tutor:role.direct_manager||'',phone:''};
+ const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||'').match(/\\d+/)?.[0]||'',workdays:role.work_days||'',hours:role.schedule||'',salary:role.compensation||'',frequency:role.payment_frequency||'',tutor:role.direct_manager||'',phone:''};
+ const options={workdays:['De lunes a sábado','De lunes a viernes','Por llamado'],hours:['De 9:00 a. m. a 6:00 p. m.'],frequency:['Diaria','Semanal','Quincenal','Mensual','Por llamado']};
+ const style='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;width:100%;box-sizing:border-box;font:inherit';
  for(const [key,label,type] of fields){
-  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed';wrap.textContent=label;
-  const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;font:inherit';if(key==='days')input.min='1';wrap.append(input);form.append(wrap);
+  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed';wrap.append(document.createTextNode(label));
+  if(type==='select'){
+   const sel=document.createElement('select');sel.name=key;sel.required=true;sel.style.cssText=style;
+   for(const value of ['',...options[key],'__other__']){const opt=document.createElement('option');opt.value=value;opt.textContent=value===''?'Seleccionar':value==='__other__'?'Otro…':value;sel.append(opt);}
+   const extra=document.createElement('input');extra.name=key+'Other';extra.type='text';extra.placeholder='Especificar '+label.toLowerCase();extra.style.cssText=style+';display:none';extra.disabled=true;
+   const current=String(defaults[key]||'').trim();const found=options[key].find(x=>x.toLocaleLowerCase('es')===current.toLocaleLowerCase('es'));
+   if(found)sel.value=found;else if(current){sel.value='__other__';extra.value=current;extra.disabled=false;extra.required=true;extra.style.display='block';}
+   sel.addEventListener('change',()=>{const other=sel.value==='__other__';extra.disabled=!other;extra.required=other;extra.style.display=other?'block':'none';if(!other)extra.value='';});wrap.append(sel,extra);
+  }else{const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText=style;if(key==='days')input.min='1';wrap.append(input);}
+  form.append(wrap);
  }
  const button=document.createElement('button');button.type='submit';button.textContent='Preparar mensaje y enlaces →';button.style.cssText='grid-column:1/-1;background:#ffda03;color:#101820;border:0;border-radius:14px;padding:15px;font-weight:800;cursor:pointer';form.append(button);
  form.elements.days.max='365';form.elements.days.step='1';
@@ -2770,6 +2780,7 @@ async function openTrainingDocumentation(candidateId){
   e.preventDefault();invalidate();if(!form.reportValidity())return;button.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
   try{
    const v=Object.fromEntries([...new FormData(form).entries()].map(([k,value])=>[k,String(value).trim()]));
+   for(const key of ['workdays','hours','frequency']){if(v[key]==='__other__')v[key]=v[key+'Other']||'';delete v[key+'Other'];}
    if(Object.values(v).some(value=>!value)||!Number.isInteger(Number(v.days))||Number(v.days)<1||Number(v.days)>365)throw Error('Completa todos los datos y una duración entre 1 y 365 días.');
    const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').split(/\\s+/)[0];
    if(!first||first.toUpperCase()==='CANDIDATO')throw Error('La ficha no tiene un primer nombre válido.');
@@ -2782,7 +2793,7 @@ async function openTrainingDocumentation(candidateId){
    if(signed.error||!signed.data?.signedUrl)throw Error('No se pudo generar el enlace de la documentación integral: '+(signed.error?.message||'sin enlace'));
    if([...new FormData(form).entries()].some(([k,value])=>String(value).trim()!==v[k]))throw Error('Los datos cambiaron mientras se preparaba el enlace. Vuelve a preparar el mensaje.');
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\\n\\n📅 Fecha de inicio: '+date+'\\n⏱️ Duración: '+v.days+' días\\n📆 Días laborables: '+v.workdays+'\\n🕘 Horario: '+v.hours+'\\n💰 Remuneración: '+v.salary+'\\n👤 Tutor asignado: '+v.tutor+'\\n📞 Contacto del tutor: '+v.phone+'\\n\\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\\n\\n🔗 Consultar y descargar documentación: '+signed.data.signedUrl;
+   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\\n\\n📅 Fecha de inicio: '+date+'\\n⏱️ Duración: '+v.days+' días\\n📆 Días laborables: '+v.workdays+'\\n🕘 Horario: '+v.hours+'\\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\\n👤 Tutor asignado: '+v.tutor+'\\n📞 Contacto del tutor: '+v.phone+'\\n\\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\\n\\n🔗 Consultar y descargar documentación: '+signed.data.signedUrl;
    const preview=document.createElement('div');preview.style.cssText='margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.textContent=completeMessage;
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
    send.onclick=()=>{preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(completeMessage),'_blank','noopener,noreferrer');};
