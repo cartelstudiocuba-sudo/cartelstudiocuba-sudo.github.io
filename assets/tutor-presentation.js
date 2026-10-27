@@ -2,14 +2,14 @@
 window.CartelTutorPresentation={async publish(sb,trialId,roleId){
  const frame=document.createElement('iframe');let loadTimer;
  frame.title='Preparando presentación de capacitación';frame.setAttribute('aria-hidden','true');
- frame.style.cssText='position:fixed;left:-20000px;top:0;width:1200px;height:900px;border:0;pointer-events:none';
+ frame.style.cssText='position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden;border:0;pointer-events:none';
  try{
   const loaded=new Promise((resolve,reject)=>{frame.onload=resolve;frame.onerror=()=>reject(Error('No se pudo cargar el generador.'));});
   frame.src='/plaza-ficha.html?id='+encodeURIComponent(roleId)+'&tutor_export=1';document.body.append(frame);
   await Promise.race([loaded,new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(Error('El generador tardó demasiado. Reintenta.')),45000);})]);clearTimeout(loadTimer);
   const deadline=Date.now()+45000;
   while(!frame.contentWindow?.tutorExportReady){if(Date.now()>deadline)throw Error('No se pudo cargar toda la información de la plaza. Reintenta.');await new Promise(r=>setTimeout(r,100));}
-  const result=await Promise.race([frame.contentWindow.exportTutorPresentationFile(String(roleId)),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(Error('La exportación tardó demasiado. Reintenta.')),300000);})]);clearTimeout(loadTimer);
+  const result=await Promise.race([frame.contentWindow.exportTutorPresentationFile(String(roleId)),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(Error('La exportación tardó demasiado. Reintenta.')),90000);})]);clearTimeout(loadTimer);
   if(!result?.file||!result.version)throw Error('El generador no produjo un archivo válido.');
   if(result.file.size>50*1024*1024)throw Error('La presentación supera 50 MB. Reduce las imágenes de la plaza y reintenta.');
   const {data:{session}}=await sb.auth.getSession();if(!session)throw Error('Tu sesión ha caducado. Vuelve a iniciar sesión.');
