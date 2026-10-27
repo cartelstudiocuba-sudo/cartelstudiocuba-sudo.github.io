@@ -17,4 +17,11 @@ Incidencia previa comprobada: `closure-document-regression.cjs` falla en la lín
 
 Los avisos de Supabase sobre funciones SECURITY DEFINER se revisaron: la lectura anónima de esta API es intencional y exige el token; emisión y revocación comprueban el propietario. La tabla privada no concede acceso directo. Referencia del analizador: https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable
 
-La prueba de producción se ejecuta con `training-content-live.cjs --published`; requiere un fixture sintético temporal fuera del repositorio. Los PDF, capturas y tokens de prueba no se incorporan al historial Git.
+Producción: `training-content-live.cjs --published` terminó en PASS sobre https://gestion.elcartelstudio.com con Supabase real. Descargó un PDF de 5 113 950 bytes sin login, rechazó el token incorrecto y no registró errores JavaScript. Todas las solicitudes a Supabase correspondieron exclusivamente al RPC de lectura por token. El candidato, período, acta y enlaces sintéticos fueron eliminados después; se comprobó que no quedan registros de esa prueba.
+
+Commit de implementación: `9ab1647e7eb99b1a4256160724a98761a5f5186f`.
+GitHub Pages: despliegue `40452377646`, conclusión `success`.
+https://github.com/cartelstudiocuba-sudo/cartelstudiocuba-sudo.github.io/actions/runs/40452377646
+
+Migración aplicada en `jhumvctocphyiwhszeaz`: `secure_live_training_content_links`.
+Las pruebas no enviaron mensajes a candidatos reales. Los PDF, capturas y tokens de prueba no se incorporan al historial Git.
