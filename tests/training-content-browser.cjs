@@ -15,14 +15,30 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
  await page.route('http://isolated.test/**',r=>r.fulfill({body:'<meta name="viewport" content="width=device-width,initial-scale=1">',contentType:'text/html'}));await page.goto('http://isolated.test/');await page.addScriptTag({content:mock+functions});await page.evaluate(()=>openTrainingDocumentation('c'));
  const dialog=page.getByRole('dialog');assert.equal(await dialog.locator('[name=days]').inputValue(),'7');assert.equal(await dialog.locator('[name=salary]').inputValue(),'15000');assert.equal(await dialog.locator('[name=tutor]').inputValue(),'');
+ assert.equal(await dialog.locator('[name=start]').inputValue(),'');assert.equal(await dialog.locator('[name=phone]').inputValue(),'');
+ await dialog.getByRole('button',{name:'Preparar mensaje y enlaces'}).click();assert.equal(await page.evaluate(()=>calls.length),0);
+ for(const key of ['start','tutor','phone'])assert(await dialog.locator('[data-error="'+key+'"]').innerText());
+ await dialog.locator('[name=start]').fill('2026-11-01');
+ await dialog.locator('[name=start]').press('Enter');assert.equal(await page.evaluate(()=>calls.length),0);assert.equal(await dialog.locator('[name=start]').inputValue(),'2026-11-01');
+ await page.evaluate(()=>document.querySelector('form').requestSubmit());assert.equal(await page.evaluate(()=>calls.length),0);
+ await dialog.locator('[name=tutor]').fill('   ');await dialog.locator('[name=phone]').fill('   ');
+ await page.evaluate(()=>document.querySelector('form').onsubmit({preventDefault(){}}));assert.equal(await page.evaluate(()=>calls.length),0);
  await dialog.locator('[name=tutor]').fill('Tutor de prueba');await dialog.locator('[name=phone]').fill('5350000001');
  const prepare=dialog.getByRole('button',{name:'Preparar mensaje y enlaces'});await prepare.click();await page.locator('[data-preview]').waitFor();let message=await page.locator('[data-preview]>div').innerText();assert(message.startsWith('Perfecto, Daniel.'));assert(message.includes('\n\n📅'));assert(!message.includes('\\n'));assert(message.includes('Ademas en el siguiente enlace te agrupamos'));assert(message.includes('?documento=contenido#token='));assert(!/contrato|actualizar-expediente/i.test(message));assert.deepEqual(await page.evaluate(()=>calls),[{name:'hr_issue_training_content',args:{p_trial:'t'}}]);
  await dialog.getByRole('button',{name:'Abrir WhatsApp'}).click();assert.equal(await page.evaluate(()=>new URL(opened[0]).searchParams.get('text')),message);
+ // Programmatic edits without events must not reuse a stale preview.
+ await page.evaluate(()=>{document.querySelector('[name=phone]').value='';document.querySelector('[data-preview] button').click();});
+ assert.equal(await page.evaluate(()=>calls.length),1);assert.equal(await page.locator('[data-preview]').count(),0);
+ await dialog.locator('[name=phone]').fill('5350000001');await prepare.click();await page.locator('[data-preview]').waitFor();
  await dialog.locator('[name=tutor]').fill('Otro tutor');assert.equal(await page.locator('[data-preview]').count(),0);
  for(const scenario of ['fail','foreign','wrongrole']){await page.evaluate(s=>window.scenario=s,scenario);await prepare.click();await page.waitForFunction(()=>!document.querySelector('form button').disabled);assert.equal(await page.locator('[data-preview]').count(),0);assert(await page.locator('#trainingDocumentationError').innerText());}
  await page.evaluate(()=>window.scenario='slow');await prepare.click();await dialog.locator('[name=tutor]').fill('Cambio concurrente');await page.waitForFunction(()=>!document.querySelector('form button').disabled);assert.equal(await page.locator('[data-preview]').count(),0);
  // Custom options must pass the concurrency check after normalization.
  await page.evaluate(()=>window.scenario='ok');await dialog.locator('[name=workdays]').selectOption('__other__');await dialog.locator('[name=workdaysOther]').fill('Martes y jueves');await prepare.click();await page.locator('[data-preview]').waitFor();assert((await page.locator('[data-preview]').innerText()).includes('Martes y jueves'));assert(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+ await page.screenshot({path:path.join(root,'tests','documentation-'+width+'.png')});
+ await dialog.locator('[data-close]').click();await page.evaluate(()=>openTrainingDocumentation('c'));
+ for(const key of ['start','tutor','phone'])assert.equal(await page.locator('[name='+key+']').inputValue(),'');
+ await page.screenshot({path:path.join(root,'tests','documentation-empty-'+width+'.png')});
  await context.close();console.log('PASS training form and WhatsApp, no attachments/contracts, errors, custom options, concurrent edits, '+width+'px');
  }
  const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true}),page=await context.newPage();let response=fixture,reads=0;const requests=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
