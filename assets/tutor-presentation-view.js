@@ -23,6 +23,16 @@
  view.onclick=()=>act(false);download.onclick=()=>act(true);window.addEventListener('pagehide',()=>{clearPreview();clearTimeout(expiryTimer);});
  try{
   if(!/^[a-f0-9]{64}$/.test(token))throw Error('Enlace no válido. Solicita uno nuevo a Recursos Humanos.');
+  const liveResponse=await request('live-info').catch(()=>null);
+  if(liveResponse){info=await liveResponse.json();const remaining=Date.parse(info.expires_at)-Date.now();if(!Number.isFinite(remaining)||remaining<=0)throw Error('El enlace ha caducado.');
+   const title=document.createElement('h2');title.textContent=info.presentation_title||info.title;preview.append(title);
+   const add=(heading,body)=>{if(!body)return;const section=document.createElement('section');section.style.cssText='padding:24px;margin:18px 0;background:#1c2c40;border-radius:18px;line-height:1.7';const h=document.createElement('h3');h.textContent=heading;section.append(h);const p=document.createElement('p');p.textContent=body;section.append(p);preview.append(section);};
+   add('Plaza',info.title);add('Descripción',info.description);add('Capacitación',info.training);
+   (info.modules||[]).forEach((m,i)=>add((i+1)+'. '+m.title,[m.guide,m.video].filter(Boolean).join('\n')));
+   add('Indicaciones adicionales',info.custom_notes);
+   status.textContent='Presentación disponible hasta '+new Date(info.expires_at).toLocaleString('es-ES')+'.';
+   view.hidden=download.hidden=true;expiryTimer=setTimeout(()=>fail(Error('El enlace ha caducado.')),Math.min(remaining,2147483647));return;
+  }
   info=await(await request('info')).json();
   const remaining=Date.parse(info.expires_at)-Date.now();if(!Number.isFinite(remaining)||remaining<=0||!['pdf','ppt','pptx','ppsx'].includes(info.ext))throw Error('El enlace ha caducado.');
   status.textContent='Acceso válido hasta '+new Date(info.expires_at).toLocaleString('es-ES')+'. El enlace permite acceder a quien lo posea; no lo compartas fuera de la capacitación.';
