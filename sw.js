@@ -1,4 +1,4 @@
-const CACHE='cartel-gestion-closure-20261026-v3';
+const CACHE='cartel-gestion-training-20261027-v1';
 self.addEventListener('install',e=>{self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})())});
 self.addEventListener('fetch',e=>{
