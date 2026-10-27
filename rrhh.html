@@ -2748,8 +2748,8 @@ async function openTrainingDocumentation(candidateId){
  document.getElementById('trainingDocumentationModal')?.remove();
  const overlay=document.createElement('div');overlay.className='trial-closure-overlay';overlay.style.cssText='position:fixed;inset:0;z-index:999999;background:#050a12d9;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto';
  overlay.id='trainingDocumentationModal';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Enviar documentación de capacitación');
- const panel=document.createElement('div');panel.style.cssText='background:#111e2e;color:#f3f6fa;border:1px solid #40536c;border-radius:22px;padding:24px;width:min(690px,100%);max-height:94vh;overflow:auto;box-shadow:0 24px 80px #0009';
- panel.innerHTML='<div style="display:flex;align-items:start;justify-content:space-between;gap:15px"><div><small style="color:#ffda03">ETAPA 04 · CAPACITACIÓN</small><h2 style="margin:7px 0 5px">Enviar documentación</h2><p style="color:#bdc9d8">Configura los datos reales antes de preparar el mensaje para el candidato.</p></div><button type="button" data-close style="background:#25384d;color:white;border:1px solid #56708b;border-radius:12px;padding:9px 14px">✕</button></div><form id="trainingDocumentationForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px;margin-top:15px"></form><p id="trainingDocumentationError" role="alert" style="color:#ffb4ad"></p>';
+ const panel=document.createElement('div');panel.style.cssText='background:#111e2e;color:#f3f6fa;border:1px solid #40536c;border-radius:22px;padding:clamp(14px,4vw,24px);width:min(690px,100%);min-width:0;box-sizing:border-box;max-height:94vh;overflow-x:hidden;overflow-y:auto;box-shadow:0 24px 80px #0009';
+ panel.innerHTML='<div style="display:flex;align-items:start;justify-content:space-between;gap:15px"><div><small style="color:#ffda03">ETAPA 04 · CAPACITACIÓN</small><h2 style="margin:7px 0 5px">Enviar documentación</h2><p style="color:#bdc9d8">Configura los datos reales antes de preparar el mensaje para el candidato.</p></div><button type="button" data-close style="background:#25384d;color:white;border:1px solid #56708b;border-radius:12px;padding:9px 14px">✕</button></div><form id="trainingDocumentationForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:13px;margin-top:15px"></form><p id="trainingDocumentationError" role="alert" style="color:#ffb4ad"></p>';
  overlay.append(panel);document.body.append(overlay);
  panel.querySelector('[data-close]').onclick=()=>overlay.remove();
  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
@@ -2758,15 +2758,14 @@ async function openTrainingDocumentation(candidateId){
  const today=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T12:00:00Z');today.setUTCDate(today.getUTCDate()+1);
  const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||'').match(/\\d+/)?.[0]||'',workdays:role.work_days||'',hours:role.schedule||'',salary:role.compensation||'',frequency:role.payment_frequency||'',tutor:role.direct_manager||'',phone:''};
  const options={workdays:['De lunes a sábado','De lunes a viernes','Por llamado'],hours:['De 9:00 a. m. a 6:00 p. m.'],frequency:['Diaria','Semanal','Quincenal','Mensual','Por llamado']};
- const style='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;width:100%;box-sizing:border-box;font:inherit';
+ const style='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;max-width:100%;width:100%;box-sizing:border-box;font:inherit';
  for(const [key,label,type] of fields){
-  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed';wrap.append(document.createTextNode(label));
+  const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed;min-width:0;max-width:100%';wrap.append(document.createTextNode(label));
   if(type==='select'){
    const sel=document.createElement('select');sel.name=key;sel.required=true;sel.style.cssText=style;
    for(const value of ['',...options[key],'__other__']){const opt=document.createElement('option');opt.value=value;opt.textContent=value===''?'Seleccionar':value==='__other__'?'Otro…':value;sel.append(opt);}
    const extra=document.createElement('input');extra.name=key+'Other';extra.type='text';extra.placeholder='Especificar '+label.toLowerCase();extra.style.cssText=style+';display:none';extra.disabled=true;
-   const current=String(defaults[key]||'').trim();const found=options[key].find(x=>x.toLocaleLowerCase('es')===current.toLocaleLowerCase('es'));
-   if(found)sel.value=found;else if(current){sel.value='__other__';extra.value=current;extra.disabled=false;extra.required=true;extra.style.display='block';}
+   if(key==='workdays')sel.value='De lunes a sábado';else if(key==='hours')sel.value='De 9:00 a. m. a 6:00 p. m.';else if(key==='frequency')sel.value='Semanal';
    sel.addEventListener('change',()=>{const other=sel.value==='__other__';extra.disabled=!other;extra.required=other;extra.style.display=other?'block':'none';if(!other)extra.value='';});wrap.append(sel,extra);
   }else{const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText=style;if(key==='days')input.min='1';wrap.append(input);}
   form.append(wrap);
