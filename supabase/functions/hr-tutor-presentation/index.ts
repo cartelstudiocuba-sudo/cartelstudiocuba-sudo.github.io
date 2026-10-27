@@ -41,7 +41,7 @@ Deno.serve(async req=>{
   const body=await req.json();
   if(body.action==='issue-live'){
    const bearer=req.headers.get('authorization')||'';
-   const {data:{user},error:authError}=await admin.auth.getUser(bearer.replace(/^Bearer\\s+/i,''));
+   const {data:{user},error:authError}=await admin.auth.getUser(bearer.replace(/^Bearer\s+/i,''));
    if(authError||!user)return json({error:'Sesión no válida'},401);
    const client=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:bearer}},auth:{persistSession:false}});
    const {data,error}=await client.rpc('hr_issue_tutor_live',{p_trial:String(body.trial_id||'')});
