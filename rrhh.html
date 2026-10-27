@@ -2764,7 +2764,8 @@ async function openTrainingDocumentation(candidateId){
  const button=document.createElement('button');button.type='submit';button.textContent='Preparar mensaje y enlaces →';button.style.cssText='grid-column:1/-1;background:#ffda03;color:#101820;border:0;border-radius:14px;padding:15px;font-weight:800;cursor:pointer';form.append(button);
  form.elements.days.max='365';form.elements.days.step='1';
  const invalidate=()=>panel.querySelector('[data-preview]')?.remove();form.addEventListener('input',invalidate);
- form.elements.start.focus();
+ // No enfocar automáticamente el campo de fecha: iOS abre el selector nativo al enfocar.
+ // El calendario solo se abre cuando el usuario toca expresamente la fecha.
  form.onsubmit=async e=>{
   e.preventDefault();invalidate();if(!form.reportValidity())return;button.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
   try{
