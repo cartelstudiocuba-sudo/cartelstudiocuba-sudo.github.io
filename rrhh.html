@@ -2755,7 +2755,7 @@ async function openTrainingDocumentation(candidateId){
  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
  const form=panel.querySelector('form');
  const fields=[['start','Fecha de inicio','date'],['days','Duración de la capacitación (días)','number'],['workdays','Días laborables','text'],['hours','Horario','text'],['salary','Remuneración de la plaza','text'],['tutor','Nombre del tutor','text'],['phone','Teléfono del tutor','tel']];
- const today=new Date();today.setDate(today.getDate()+1);
+ const today=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T12:00:00Z');today.setUTCDate(today.getUTCDate()+1);
  const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||'').match(/\d+/)?.[0]||'',workdays:role.work_days||'',hours:role.schedule||'',salary:[role.compensation,role.currency,role.payment_frequency].filter(Boolean).join(' · '),tutor:role.direct_manager||'',phone:''};
  for(const [key,label,type] of fields){
   const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed';wrap.textContent=label;
