@@ -2753,7 +2753,7 @@ async function openTrainingDocumentation(candidateId){
  const form=panel.querySelector('form');
  const fields=[['start','Fecha de inicio','date'],['days','Duración de la capacitación (días)','number'],['workdays','Días laborables','text'],['hours','Horario','text'],['salary','Remuneración de la plaza','text'],['tutor','Nombre del tutor','text'],['phone','Teléfono del tutor','tel']];
  const today=new Date();today.setDate(today.getDate()+1);
- const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||3).match(/\\d+/)?.[0]||'3',workdays:role.work_days||'',hours:role.schedule||'',salary:role.compensation||'',tutor:role.direct_manager||'',phone:''};
+ const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||3).match(/\d+/)?.[0]||'3',workdays:role.work_days||'',hours:role.schedule||'',salary:role.compensation||'',tutor:role.direct_manager||'',phone:''};
  for(const [key,label,type] of fields){
   const wrap=document.createElement('label');wrap.style.cssText='display:grid;gap:6px;font-size:13px;color:#d4dfed';wrap.textContent=label;
   const input=document.createElement('input');input.name=key;input.type=type;input.required=true;input.value=String(defaults[key]||'');input.style.cssText='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;font:inherit';if(key==='days')input.min='1';wrap.append(input);form.append(wrap);
@@ -2763,7 +2763,7 @@ async function openTrainingDocumentation(candidateId){
   e.preventDefault();button.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
   try{
    const v=Object.fromEntries(new FormData(form).entries());
-   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').split(/\\s+/)[0];
+   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'').split(/\s+/)[0];
    if(!first)throw Error('La ficha no tiene un nombre válido.');
    const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta el teléfono del candidato.');
    const contractPath=role.employment_contract_path;
@@ -2776,7 +2776,7 @@ async function openTrainingDocumentation(candidateId){
    let contentUrl='';
    if(content?.storage_path){const c=await sb.storage.from('hr-role-documents').createSignedUrl(content.storage_path,604800);if(!c.error)contentUrl=c.data?.signedUrl||'';}
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-   const message='Perfecto, '+first+'. A partir del '+date+' comienza tu período de capacitación para la plaza de '+role.title+' en El Cartel Studio.\\n\\n📅 Inicio: '+date+'\\n⏱️ Duración: '+v.days+' días\\n📆 Días laborables: '+v.workdays+'\\n🕘 Horario: '+v.hours+'\\n💰 Remuneración establecida para la plaza: '+v.salary+'\\n👤 Tutor: '+v.tutor+'\\n📞 Contacto: '+v.phone+'\\n\\nTu tutor te entregará los medios básicos, accesos y el programa de capacitación.\\n\\nEl siguiente paso es completar tu expediente laboral y formalizar la contratación.\\n\\n📄 Contrato de trabajo (consulta y descarga):\\n'+signed.data.signedUrl+'\\n\\n'+(contentUrl?'📚 Contenido de la plaza y documentación para estudiar:\\n'+contentUrl+'\\n\\n':'')+'Por favor, revisa la documentación y confirma por esta vía que la has recibido. ¡Bienvenido al equipo!';
+   const message='Perfecto, '+first+'. A partir del '+date+' comienza tu período de capacitación para la plaza de '+role.title+' en El Cartel Studio.\n\n📅 Inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración establecida para la plaza: '+v.salary+'\n👤 Tutor: '+v.tutor+'\n📞 Contacto: '+v.phone+'\n\nTu tutor te entregará los medios básicos, accesos y el programa de capacitación.\n\nEl siguiente paso es completar tu expediente laboral y formalizar la contratación.\n\n📄 Contrato de trabajo (consulta y descarga):\n'+signed.data.signedUrl+'\n\n'+(contentUrl?'📚 Contenido de la plaza y documentación para estudiar:\n'+contentUrl+'\n\n':'')+'Por favor, revisa la documentación y confirma por esta vía que la has recibido. ¡Bienvenido al equipo!';
    const preview=document.createElement('div');preview.style.cssText='margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.textContent=message;
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
    send.onclick=()=>{preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');};
