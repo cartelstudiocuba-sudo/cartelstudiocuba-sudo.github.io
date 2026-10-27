@@ -39,6 +39,26 @@ Deno.serve(async req=>{
    return json(link);
   }
   const body=await req.json();
+  if(body.action==='issue-live'){
+   const bearer=req.headers.get('authorization')||'';
+   const {data:{user},error:authError}=await admin.auth.getUser(bearer.replace(/^Bearer\\s+/i,''));
+   if(authError||!user)return json({error:'Sesión no válida'},401);
+   const client=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:bearer}},auth:{persistSession:false}});
+   const {data,error}=await client.rpc('hr_issue_tutor_live',{p_trial:String(body.trial_id||'')});
+   if(error||!data)return json({error:'No autorizado o capacitación no vigente'},403);
+   return json(data);
+  }
+  if(body.action==='live-info'){
+   if(!/^[a-f0-9]{64}$/.test(String(body.token||'')))return json({error:'Enlace no válido'},404);
+   const {data:link,error}=await admin.rpc('hr_resolve_tutor_live',{p_token:body.token});
+   if(error||!link)return json({error:'Enlace caducado o revocado'},404);
+   const {data:role,error:roleError}=await admin.from('hr_roles').select('title,description,training,work_content').eq('id',link.role_id).single();
+   if(roleError||!role)return json({error:'La plaza no está disponible'},404);
+   const wc=role.work_content&&typeof role.work_content==='object'?role.work_content:{};
+   const master=wc.training_master&&typeof wc.training_master==='object'?wc.training_master:{};
+   return json({mode:'live',expires_at:link.expires_at,title:role.title,description:role.description||'',training:role.training||'',presentation_title:master.presentation_title||('Capacitación · '+role.title),modules:Array.isArray(master.modules)?master.modules.map((m:Record<string,unknown>)=>({title:String(m.title||''),guide:String(m.guide||''),video:String(m.video||'')})).slice(0,60):[],custom_notes:String(master.custom_notes||''),presentation_mode:master.presentation_mode||'automatic'});
+  }
+
   if(!['info','read','download'].includes(body.action)||!/^([a-f0-9]{64})$/.test(body.token||''))return json({error:'Enlace no válido o caducado'},404);
   const {data:link,error}=await admin.rpc('hr_resolve_tutor',{p_token:body.token});
   if(error||!link)return json({error:'Enlace no válido o caducado. Solicita uno nuevo a Recursos Humanos.'},404);
