@@ -3880,6 +3880,8 @@ async function exportTrainingSupportPdf(type,publication=false){
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const selector=type==='presentation'?'.training-slide':type==='guide'?'.training-guide-page':'.training-video-page';
  const sourcePages=[...stage.querySelectorAll(selector)];
+ const reportProgress=(step,done,total)=>{if(publication&&window.parent!==window)window.parent.postMessage({type:'cartel-tutor-export-progress',step,done,total},location.origin);};
+ reportProgress('render',0,sourcePages.length);
  if(!sourcePages.length){stage.innerHTML='';return}
 
  const stageImages=[...stage.querySelectorAll('img')];
@@ -3918,7 +3920,7 @@ async function exportTrainingSupportPdf(type,publication=false){
    if(imgs.length)await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,1500)})));
    if(!page.isConnected)throw new Error('La diapositiva temporal no está conectada al documento.');
    return await html2canvas(page,{
-    scale:publication?1.5:isPresentation?2.25:2,
+    scale:publication?1:isPresentation?2.25:2,
     useCORS:true,
     backgroundColor:'#ffffff',
     logging:false,
@@ -3946,14 +3948,18 @@ async function exportTrainingSupportPdf(type,publication=false){
   }
 
   for(let i=0;i<sourcePages.length;i++){
+   reportProgress('render',i+1,sourcePages.length);
    if(i)pdf.addPage(isPresentation?[slideW,slideH]:'letter',isPresentation?'landscape':'portrait');
    const canvas=await capturePage(sourcePages[i],isPresentation);
    if(isPresentation){
-    pdf.addImage(canvas.toDataURL('image/jpeg',publication ? .85 : .97),'JPEG',0,0,slideW,slideH,undefined,'FAST')
+    pdf.addImage(canvas.toDataURL('image/jpeg',publication ? .78 : .97),'JPEG',0,0,slideW,slideH,undefined,'FAST')
    }else{
     pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,215.9,279.4,undefined,'FAST')
    }
+   canvas.width=0;canvas.height=0;
+   await new Promise(resolve=>setTimeout(resolve,0));
   }
+  reportProgress('upload',sourcePages.length,sourcePages.length);
 
   const label=isPresentation?'Presentación capacitación 16-9':type==='guide'?'Guía del capacitador':'Guion onboarding';
   const safe=String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-').trim();
