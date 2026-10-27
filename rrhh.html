@@ -2770,33 +2770,22 @@ async function openTrainingDocumentation(candidateId){
   try{
    const v=Object.fromEntries([...new FormData(form).entries()].map(([k,value])=>[k,String(value).trim()]));
    if(Object.values(v).some(value=>!value)||!Number.isInteger(Number(v.days))||Number(v.days)<1||Number(v.days)>365)throw Error('Completa todos los datos y una duración entre 1 y 365 días.');
-   const closure=await sb.from('hr_trial_closures').select('expires_at,revoked_at,submitted_at').eq('trial_id',trial.id).maybeSingle();
-   if(closure.error||!closure.data)throw Error('No se pudo verificar el expediente. Revisa el cierre del período de prueba.');
-   if(closure.data.revoked_at||Date.parse(closure.data.expires_at)<=Date.now())throw Error('El enlace del expediente caducó o fue revocado. Revisa el cierre antes de continuar.');
-   const prepared=await sb.from('hr_trial_closure_events').select('payload').eq('trial_id',trial.id).eq('action','closure_prepared').order('created_at',{ascending:false}).limit(1).maybeSingle();
-   if(prepared.error||!prepared.data?.payload?.form_url)throw Error('No se encontró el enlace privado del expediente. Revisa el cierre.');
-   const formUrl=new URL(prepared.data.payload.form_url);
-   if(formUrl.origin!==location.origin||formUrl.pathname!=='/actualizar-expediente.html'||!/^#token=[0-9a-f]{64}$/.test(formUrl.hash))throw Error('El enlace del expediente no es válido.');
-   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'').split(/\s+/)[0];
-   if(!first)throw Error('La ficha no tiene un nombre válido.');
+   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').split(/\\s+/)[0];
+   if(!first||first.toUpperCase()==='CANDIDATO')throw Error('La ficha no tiene un primer nombre válido.');
    const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta el teléfono del candidato.');
-   const contractPath=role.employment_contract_path;
-   if(!contractPath)throw Error('La ficha de la plaza no tiene un contrato de trabajo adjunto. Agrégalo antes de enviar.');
-   const signed=await sb.storage.from('hr-role-documents').createSignedUrl(contractPath,604800);
-   if(signed.error||!signed.data?.signedUrl)throw Error('No se pudo obtener el contrato de la plaza: '+(signed.error?.message||'sin enlace'));
    const docs=await sb.from('hr_role_documents').select('title,storage_path').eq('role_id',role.id).eq('is_current',true);
    if(docs.error)throw Error('No se pudo consultar la documentación de la plaza: '+docs.error.message);
-   const materials=[];const seen=new Set([contractPath]);
-   for(const doc of docs.data||[]){if(!doc.storage_path||seen.has(doc.storage_path))continue;seen.add(doc.storage_path);const c=await sb.storage.from('hr-role-documents').createSignedUrl(doc.storage_path,604800);if(c.error||!c.data?.signedUrl)throw Error('No se pudo preparar el documento: '+doc.title);materials.push(String(doc.title||'Documento de la plaza')+':\n'+c.data.signedUrl);}
-   const contentUrl=materials.join('\n\n');
-   if([...new FormData(form).entries()].some(([k,value])=>String(value).trim()!==v[k]))throw Error('Los datos cambiaron mientras se preparaban los enlaces. Vuelve a preparar el mensaje.');
+   const content=(docs.data||[]).find(d=>/contenido (integral )?de la plaza|documentación integral|manual de la plaza/i.test(d.title||'')&&d.storage_path);
+   if(!content)throw Error('La ficha de esta plaza aún no tiene publicado el documento integral. Publícalo en Documentación con el título «Contenido de la plaza» antes de enviar este mensaje. El contrato de trabajo no se enviará en esta etapa.');
+   const signed=await sb.storage.from('hr-role-documents').createSignedUrl(content.storage_path,604800);
+   if(signed.error||!signed.data?.signedUrl)throw Error('No se pudo generar el enlace de la documentación integral: '+(signed.error?.message||'sin enlace'));
+   if([...new FormData(form).entries()].some(([k,value])=>String(value).trim()!==v[k]))throw Error('Los datos cambiaron mientras se preparaba el enlace. Vuelve a preparar el mensaje.');
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-   const message='Perfecto, '+first+'. A partir del '+date+' comienza tu período de capacitación para la plaza de '+role.title+' en El Cartel Studio.\n\n📅 Inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración establecida para la plaza: '+v.salary+'\n👤 Tutor: '+v.tutor+'\n📞 Contacto: '+v.phone+'\n\nTu tutor te entregará los medios básicos, accesos y el programa de capacitación.\n\nEl siguiente paso es completar tu expediente laboral y formalizar la contratación.\n\n📄 Contrato de trabajo (consulta y descarga):\n'+signed.data.signedUrl+'\n\n'+(contentUrl?'📚 Contenido de la plaza y documentación para estudiar:\n'+contentUrl+'\n\n':'')+'Por favor, revisa la documentación y confirma por esta vía que la has recibido. ¡Bienvenido al equipo!';
-   const completeMessage=message.replace('El siguiente paso es completar tu expediente laboral y formalizar la contratación.','El siguiente paso es completar tu expediente laboral y formalizar la contratación.\n\n'+(closure.data.submitted_at?'✅ Tu expediente ya fue recibido.':'🗂️ Completa tus datos y adjunta las fotos del carné en este formulario privado:\n'+formUrl.href)).replace('📄 Contrato de trabajo (consulta y descarga):','📄 Contrato de trabajo: descárgalo, revísalo y entrégalo firmado a tu tutor.\nEnlace de descarga (válido durante 7 días):');
+   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\\n\\n📅 Fecha de inicio: '+date+'\\n⏱️ Duración: '+v.days+' días\\n📆 Días laborables: '+v.workdays+'\\n🕘 Horario: '+v.hours+'\\n💰 Remuneración: '+v.salary+'\\n👤 Tutor asignado: '+v.tutor+'\\n📞 Contacto del tutor: '+v.phone+'\\n\\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\\n\\n🔗 Consultar y descargar documentación: '+signed.data.signedUrl;
    const preview=document.createElement('div');preview.style.cssText='margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.textContent=completeMessage;
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
    send.onclick=()=>{preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(completeMessage),'_blank','noopener,noreferrer');};
-   if(!materials.length){const warning=document.createElement('p');warning.setAttribute('role','status');warning.textContent='La plaza no tiene archivos de contenido publicados en Documentación. Se incluirán el contrato y el expediente; el contenido generado de la ficha queda pendiente de exportar y adjuntar.';preview.append(warning);}
+
    panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';area.append(preview,send);form.after(area);
   }catch(ex){err.textContent=ex.message||'No se pudo preparar la documentación.';}finally{button.disabled=false;}
  };
