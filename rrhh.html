@@ -2814,12 +2814,7 @@ async function openTrainingDocumentation(candidateId){
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
    let completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
    let presentation='',presentationExpiry=null;
-   if(recipient==='tutor'){
-    err.textContent='Generando y publicando la presentación privada. Puede tardar unos minutos…';
-    const published=await CartelTutorPresentation.publish(sb,trial.id,role.id);
-    presentation=published.url;presentationExpiry=published.expires_at;err.textContent='';
-   }
-   if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron. Vuelve a preparar el mensaje.');
+   const waitingLink='⏳ Enlace en preparación…';
    if(recipient==='tutor')completeMessage=`Hola, *${v.tutor}*. Te informamos que *${candidate.full_name.trim()}* ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de *${role.title}*. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
 
 📅 *Inicio:* ${date}
@@ -2830,8 +2825,8 @@ async function openTrainingDocumentation(candidateId){
 Te compartimos los documentos necesarios para preparar y desarrollar su capacitación:
 
 📘 *Presentación de capacitación:*
-${presentation}
-Acceso válido hasta ${presentationExpiry?new Date(presentationExpiry).toLocaleString('es-ES'):''}.
+${waitingLink}
+Acceso válido durante siete días desde su publicación.
 
 📄 *Contenido de la plaza:*
 ${contentUrl.href}
@@ -2840,10 +2835,31 @@ Te corresponde preparar la presentación que utilizarás durante la capacitació
    const previewLabel=document.createElement('label');previewLabel.textContent=recipient==='tutor'?'Mensaje editable para el tutor':'Mensaje editable para el candidato';
    const preview=document.createElement('textarea');preview.rows=18;preview.setAttribute('aria-label','Mensaje WhatsApp editable');preview.style.cssText='width:100%;box-sizing:border-box;background:#223247;color:white;margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.value=completeMessage;previewLabel.append(preview);
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
-   send.disabled=recipient==='tutor'&&!presentation;
-   send.onclick=()=>{if(recipient==='tutor'&&Date.parse(presentationExpiry)<=Date.now()){invalidate();err.textContent='La presentación ha caducado. Vuelve a preparar el mensaje.';return;}if(!preview.value.trim()){err.textContent='El mensaje está vacío.';return;}if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(preview.value),'_blank','noopener,noreferrer');};
-
-   panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';const notice=document.createElement('p');notice.textContent='Se abrirá WhatsApp para que revises y envíes el mensaje manualmente. Abrirlo no confirma su entrega.';area.append(previewLabel,notice,send);form.after(area);
+   send.disabled=recipient==='tutor';
+   send.onclick=()=>{if(recipient==='tutor'&&(!presentation||!Number.isFinite(Date.parse(presentationExpiry))||Date.parse(presentationExpiry)<=Date.now())){err.textContent='La presentación no está disponible o ha caducado. Reintenta la publicación.';return;}if(!preview.value.trim()){err.textContent='El mensaje está vacío.';return;}if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(preview.value),'_blank','noopener,noreferrer');};
+   panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';const notice=document.createElement('p');notice.textContent='Se abrirá WhatsApp para que revises y envíes el mensaje manualmente. Abrirlo no confirma su entrega.';area.append(previewLabel,notice);
+   if(recipient==='tutor'){
+    const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.style.cssText='color:#f3d873;margin:12px 0';
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar publicación';retry.style.cssText='background:#263c55;color:white;border:1px solid #6c8298;border-radius:12px;padding:12px;margin:6px 0 12px';retry.hidden=true;
+    let publishing=false;
+    const publishTutor=async()=>{
+     if(publishing||!area.isConnected)return;
+     publishing=true;retry.hidden=true;status.textContent='Preparando la presentación privada… Puedes revisar y editar el mensaje mientras tanto.';err.textContent='';send.disabled=true;
+     try{
+      const published=await CartelTutorPresentation.publish(sb,trial.id,role.id);
+      if(!area.isConnected)return;
+      if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron. Vuelve a preparar el mensaje.');
+      if(!published?.url||!Number.isFinite(Date.parse(published.expires_at))||Date.parse(published.expires_at)<=Date.now())throw Error('El enlace de la presentación no es válido.');
+      presentation=published.url;presentationExpiry=published.expires_at;
+      if(preview.value.includes(waitingLink))preview.value=preview.value.replace(waitingLink,presentation);
+      else {status.textContent='La presentación está lista, pero se modificó el marcador del enlace. Insértalo antes de enviar: '+presentation;retry.hidden=false;return;}
+      status.textContent='Presentación publicada. Revisa el mensaje antes de abrir WhatsApp.';send.disabled=false;
+     }catch(ex){if(area.isConnected){status.textContent='No se pudo preparar la presentación: '+(ex.message||'Error inesperado.');retry.hidden=false;}}
+     finally{publishing=false;}
+    };
+    retry.onclick=publishTutor;area.append(status,retry);setTimeout(publishTutor,0);
+   }
+   area.append(send);form.after(area);
   }catch(ex){err.textContent=ex.message||'No se pudo preparar la documentación.';}finally{button.disabled=false;tutorButton.disabled=false;}
  };
 }
