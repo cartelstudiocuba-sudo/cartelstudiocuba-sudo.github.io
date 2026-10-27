@@ -2756,7 +2756,7 @@ async function openTrainingDocumentation(candidateId){
  const form=panel.querySelector('form');
  const fields=[['start','Fecha de inicio','date'],['days','Duración de la capacitación (días)','number'],['workdays','Días laborables','select'],['hours','Horario','select'],['salary','Remuneración de la plaza','text'],['frequency','Frecuencia','select'],['tutor','Nombre del tutor','text'],['phone','Teléfono del tutor','tel']];
  const today=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T12:00:00Z');today.setUTCDate(today.getUTCDate()+1);
- const defaults={start:today.toISOString().slice(0,10),days:String(role.training_period||'').match(/\\d+/)?.[0]||'',workdays:role.work_days||'',hours:role.schedule||'',salary:role.compensation||'',frequency:role.payment_frequency||'',tutor:role.direct_manager||'',phone:''};
+ const defaults={start:today.toISOString().slice(0,10),days:'7',workdays:role.work_days||'',hours:role.schedule||'',salary:String(role.compensation??'').trim(),frequency:role.payment_frequency||'',tutor:role.direct_manager||'',phone:''};
  const options={workdays:['De lunes a sábado','De lunes a viernes','Por llamado'],hours:['De 9:00 a. m. a 6:00 p. m.'],frequency:['Diaria','Semanal','Quincenal','Mensual','Por llamado']};
  const style='background:#223247;border:1px solid #52677f;border-radius:11px;color:white;padding:12px;min-width:0;max-width:100%;width:100%;box-sizing:border-box;font:inherit';
  for(const [key,label,type] of fields){
