@@ -1,4 +1,15 @@
 /* Carta layout shared by the role sheet and the public capability view. */
+// Compare in Carta layout pixels, independently of preview scaling.
+// Pagination reserves 30px; verification requires 28px, allowing fractional rounding.
+function roleContentPageOverflows(content, clearance=28) {
+ const page=content?.closest('.contract-paper-page'),footer=page?.querySelector('.contract-paper-footer'),last=content?.lastElementChild;
+ if(!page||!footer||!last)return false;
+ // Older engines may retain a scroll offset on an overflow:hidden paper.
+ page.scrollTop=0;
+ const scale=page.getBoundingClientRect().height/page.offsetHeight;
+ if(!Number.isFinite(scale)||scale<=0)throw Error('No se pudo medir el documento. Vuelve a intentarlo.');
+ return (last.getBoundingClientRect().bottom-footer.getBoundingClientRect().top)/scale > -clearance;
+}
 function appendRoleContentPiece(node, getContent, addPage, overflows) {
  let content=getContent(); content.append(node);
  if(!overflows())return;
@@ -20,7 +31,10 @@ function appendRoleContentPiece(node, getContent, addPage, overflows) {
   // Prefer a paragraph/line boundary, then a word; a long unbroken word still advances.
   const text=source.textContent,prefix=text.slice(0,lo);
   const line=prefix.lastIndexOf('\n'),word=prefix.search(/\s+\S*$/u);
-  const cut=line>lo/2?line+1:word>lo/2?word+1:lo;
+  let cut=line>lo/2?line+1:word>lo/2?word+1:lo;
+  // Never divide a UTF-16 surrogate pair between pages.
+  if(cut<total&&/[\uD800-\uDBFF]/u.test(text[cut-1])&&/[\uDC00-\uDFFF]/u.test(text[cut]))cut--;
+  if(!cut)throw Error('No se pudo dividir el bloque del documento.');
   node.replaceChildren(...fragment(0,cut).childNodes);
   if(overflows())throw Error('El contenido excede el área imprimible.');
   const rest=fragment(cut,total);content=addPage();node=rest;content.append(node);
@@ -54,9 +68,7 @@ function verifyRoleContentPages(pages,expected){
  const contents=[...pages.querySelectorAll('.doc-info-content')];
  if(contents.map(c=>c.textContent).join('')!==expected)throw Error('No se pudo verificar la integridad del contenido. Vuelve a generar el documento.');
  for(const content of contents){
-  const footer=content.closest('article').querySelector('footer');
-  if(content.lastElementChild&&content.lastElementChild.getBoundingClientRect().bottom>footer.getBoundingClientRect().top-27)
-   throw Error('El contenido excede el área imprimible. Vuelve a generar el documento.');
+  if(roleContentPageOverflows(content))throw Error('El contenido excede el área imprimible. Vuelve a generar el documento.');
  }
  pages.dataset.integrity='verified';
 }

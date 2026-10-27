@@ -23,3 +23,18 @@
 .role-content-pages .contract-paper-page{width:816px!important;min-width:816px;height:1056px!important}
 .role-content-warnings{padding:12px;background:#fff8d8;border:1px solid #ecd667;border-radius:8px;margin-bottom:12px;font-size:13px}
 @media print{.role-content-warnings{display:none}}
+
+/* Keep iOS text autosizing from changing line breaks after pagination. */
+.role-content-pages{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.role-content-pages .doc-info-content{display:flow-root}
+
+/* Recovery view keeps every block readable; only verified Carta pages are exported. */
+.role-content-readable .contract-paper-page{height:auto!important;min-height:1056px;overflow:visible}
+.role-content-readable .contract-paper-footer{position:static;margin-top:28px}
+
+.training-public #docPrototypePreview{overflow:hidden}
+.training-public #docPrototypePreview .contract-pages{margin:0}
+
+/* A paper page must never become an internally scrolled viewport while splitting. */
+.role-content-pages .contract-paper-page{overflow:clip;overflow-anchor:none}
+.role-content-pages .doc-info-content{overflow-anchor:none}

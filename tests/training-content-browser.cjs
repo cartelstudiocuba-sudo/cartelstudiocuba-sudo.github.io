@@ -9,7 +9,7 @@ const role={id:'r',title:'Plaza ficticia',work_days:'De lunes a sábado',schedul
 const trialPeriodsByCandidate={c:{id:'t'}},trainingDecisionByTrial={t:'continue'},roleForVacancy=()=>role,candidatePhone=()=> '5350000000',preserveCandidateSheet=()=>{};
 window.scenario='ok';window.calls=[];window.open=(...args)=>window.opened=args;
 const sb={async rpc(name,args){calls.push({name,args});if(scenario==='slow')await new Promise(r=>setTimeout(r,300));return scenario==='fail'?{error:{message:'denied'}}:{data:{url:(scenario==='foreign'?'https://attacker.invalid':'https://gestion.elcartelstudio.com')+'/plaza-ficha.html?documento=contenido#token='+'a'.repeat(64),role_id:scenario==='wrongrole'?'other':'r'}};}};`;
-const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripción vigente',direct_manager:'Tutor',work_content:{custom:[{title:'Función vigente',text:'CONTENIDO VIGENTE DEL GENERADOR'}],protocol_blocks:[{title:'Protocolo vigente',objective:'Objetivo vigente',steps:['Paso uno']}],evaluation_master:{criteria:[{name:'Puntualidad',desc:'Llegar a tiempo',weight:100}]}}},nomenclators:[{id:'n',category:'informacion_institucional',key:'mision',label:'Misión',value:'MISIÓN VIGENTE',applies_to_all_roles:true}],roles:[],expires_at:'2099-01-01T00:00:00Z'};
+const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripción vigente',direct_manager:'Tutor',work_content:{custom:[{title:'Función vigente',text:'CONTENIDO VIGENTE DEL GENERADOR '+('Texto extenso de regresión con acentos áéíóú y pasos verificables. '.repeat(180))+'FIN DEL BLOQUE LARGO'}],protocol_blocks:[{title:'Protocolo vigente',objective:'Objetivo vigente',steps:['Paso uno']}],evaluation_master:{criteria:[{name:'Puntualidad',desc:'Llegar a tiempo',weight:100}]}}},nomenclators:[{id:'n',category:'informacion_institucional',key:'mision',label:'Misión',value:'MISIÓN VIGENTE',applies_to_all_roles:true}],roles:[],expires_at:'2099-01-01T00:00:00Z'};
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
  for(const width of [390,1440]){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
@@ -50,30 +50,52 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  const parity=await page.evaluate(()=>{const box=document.createElement('div');box.style.width='1000px';document.body.append(box);buildDocumentationInformativePages('role_content',box);const text=box.innerText;box.remove();return text;});assert(parity.includes('CONTENIDO VIGENTE DEL GENERADOR'));
 
  // Stress the shared paginator without any real candidate or server mutations.
- for(const width of [390,1440]){
+ for(const width of [320,390,768,1440]){
   await page.setViewportSize({width,height:900});
   const result=await page.evaluate(()=>{
    const box=document.createElement('div');box.className='training-public-pdf-stage';document.body.append(box);
-   const value=('Párrafo áéíóú con contenido largo y verificable. '.repeat(120)+'\n\n').repeat(12)+'FINAL SIN PÉRDIDA';
+   const value=('Párrafo áéíóú con contenido largo y verificable. '.repeat(120)+'\n\n').repeat(12)+'FINAL SIN PÉRDIDA '+ 'SINESPACIOS🧭'.repeat(1600);
    const groups=[{title:'Prueba extensa',kind:'blocks',items:[['Bloque',value]]},{title:'Campos extensos',kind:'grouped_fields',groups:[{title:'Grupo',items:[['Campo',value]]}]}];
    buildDocumentationInformativePages('role_content',box,groups);
    const blocks=[...box.querySelectorAll('.doc-info-content')];
    const text=blocks.map(x=>x.textContent).join('');
-   const fits=blocks.every(c=>!c.lastElementChild||c.lastElementChild.getBoundingClientRect().bottom<=c.closest('article').querySelector('footer').getBoundingClientRect().top-27);
-   const normalize=t=>t.replace(/\s/g,'');
-   const expected=normalize('Prueba extensaBloque'+value+'Campos extensosGrupoCampo'+value);
-   const exact=normalize(text)===expected,pages=box.querySelectorAll('article.contract-paper-page').length;
+   const fits=blocks.every(c=>!roleContentPageOverflows(c)&&c.closest('article').scrollTop===0&&c.getBoundingClientRect().top>=c.closest('article').querySelector('header').getBoundingClientRect().bottom);
+   const raw=blocks.map(c=>c.textContent).join('');
+   let legacyFails=false;
+   for(const scale of [.37,.48,.85,1,1.25]){
+    box.style.transformOrigin='top left';box.style.transform='scale('+scale+')';
+    verifyRoleContentPages(box,raw);
+    if(scale===.37)legacyFails=blocks.some(c=>c.lastElementChild&&c.lastElementChild.getBoundingClientRect().bottom>c.closest('article').querySelector('footer').getBoundingClientRect().top-27);
+   }
+   box.style.transform='';
+   const expected='Prueba extensaBloque'+value+'Campos extensosGrupoCampo'+value;
+   const exact=text===expected,pages=box.querySelectorAll('article.contract-paper-page').length;
    const warnings=roleContentWarnings();box.remove();
-   return {fits,exact,pages,warnings};
+   return {fits,exact,pages,warnings,legacyFails};
   });
-  assert(result.fits,JSON.stringify(result));assert(result.exact,'Text must be preserved exactly');assert(result.pages>10);
-  console.log('PASS long paragraphs, grouped fields, exact text integrity and page bounds '+width+'px');
+  assert(result.fits,JSON.stringify(result));assert(result.exact,'Text must be preserved exactly');assert(result.pages>10);assert(result.legacyFails,'Original unscaled clearance must reproduce the mobile failure');
+  console.log('PASS long paragraphs, grouped fields, unbroken Unicode, exact text, scales .37/.48/.85/1/1.25; reproduced legacy false overflow; '+width+'px, '+result.pages+' pages');
  }
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>!!window.jspdf?.jsPDF&&!!window.html2canvas,{},{timeout:45000});
  const download=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();const file=await download;const dest=path.join(root,'tests','training-content-proof.pdf');await file.saveAs(dest);assert(fs.statSync(dest).size>15000);assert(fs.readFileSync(dest).subarray(0,5).toString()==='%PDF-');assert(reads>=2);assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.equal(await page.locator('.contract-preview-toolbar').isVisible(),false);assert.deepEqual(errors,[]);
  await page.screenshot({path:path.join(root,'tests','training-content-mobile.png'),fullPage:false});
- await page.setViewportSize({width:1440,height:900});const desktopDownload=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();assert((await desktopDownload).suggestedFilename().endsWith('.pdf'));assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);
+ await page.setViewportSize({width:1440,height:900});await page.screenshot({path:path.join(root,'tests','role-content-desktop.png')});const desktopDownload=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();assert((await desktopDownload).suggestedFilename().endsWith('.pdf'));assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);
+ // A layout/export failure and a failed read must preserve the verified preview.
+ const before=await page.locator('.role-content-pages').textContent();
+ await page.evaluate(()=>{window.savedBuild=buildDocumentationInformativePages;buildDocumentationInformativePages=()=>{throw Error('Fallo simulado de paginación');};});
+ await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();
+ await page.getByText('Fallo simulado de paginación',{exact:false}).waitFor();
+ assert.equal(await page.locator('.role-content-pages').textContent(),before);
+ assert.equal(await page.locator('#trainingContentDownload').isEnabled(),true);
+ await page.evaluate(()=>buildDocumentationInformativePages=window.savedBuild);
+ // First-render failure recovers ALL text in a continuous, non-exportable view.
+ await page.evaluate(()=>{document.querySelector('#docPrototypePreview').replaceChildren();window.savedVerify=verifyRoleContentPages;verifyRoleContentPages=()=>{throw Error('Fallo inicial simulado');};});
+ await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();
+ await page.getByText('Fallo inicial simulado',{exact:false}).waitFor();
+ assert.equal(await page.locator('.role-content-readable').count(),1);
+ assert((await page.locator('.role-content-readable').innerText()).includes('CONTENIDO VIGENTE DEL GENERADOR'));
+ await page.evaluate(()=>verifyRoleContentPages=window.savedVerify);
  response=null;await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#trainingContentStatus').textContent.includes('vencido'));assert.equal(await page.locator('.contract-paper-page').count(),0);assert((await page.locator('[role=status]').innerText()).includes('vencido'));
  await page.goto('https://gestion.elcartelstudio.com/plaza-ficha.html?documento=contenido#token=bad');await page.getByText('El enlace no es válido.',{exact:false}).waitFor();assert.equal(await page.locator('.contract-paper-page').count(),0);
  await context.close();console.log('PASS public full page without login, shared live generator, actual PDF download, no admin reads/storage, revocation and invalid token');
