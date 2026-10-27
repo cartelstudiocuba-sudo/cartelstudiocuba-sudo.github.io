@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><script src="/assets/tutor-presentation.js?v=20261027c"></script><script id="rrhh-desktop-shell-20261022">
+<!doctype html><html lang="es"><head><script src="/assets/tutor-presentation.js?v=20261027d"></script><script id="rrhh-desktop-shell-20261022">
 (function(){
  const params=new URLSearchParams(location.search);
  // embedded=1 controls the module UI; only a real parent frame owns desktop navigation.
@@ -2846,7 +2846,7 @@ Te corresponde preparar la presentación que utilizarás durante la capacitació
      if(publishing||!area.isConnected)return;
      publishing=true;retry.hidden=true;status.textContent='Preparando la presentación privada… Puedes revisar y editar el mensaje mientras tanto.';err.textContent='';send.disabled=true;
      try{
-      const published=await CartelTutorPresentation.publish(sb,trial.id,role.id,progress=>{if(!area.isConnected)return;if(progress.step==='render'&&progress.total)status.textContent='Generando diapositiva '+progress.done+' de '+progress.total+'…';else if(progress.step==='upload')status.textContent='Publicando presentación privada…';else status.textContent='Preparando el generador de la presentación…';});
+      const published=await CartelTutorPresentation.publish(sb,trial.id,role.id,progress=>{if(!area.isConnected)return;if(progress.step==='render'&&progress.total)status.textContent='Generando diapositiva '+progress.done+' de '+progress.total+'…';else if(progress.step==='upload')status.textContent='Publicando presentación privada…';else if(progress.step==='load')status.textContent='Abriendo el generador de capacitación…';else if(progress.step==='data')status.textContent='Cargando información de la plaza…';else status.textContent='Iniciando exportación de la presentación…';});
       if(!area.isConnected)return;
       if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron. Vuelve a preparar el mensaje.');
       if(!published?.url||!Number.isFinite(Date.parse(published.expires_at))||Date.parse(published.expires_at)<=Date.now())throw Error('El enlace de la presentación no es válido.');
