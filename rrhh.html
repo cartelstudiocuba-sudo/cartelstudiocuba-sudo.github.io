@@ -2769,15 +2769,22 @@ async function openTrainingDocumentation(candidateId){
   }else{const input=document.createElement('input');input.name=key;input.type=type;input.required=true;if(['start','tutor','phone'].includes(key))input.autocomplete='off';input.value=String(defaults[key]||'');input.style.cssText=style;if(type==='date'){input.style.setProperty('display','block','important');input.style.setProperty('width','100%','important');input.style.setProperty('max-width','100%','important');input.style.setProperty('min-width','0','important');input.style.setProperty('box-sizing','border-box','important');input.style.setProperty('-webkit-appearance','none');input.style.setProperty('appearance','none');input.style.setProperty('overflow','hidden');}if(key==='days'){input.min='1';input.max='365';input.step='1';input.defaultValue='7';input.setAttribute('value','7');input.value='7';}wrap.append(input);}
   form.append(wrap);
  }
+ const presentationLabel=document.createElement('label');presentationLabel.style.cssText='grid-column:1/-1;display:grid;gap:6px';presentationLabel.textContent='Presentación para el tutor: enlace firmado (opcional para el candidato)';
+ const presentationInput=document.createElement('input');presentationInput.type='url';presentationInput.name='presentation';presentationInput.style.cssText=style;presentationLabel.append(presentationInput);
+ const help=document.createElement('small');help.textContent='El generador permite exportar PDF/PPSX, pero aún no publica enlaces. Exporta la presentación y solicita un enlace firmado del almacenamiento privado. Nunca pegues una dirección interna. Sin este enlace no se abrirá WhatsApp del tutor.';presentationLabel.append(help);form.append(presentationLabel);
+ const normalizeTutorPhone=value=>{const raw=String(value).trim();if(!/^[+\d\s().-]+$/.test(raw))return '';let digits=raw.replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.length===8)digits='53'+digits;return /^[1-9]\d{7,14}$/.test(digits)?digits:'';};
+ const presentationUrl=()=>{try{const u=new URL(presentationInput.value.trim());return u.origin==='https://jhumvctocphyiwhszeaz.supabase.co'&&u.pathname.startsWith('/storage/v1/object/sign/hr-role-documents/')&&u.searchParams.get('token')&&!u.username&&!u.password&&!u.hash?u.href:'';}catch{return '';}};
+ let preparedContent=null;
  const button=document.createElement('button');button.type='submit';button.textContent='Preparar mensaje y enlaces →';button.style.cssText='grid-column:1/-1;background:#ffda03;color:#101820;border:0;border-radius:14px;padding:15px;font-weight:800;cursor:pointer';form.append(button);
+ const tutorButton=document.createElement('button');tutorButton.type='button';tutorButton.textContent='WhatsApp tutor';tutorButton.style.cssText=button.style.cssText;tutorButton.onclick=()=>prepareMessage('tutor');form.append(tutorButton);
  // Asegurar que el valor inicial siga visible después de insertar el campo en el formulario.
  form.elements.days.value='7';
- const requiredMessages={start:'Selecciona la fecha de inicio.',tutor:'Escribe el nombre del tutor.',phone:'Escribe el teléfono del tutor.'};
+ const requiredMessages={start:'Selecciona la fecha de inicio.',tutor:'Escribe el nombre del tutor.',phone:'Escribe un número de WhatsApp válido con código de país (o 8 dígitos para Cuba).'};
  const validate=()=>{
   let firstInvalid=null;
   for(const [key,message] of Object.entries(requiredMessages)){
    const input=form.elements[key];input.setCustomValidity('');
-   const invalid=!input.value.trim()||(key==='start'&&!input.validity.valid)||(key==='phone'&&!/\d/.test(input.value));
+   const invalid=!input.value.trim()||(key==='start'&&!input.validity.valid)||(key==='phone'&&!normalizeTutorPhone(input.value));
    input.setCustomValidity(invalid?message:'');input.setAttribute('aria-invalid',String(invalid));
    let error=form.querySelector('[data-error="'+key+'"]');
    if(!error){error=document.createElement('span');error.dataset.error=key;error.id='training-error-'+key;error.style.color='#ffb4ad';input.setAttribute('aria-describedby',error.id);input.after(error);}
@@ -2791,29 +2798,53 @@ async function openTrainingDocumentation(candidateId){
  form.addEventListener('input',edited);form.addEventListener('change',edited);
  // No enfocar automáticamente el campo de fecha: iOS abre el selector nativo al enfocar.
  // El calendario solo se abre cuando el usuario toca expresamente la fecha.
- form.onsubmit=async e=>{
-  e.preventDefault();invalidate();if(!validate())return;button.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
+ form.onsubmit=e=>{e.preventDefault();prepareMessage('candidate');};
+ const prepareMessage=async recipient=>{
+  invalidate();if(!validate())return;button.disabled=true;tutorButton.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
   try{
    const formSnapshot=JSON.stringify([...new FormData(form).entries()]);
    const v=Object.fromEntries([...new FormData(form).entries()].map(([k,value])=>[k,String(value).trim()]));
    for(const key of ['workdays','hours','frequency']){if(v[key]==='__other__')v[key]=v[key+'Other']||'';delete v[key+'Other'];}
-   if(Object.values(v).some(value=>!value)||!Number.isInteger(Number(v.days))||Number(v.days)<1||Number(v.days)>365)throw Error('Completa todos los datos y una duración entre 1 y 365 días.');
+   if(Object.entries(v).some(([key,value])=>key!=='presentation'&&!value)||!Number.isInteger(Number(v.days))||Number(v.days)<1||Number(v.days)>365)throw Error('Completa todos los datos y una duración entre 1 y 365 días.');
    const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'').split(/\s+/)[0];
    if(!first||first.toUpperCase()==='CANDIDATO')throw Error('La ficha no tiene un primer nombre válido.');
-   const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta el teléfono del candidato.');
-   const issued=await sb.rpc('hr_issue_training_content',{p_trial:trial.id});
+   const phone=recipient==='tutor'?normalizeTutorPhone(v.phone):candidatePhone(candidate);if(phone.length<8)throw Error('Falta el teléfono del candidato.');
+   const issued=preparedContent||await sb.rpc('hr_issue_training_content',{p_trial:trial.id});
    if(issued.error||!issued.data?.url)throw Error('No se pudo preparar el acceso a la documentación: '+(issued.error?.message||'sin enlace'));
    const contentUrl=new URL(issued.data.url);
    if(contentUrl.origin!=='https://gestion.elcartelstudio.com'||contentUrl.pathname!=='/plaza-ficha.html'||contentUrl.search!=='?documento=contenido'||!/^#token=[a-f0-9]{64}$/.test(contentUrl.hash)||String(issued.data.role_id)!==String(role.id))throw Error('El enlace recibido no corresponde a la plaza. Actualiza la ficha.');
    if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron mientras se preparaba el enlace. Vuelve a preparar el mensaje.');
+   preparedContent=issued;
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
-   const preview=document.createElement('div');preview.style.cssText='margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.textContent=completeMessage;
-   const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
-   send.onclick=()=>{if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(completeMessage),'_blank','noopener,noreferrer');};
+   let completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
+   let presentation=presentationUrl();
+   if(recipient==='tutor'&&presentation){try{const response=await fetch(presentation,{method:'HEAD',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});if(!response.ok)presentation='';}catch{presentation='';}}
+   if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron. Vuelve a preparar el mensaje.');
+   if(recipient==='tutor')completeMessage=`Hola, *${v.tutor}*. Te informamos que *${candidate.full_name.trim()}* ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de *${role.title}*. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
 
-   panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';area.append(preview,send);form.after(area);
-  }catch(ex){err.textContent=ex.message||'No se pudo preparar la documentación.';}finally{button.disabled=false;}
+📅 *Inicio:* ${date}
+⏳ *Duración:* ${v.days} días
+🕘 *Horario:* ${v.hours}
+📆 *Días y frecuencia:* ${v.workdays} · ${v.frequency}
+
+Te compartimos los documentos necesarios para preparar y desarrollar su capacitación:
+
+📘 *Presentación de capacitación:*
+${presentation||'[Pendiente: enlace firmado de la presentación]'}
+
+📄 *Contenido de la plaza:*
+${contentUrl.href}
+
+Te corresponde preparar la presentación que utilizarás durante la capacitación y, tomando como base el material proporcionado, explicar las funciones, responsabilidades, protocolos y normas de la plaza, así como coordinar la entrega de los medios básicos, uniformes y accesorios necesarios para que el trabajador pueda desempeñar correctamente sus funciones. *Confiamos en tu experiencia y compromiso.*`;
+   if(recipient==='tutor'&&!presentation)err.textContent='Bloqueado: falta un enlace firmado de la presentación. Exporta el PDF/PPSX desde la ficha de la plaza y compártelo por un canal autorizado, o añade aquí su enlace firmado. El mensaje no se ha enviado.';
+   const previewLabel=document.createElement('label');previewLabel.textContent=recipient==='tutor'?'Mensaje editable para el tutor':'Mensaje editable para el candidato';
+   const preview=document.createElement('textarea');preview.rows=18;preview.setAttribute('aria-label','Mensaje WhatsApp editable');preview.style.cssText='width:100%;box-sizing:border-box;background:#223247;color:white;margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.value=completeMessage;previewLabel.append(preview);
+   const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
+   send.disabled=recipient==='tutor'&&!presentation;
+   send.onclick=()=>{if(!preview.value.trim()){err.textContent='El mensaje está vacío.';return;}if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(preview.value),'_blank','noopener,noreferrer');};
+
+   panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';const notice=document.createElement('p');notice.textContent='Se abrirá WhatsApp para que revises y envíes el mensaje manualmente. Abrirlo no confirma su entrega.';area.append(previewLabel,notice,send);form.after(area);
+  }catch(ex){err.textContent=ex.message||'No se pudo preparar la documentación.';}finally{button.disabled=false;tutorButton.disabled=false;}
  };
 }
 function candidateGuidedFlow(x){
