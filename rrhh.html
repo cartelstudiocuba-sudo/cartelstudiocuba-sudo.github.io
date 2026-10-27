@@ -2779,21 +2779,20 @@ async function openTrainingDocumentation(candidateId){
  form.onsubmit=async e=>{
   e.preventDefault();invalidate();if(!form.reportValidity())return;button.disabled=true;const err=panel.querySelector('#trainingDocumentationError');err.textContent='';
   try{
+   const formSnapshot=JSON.stringify([...new FormData(form).entries()]);
    const v=Object.fromEntries([...new FormData(form).entries()].map(([k,value])=>[k,String(value).trim()]));
    for(const key of ['workdays','hours','frequency']){if(v[key]==='__other__')v[key]=v[key+'Other']||'';delete v[key+'Other'];}
    if(Object.values(v).some(value=>!value)||!Number.isInteger(Number(v.days))||Number(v.days)<1||Number(v.days)>365)throw Error('Completa todos los datos y una duración entre 1 y 365 días.');
-   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\\s*[—-]\\s*/i,'').split(/\\s+/)[0];
+   const first=String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'').split(/\s+/)[0];
    if(!first||first.toUpperCase()==='CANDIDATO')throw Error('La ficha no tiene un primer nombre válido.');
    const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta el teléfono del candidato.');
-   const docs=await sb.from('hr_role_documents').select('title,storage_path').eq('role_id',role.id).eq('is_current',true);
-   if(docs.error)throw Error('No se pudo consultar la documentación de la plaza: '+docs.error.message);
-   const content=(docs.data||[]).find(d=>/contenido (integral )?de la plaza|documentación integral|manual de la plaza/i.test(d.title||'')&&d.storage_path);
-   if(!content)throw Error('La ficha de esta plaza aún no tiene publicado el documento integral. Publícalo en Documentación con el título «Contenido de la plaza» antes de enviar este mensaje. El contrato de trabajo no se enviará en esta etapa.');
-   const signed=await sb.storage.from('hr-role-documents').createSignedUrl(content.storage_path,604800);
-   if(signed.error||!signed.data?.signedUrl)throw Error('No se pudo generar el enlace de la documentación integral: '+(signed.error?.message||'sin enlace'));
-   if([...new FormData(form).entries()].some(([k,value])=>String(value).trim()!==v[k]))throw Error('Los datos cambiaron mientras se preparaba el enlace. Vuelve a preparar el mensaje.');
+   const issued=await sb.rpc('hr_issue_training_content',{p_trial:trial.id});
+   if(issued.error||!issued.data?.url)throw Error('No se pudo preparar el acceso a la documentación: '+(issued.error?.message||'sin enlace'));
+   const contentUrl=new URL(issued.data.url);
+   if(contentUrl.origin!=='https://gestion.elcartelstudio.com'||contentUrl.pathname!=='/plaza-ficha.html'||contentUrl.search!=='?documento=contenido'||!/^#token=[a-f0-9]{64}$/.test(contentUrl.hash)||String(issued.data.role_id)!==String(role.id))throw Error('El enlace recibido no corresponde a la plaza. Actualiza la ficha.');
+   if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron mientras se preparaba el enlace. Vuelve a preparar el mensaje.');
    const date=new Date(v.start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\\n\\n📅 Fecha de inicio: '+date+'\\n⏱️ Duración: '+v.days+' días\\n📆 Días laborables: '+v.workdays+'\\n🕘 Horario: '+v.hours+'\\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\\n👤 Tutor asignado: '+v.tutor+'\\n📞 Contacto del tutor: '+v.phone+'\\n\\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\\n\\n🔗 Consultar y descargar documentación: '+signed.data.signedUrl;
+   const completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
    const preview=document.createElement('div');preview.style.cssText='margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.textContent=completeMessage;
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
    send.onclick=()=>{preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(completeMessage),'_blank','noopener,noreferrer');};

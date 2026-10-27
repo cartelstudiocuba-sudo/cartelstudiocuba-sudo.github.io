@@ -1,0 +1,15 @@
+.training-public .wrap{display:none!important}
+.training-public body{background:#eff2f5;color:#172536}
+#trainingPublicContent{max-width:1120px;margin:auto;padding:24px 12px;font:15px/1.5 system-ui}
+.training-public-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:white;border-radius:16px;margin-bottom:18px}
+.training-public-head h1{font-size:24px;margin:5px 0}
+.training-public-head p{margin:0;font-size:13px;color:#526075}
+.training-public-head button{flex-shrink:0;min-height:44px}
+.training-public .doc-prototype-preview{display:block;padding:0;border:0;overflow:auto}
+.training-public .contract-preview-toolbar{display:none}
+.training-public #docPrototypePreview{margin:0;max-width:100%}
+.training-public #docPrototypePreview .contract-pages{width:816px;align-items:stretch;overflow:visible}
+.training-public .contract-paper-page{width:816px!important;height:1056px!important;max-width:none!important}
+.training-public-pdf-stage{position:fixed;left:-20000px;top:0;width:816px;background:#fff;pointer-events:none}
+.training-public-pdf-stage .contract-pages{width:816px;align-items:stretch;overflow:visible}
+@media(max-width:600px){.training-public-head{display:block}.training-public-head button{margin-top:12px;width:100%}}
