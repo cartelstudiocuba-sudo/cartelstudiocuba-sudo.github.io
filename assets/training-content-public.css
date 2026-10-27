@@ -13,3 +13,13 @@
 .training-public-pdf-stage{position:fixed;left:-20000px;top:0;width:816px;background:#fff;pointer-events:none}
 .training-public-pdf-stage .contract-pages{width:816px;align-items:stretch;overflow:visible}
 @media(max-width:600px){.training-public-head{display:block}.training-public-head button{margin-top:12px;width:100%}}
+/* Scoped to the informative document; contracts keep their established styles. */
+.role-content-pages{width:816px!important;min-width:816px}
+.role-content-pages .doc-info-content{font:11px/1.55 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
+.role-content-pages .doc-info-content p{font:inherit!important;white-space:pre-wrap}
+.role-content-pages .doc-info-content h4,.role-content-pages .doc-info-content small{font-family:Arial,Helvetica,sans-serif!important}
+.role-content-pages .doc-info-content h4{font-size:12px!important;line-height:1.4}
+.role-content-pages .doc-info-content small{font-size:10px!important}
+.role-content-pages .contract-paper-page{width:816px!important;min-width:816px;height:1056px!important}
+.role-content-warnings{padding:12px;background:#fff8d8;border:1px solid #ecd667;border-radius:8px;margin-bottom:12px;font-size:13px}
+@media print{.role-content-warnings{display:none}}

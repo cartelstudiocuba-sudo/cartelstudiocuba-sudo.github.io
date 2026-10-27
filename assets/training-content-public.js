@@ -54,6 +54,6 @@ async function exportTrainingContentPdf(){
    const canvas=await html2canvas(pages[i],{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
    pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,215.9,279.4,undefined,'FAST');
   }
-  pdf.save('Contenido de la plaza - '+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf');
+  const blob=pdf.output('blob'),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='Contenido de la plaza - '+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);
  }finally{stage.remove();}
 }

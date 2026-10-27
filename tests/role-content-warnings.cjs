@@ -1,0 +1,11 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const role={title:'Prueba',description:'Texto orientativo por definir',work_content:{protocol_blocks:[{title:'Pendiente',objective:'',steps:[]}],evaluation_master:{criteria:[{name:'Prueba',weight:0}]}}};
+const before=JSON.stringify(role),context={role,evaluationMaster:()=>role.work_content.evaluation_master};
+vm.createContext(context);vm.runInContext(fs.readFileSync('assets/role-content-layout.js','utf8'),context);
+const warnings=context.roleContentWarnings();
+assert(warnings.some(x=>x.includes('sin completar')));
+assert(warnings.some(x=>x.includes('orientativo')));
+assert(warnings.some(x=>x.includes('0%')));
+assert(warnings.some(x=>x.includes('incompleto')));
+assert.equal(JSON.stringify(role),before);
+console.log('PASS internal warnings, zero weights, placeholders, incomplete protocols, no data mutation');
