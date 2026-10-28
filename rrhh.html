@@ -2786,6 +2786,7 @@ async function openTrainingDocumentation(candidateId){
    let completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
    let presentation='',presentationExpiry=null;
    const waitingLink='⏳ Enlace en preparación…';
+   const waitingGuideLink='⏳ Documento de conducción en preparación…';
    if(recipient==='tutor')completeMessage=`Hola, ${v.tutor}. Te informamos que ${String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'')} ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de ${role.title}. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
 
 📅 Inicio: ${date}
@@ -2798,6 +2799,10 @@ Te compartimos los documentos necesarios para preparar y desarrollar su capacita
 📘 Presentación de capacitación:
 ${waitingLink}
 Acceso válido durante siete días desde su publicación.
+
+📋 Documento de conducción para el tutor:
+${waitingGuideLink}
+Guía para preparar y conducir cada capítulo. Acceso válido durante siete días.
 
 📄 Contenido de la plaza:
 ${contentUrl.href}
@@ -2822,9 +2827,10 @@ Te corresponde preparar la presentación que utilizarás durante la capacitació
       if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot)throw Error('Los datos cambiaron. Vuelve a preparar el mensaje.');
       if(!published?.url||!Number.isFinite(Date.parse(published.expires_at))||Date.parse(published.expires_at)<=Date.now())throw Error('El enlace de la presentación no es válido.');
       presentation=published.url;presentationExpiry=published.expires_at;
-      if(preview.value.includes(waitingLink))preview.value=preview.value.replace(waitingLink,presentation);
-      else {status.textContent='La presentación está lista, pero se modificó el marcador del enlace. Insértalo antes de enviar: '+presentation;retry.hidden=false;return;}
-      status.textContent='Enlace de presentación listo. Revisa el mensaje antes de abrir WhatsApp.';send.disabled=false;
+      const guideUrl=new URL(presentation);guideUrl.pathname='/plaza-ficha.html';guideUrl.search='?documento=presentacion&material=guia';
+      if(preview.value.includes(waitingLink)&&preview.value.includes(waitingGuideLink))preview.value=preview.value.replace(waitingLink,presentation).replace(waitingGuideLink,guideUrl.href);
+      else {status.textContent='La presentación está lista, pero se modificó el marcador del enlace. Inserta ambos enlaces antes de enviar: '+presentation+' · Documento de conducción: '+guideUrl.href;retry.hidden=false;return;}
+      status.textContent='Presentación y documento de conducción listos. Revisa el mensaje antes de abrir WhatsApp.';send.disabled=false;
      }catch(ex){if(area.isConnected){status.textContent='No se pudo preparar la presentación: '+(ex.message||'Error inesperado.');retry.hidden=false;}}
      finally{publishing=false;}
     };
