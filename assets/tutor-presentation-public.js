@@ -1,11 +1,13 @@
 'use strict';
 if(new URLSearchParams(location.search).get('documento')==='presentacion')document.documentElement.classList.add('training-public');
 async function bootTutorPresentation(){
+ const guide=new URLSearchParams(location.search).get('material')==='guia',supportType=guide?'guide':'presentation';
+ const materialTitle=guide?'Documento de conducción para el tutor':'Presentación para el tutor';
  const token=new URLSearchParams(location.hash.slice(1)).get('token')||'';
- history.replaceState(null,'',location.pathname+'?documento=presentacion');
- document.title='Presentación para el tutor · El Cartel Studio';
+ history.replaceState(null,'',location.pathname+'?documento=presentacion'+(guide?'&material=guia':''));
+ document.title=materialTitle+' · El Cartel Studio';
  const root=document.createElement('main');root.id='trainingPublicContent';
- root.innerHTML='<header class="training-public-head"><div><small>EL CARTEL STUDIO · CAPACITACIÓN</small><h1>Presentación para el tutor</h1><p role="status">Validando acceso…</p></div><button class="btn primary" disabled>Descargar PDF</button></header><section class="training-support-body presentation" aria-label="Diapositivas de capacitación"></section>';
+ root.innerHTML='<header class="training-public-head"><div><small>EL CARTEL STUDIO · CAPACITACIÓN</small><h1>'+materialTitle+'</h1><p role="status">Validando acceso…</p></div><button class="btn primary" disabled>Descargar PDF</button></header><section class="training-support-body '+supportType+'" aria-label="'+materialTitle+'"></section>';
  document.body.append(root);
  const status=root.querySelector('[role=status]'),button=root.querySelector('button'),box=root.querySelector('section');
  let expires=0,pdfFile=null,pdfBlob=null,downloadUrl=null,busy=false,version='',timer,invalid=false;
@@ -31,9 +33,8 @@ async function bootTutorPresentation(){
  };
  const render=async()=>{
   await document.fonts.ready;
-  box.innerHTML=trainingPresentationHtml();
-  paginateTrainingPresentation(box);
-  trainingPresentationObserve(box);trainingPresentationScale(box);
+  box.innerHTML=guide?trainingGuideHtml():trainingPresentationHtml();
+  if(!guide){paginateTrainingPresentation(box);trainingPresentationObserve(box);trainingPresentationScale(box);}
  };
  const save=()=>{
   if(invalid||Date.now()>=expires){clear('El enlace ha caducado.');return;}
@@ -54,18 +55,18 @@ async function bootTutorPresentation(){
   busy=true;button.disabled=true;button.textContent='Generando PDF…';
   try{
    const data=await request();if(apply(data))await render();
-   const blob=await exportTrainingSupportPdf('presentation',false,true);
+   const blob=await exportTrainingSupportPdf(supportType,false,true);
    const checked=await request();
    if(JSON.stringify(checked)!==version){apply(checked);await render();throw Error('La presentación cambió. Toca Descargar PDF para generar la versión actual.');}
    if(invalid)return;
    pdfBlob=blob;
-   const filename='Presentación capacitación - '+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf';
+   const filename=(guide?'Documento de conducción - ':'Presentación capacitación - ')+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf';
    pdfFile=new File([blob],filename,{type:'application/pdf'});
    status.textContent='PDF listo. Toca Descargar PDF para guardarlo; en iPhone selecciona Guardar en Archivos en el menú Compartir.';
   }catch(error){if(!invalid)status.textContent=error.message;}
-  finally{busy=false;button.textContent='Descargar PDF';button.disabled=invalid||!box.querySelector('.training-slide');}
+  finally{busy=false;button.textContent='Descargar PDF';button.disabled=invalid||!box.querySelector(guide?'.training-guide-page':'.training-slide');}
  };
- try{apply(await request());await render();button.disabled=false;status.textContent=role.title+' · Diapositivas 16:9 · Enlace válido hasta '+new Date(expires).toLocaleString('es-ES');}
+ try{apply(await request());await render();button.disabled=false;status.textContent=role.title+(guide?' · Documento de conducción · Enlace válido hasta ':' · Diapositivas 16:9 · Enlace válido hasta ')+new Date(expires).toLocaleString('es-ES');}
  catch(error){if(!invalid)clear(error.message);}
  // Revalidate capabilities while open; never retain a downloadable PDF across checks.
  timer=setInterval(async()=>{
