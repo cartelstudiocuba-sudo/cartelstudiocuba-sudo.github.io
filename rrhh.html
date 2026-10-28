@@ -2817,18 +2817,18 @@ async function openTrainingDocumentation(candidateId){
    const waitingLink='⏳ Enlace en preparación…';
    if(recipient==='tutor')completeMessage=`Hola, ${v.tutor}. Te informamos que ${String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'')} ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de ${role.title}. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
 
-📅 *Inicio:* ${date}
-⏳ *Duración:* ${v.days} días
-🕘 *Horario:* ${v.hours}
-📆 *Días y frecuencia:* ${v.workdays} · ${v.frequency}
+📅 Inicio: ${date}
+⏳ Duración: ${v.days} días
+🕘 Horario: ${v.hours}
+📆 Días y frecuencia: ${v.workdays} · ${v.frequency}
 
 Te compartimos los documentos necesarios para preparar y desarrollar su capacitación:
 
-📘 *Presentación de capacitación:*
+📘 Presentación de capacitación:
 ${waitingLink}
 Acceso válido durante siete días desde su publicación.
 
-📄 *Contenido de la plaza:*
+📄 Contenido de la plaza:
 ${contentUrl.href}
 
 Te corresponde preparar la presentación que utilizarás durante la capacitación y, tomando como base el material proporcionado, explicar las funciones, responsabilidades, protocolos y normas de la plaza, así como coordinar la entrega de los medios básicos, uniformes y accesorios necesarios para que el trabajador pueda desempeñar correctamente sus funciones. *Confiamos en tu experiencia y compromiso.*`;
@@ -2853,7 +2853,7 @@ Te corresponde preparar la presentación que utilizarás durante la capacitació
       presentation=published.url;presentationExpiry=published.expires_at;
       if(preview.value.includes(waitingLink))preview.value=preview.value.replace(waitingLink,presentation);
       else {status.textContent='La presentación está lista, pero se modificó el marcador del enlace. Insértalo antes de enviar: '+presentation;retry.hidden=false;return;}
-      status.textContent='Presentación publicada. Revisa el mensaje antes de abrir WhatsApp.';send.disabled=false;
+      status.textContent='Enlace de presentación listo. Revisa el mensaje antes de abrir WhatsApp.';send.disabled=false;
      }catch(ex){if(area.isConnected){status.textContent='No se pudo preparar la presentación: '+(ex.message||'Error inesperado.');retry.hidden=false;}}
      finally{publishing=false;}
     };
