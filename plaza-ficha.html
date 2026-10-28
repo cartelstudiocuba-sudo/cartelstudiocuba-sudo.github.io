@@ -3869,7 +3869,7 @@ function previewTrainingSupport(type){
 function closeTrainingSupportPreview(){const modal=document.getElementById('trainingSupportModal');if(modal)modal.classList.remove('open');document.body.classList.remove('protocol-preview-open')}
 async function exportTrainingSupportPdf(type,publication=false,publicDownload=false){
  if(!window.html2canvas||!window.jspdf?.jsPDF){if(publication||publicDownload)throw Error('No se cargó el generador de PDF.');alert('No se cargó el generador de PDF.');return}
- const showProgress=type==='presentation'&&!publication&&!publicDownload;
+ const showProgress=type==='presentation'&&!publication; // Incluye descarga pública del tutor; excluye generación silenciosa para publicación.
  let progressOverlay=null,progressText=null,progressBar=null;
  if(showProgress){
   progressOverlay=document.createElement('div');
