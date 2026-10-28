@@ -4382,7 +4382,6 @@ function trainingSourceSnapshotPayload(type){
  };
  if(type==='presentation')base.override=cfg.support_overrides?.presentation||{};
  if(type==='guide')base.override=cfg.support_overrides?.guide||{};
- Object.values(base).forEach(f=>{f.documents=f.documents.map(cleanTrialClosureTemplate)});
  return base
 }
 function trainingCurrentSourceHash(type){return trainingSimpleHash(trainingStableSerialize(trainingSourceSnapshotPayload(type)))}
