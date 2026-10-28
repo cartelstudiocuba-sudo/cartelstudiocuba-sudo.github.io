@@ -3869,6 +3869,23 @@ function previewTrainingSupport(type){
 function closeTrainingSupportPreview(){const modal=document.getElementById('trainingSupportModal');if(modal)modal.classList.remove('open');document.body.classList.remove('protocol-preview-open')}
 async function exportTrainingSupportPdf(type,publication=false,publicDownload=false){
  if(!window.html2canvas||!window.jspdf?.jsPDF){if(publication||publicDownload)throw Error('No se cargó el generador de PDF.');alert('No se cargó el generador de PDF.');return}
+ const showProgress=type==='presentation'&&!publication&&!publicDownload;
+ let progressOverlay=null,progressText=null,progressBar=null;
+ if(showProgress){
+  progressOverlay=document.createElement('div');
+  progressOverlay.id='trainingPdfProgressOverlay';
+  progressOverlay.setAttribute('role','status');progressOverlay.setAttribute('aria-live','polite');
+  progressOverlay.style.cssText='position:fixed;inset:0;z-index:2147483646;background:rgba(7,15,26,.86);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box';
+  const card=document.createElement('div');card.style.cssText='width:min(400px,100%);background:#172638;color:#f5f7fb;border:1px solid #415269;border-radius:22px;padding:30px 24px;text-align:center;box-shadow:0 20px 60px #0008';
+  const spinner=document.createElement('div');spinner.style.cssText='width:54px;height:54px;margin:0 auto 20px;border:5px solid #415269;border-top-color:#ffda03;border-radius:50%;animation:trainingPdfSpin .85s linear infinite';
+  if(!document.getElementById('trainingPdfSpinnerStyle')){const st=document.createElement('style');st.id='trainingPdfSpinnerStyle';st.textContent='@keyframes trainingPdfSpin{to{transform:rotate(360deg)}}';document.head.append(st)}
+  const heading=document.createElement('h3');heading.textContent='Generando presentación PDF…';heading.style.cssText='margin:0 0 12px;font-size:20px';
+  progressText=document.createElement('p');progressText.textContent='Preparando diapositivas…';progressText.style.cssText='margin:0 0 18px;color:#c9d4e1;font-size:15px';
+  const track=document.createElement('div');track.style.cssText='height:8px;border-radius:99px;background:#34465d;overflow:hidden';
+  progressBar=document.createElement('div');progressBar.style.cssText='height:100%;width:0%;background:#ffda03;border-radius:99px;transition:width .2s ease';
+  track.append(progressBar);card.append(spinner,heading,progressText,track);progressOverlay.append(card);document.body.append(progressOverlay);
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+ }
  let stage=document.getElementById('trainingPdfStage');
  if(!stage){stage=document.createElement('div');stage.id='trainingPdfStage';stage.className='training-pdf-stage';document.body.appendChild(stage)}
  stage.className='training-pdf-stage '+type;
@@ -3881,7 +3898,13 @@ async function exportTrainingSupportPdf(type,publication=false,publicDownload=fa
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const selector=type==='presentation'?'.training-slide':type==='guide'?'.training-guide-page':'.training-video-page';
  const sourcePages=[...stage.querySelectorAll(selector)];
- const reportProgress=(step,done,total)=>{if(publication&&window.parent!==window)window.parent.postMessage({type:'cartel-tutor-export-progress',step,done,total},location.origin);};
+ const reportProgress=(step,done,total)=>{
+  if(publication&&window.parent!==window)window.parent.postMessage({type:'cartel-tutor-export-progress',step,done,total},location.origin);
+  if(showProgress&&progressText){
+   if(step==='render'){progressText.textContent=done?'Procesando diapositiva '+done+' de '+total+'…':'Preparando '+total+' diapositivas…';progressBar.style.width=(total?Math.round(done/total*100):0)+'%'}
+   else{progressText.textContent='Finalizando PDF…';progressBar.style.width='100%'}
+  }
+ };
  reportProgress('render',0,sourcePages.length);
  if(!sourcePages.length){stage.innerHTML='';return}
 
@@ -3979,7 +4002,8 @@ async function exportTrainingSupportPdf(type,publication=false,publicDownload=fa
   console.error('Error exportando capacitación:',err);
   alert('No se pudo generar el PDF: '+(err?.message||err))
  }finally{
-  stage.innerHTML=''
+  stage.innerHTML='';
+  if(progressOverlay)progressOverlay.remove();
  }
 }
 
