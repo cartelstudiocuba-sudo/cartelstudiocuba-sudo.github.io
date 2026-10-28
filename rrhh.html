@@ -3039,6 +3039,9 @@ async function openTrialClosureDecision(candidateId){
    const url='https://wa.me/'+phone+'?text='+encodeURIComponent(message);
    if(mode==='continue'){
     trainingDecisionByTrial[String(trial.id)]='continue';
+    // Refresh dashboard counts and filtered lists as well as the open route.
+    render();
+    try{window.parent?.postMessage({type:'cartel-hr-candidate-status-updated'},location.origin)}catch(_){}
     const current=candidates.find(x=>String(x.id)===String(candidateId));
     const flow=document.querySelector('#detail .candidate-flow');
     if(current&&flow)flow.outerHTML=candidateGuidedFlow(current);
