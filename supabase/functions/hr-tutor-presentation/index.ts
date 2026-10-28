@@ -61,7 +61,7 @@ Deno.serve(async req=>{
    for(const key of ['standard','standard_titles','hidden_standard_keys','content_order','custom','protocol_blocks','policy_ids','institutional_info_ids','discipline_ids','evaluation_master'])if(key in raw)wc[key]=raw[key];
    if(Array.isArray(wc.protocol_blocks))wc.protocol_blocks=wc.protocol_blocks.map((p:Record<string,unknown>)=>{const {images,...rest}=p;return rest;});
    const master=raw.training_master&&typeof raw.training_master==='object'?raw.training_master:{};
-   wc.training_master={modules:master.modules||[],custom_notes:master.custom_notes||'',presentation_title:master.presentation_title||'',support_overrides:{presentation:master.support_overrides?.presentation||{}}};
+   wc.training_master={modules:master.modules||[],custom_notes:master.custom_notes||'',presentation_title:master.presentation_title||'',support_overrides:{presentation:master.support_overrides?.presentation||{},guide:master.support_overrides?.guide||{}}};
    const {data:nomenclators,error:nomError}=await admin.from('hr_nomenclators').select('id,category,key,label,value,notes,sort_order,applies_to_all_roles').eq('active',true).in('category',['normas_politicas','informacion_institucional','regimen_disciplinario','parametros_evaluacion']).order('sort_order').order('label');
    if(nomError)return json({error:'No se pudo cargar el contenido de capacitación'},502);
    const selected:Record<string,unknown>={normas_politicas:wc.policy_ids,informacion_institucional:wc.institutional_info_ids,regimen_disciplinario:wc.discipline_ids,parametros_evaluacion:(wc.evaluation_master as Record<string,unknown>)?.master_param_ids};
