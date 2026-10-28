@@ -52,11 +52,26 @@ Deno.serve(async req=>{
    if(!/^[a-f0-9]{64}$/.test(String(body.token||'')))return json({error:'Enlace no válido'},404);
    const {data:link,error}=await admin.rpc('hr_resolve_tutor_live',{p_token:body.token});
    if(error||!link)return json({error:'Enlace caducado o revocado'},404);
-   const {data:role,error:roleError}=await admin.from('hr_roles').select('title,description,training,work_content').eq('id',link.role_id).single();
-   if(roleError||!role)return json({error:'La plaza no está disponible'},404);
-   const wc=role.work_content&&typeof role.work_content==='object'?role.work_content:{};
-   const master=wc.training_master&&typeof wc.training_master==='object'?wc.training_master:{};
-   return json({mode:'live',expires_at:link.expires_at,title:role.title,description:role.description||'',training:role.training||'',presentation_title:master.presentation_title||('Capacitación · '+role.title),modules:Array.isArray(master.modules)?master.modules.map((m:Record<string,unknown>)=>({title:String(m.title||''),guide:String(m.guide||''),video:String(m.video||'')})).slice(0,60):[],custom_notes:String(master.custom_notes||''),presentation_mode:master.presentation_mode||'automatic'});
+   // Only renderer inputs are public: no contracts, replies, candidate data or private storage paths.
+   const fields=['id','title','description','training','area','direct_manager','modality','variable_income','employment_type','work_days','schedule','payment_frequency','payment_method','training_period','trial_period','subordinate_workers'];
+   const {data:source,error:roleError}=await admin.from('hr_roles').select(fields.join(',')+',work_content').eq('id',link.role_id).single();
+   if(roleError||!source)return json({error:'La plaza no está disponible'},404);
+   const raw=source.work_content&&typeof source.work_content==='object'?source.work_content:{};
+   const wc:Record<string,unknown>={};
+   for(const key of ['standard','standard_titles','hidden_standard_keys','content_order','custom','protocol_blocks','policy_ids','institutional_info_ids','discipline_ids','evaluation_master'])if(key in raw)wc[key]=raw[key];
+   if(Array.isArray(wc.protocol_blocks))wc.protocol_blocks=wc.protocol_blocks.map((p:Record<string,unknown>)=>{const {images,...rest}=p;return rest;});
+   const master=raw.training_master&&typeof raw.training_master==='object'?raw.training_master:{};
+   wc.training_master={modules:master.modules||[],custom_notes:master.custom_notes||'',presentation_title:master.presentation_title||'',support_overrides:{presentation:master.support_overrides?.presentation||{}}};
+   const {data:nomenclators,error:nomError}=await admin.from('hr_nomenclators').select('id,category,key,label,value,notes,sort_order,applies_to_all_roles').eq('active',true).in('category',['normas_politicas','informacion_institucional','regimen_disciplinario','parametros_evaluacion']).order('sort_order').order('label');
+   if(nomError)return json({error:'No se pudo cargar el contenido de capacitación'},502);
+   const selected:Record<string,unknown>={normas_politicas:wc.policy_ids,informacion_institucional:wc.institutional_info_ids,regimen_disciplinario:wc.discipline_ids,parametros_evaluacion:(wc.evaluation_master as Record<string,unknown>)?.master_param_ids};
+   const noms=(nomenclators||[]).filter(n=>n.applies_to_all_roles||(Array.isArray(selected[n.category])&&(selected[n.category] as string[]).includes(n.id))).map(n=>({...n,notes:n.category==='parametros_evaluacion'?n.notes:null}));
+   // The presentation's organigram uses the same active role list as the editor.
+   const {data:roles,error:rolesError}=await admin.from('hr_roles').select('id,title,status').order('title');
+   if(rolesError)return json({error:'No se pudo cargar la estructura de la agencia'},502);
+   const {data:valid}=await admin.rpc('hr_resolve_tutor_live',{p_token:body.token});
+   if(!valid)return json({error:'Enlace caducado o revocado'},404);
+   return json({mode:'live',expires_at:link.expires_at,role:{...source,work_content:wc},nomenclators:noms,roles:roles||[]});
   }
 
   if(!['info','read','download'].includes(body.action)||!/^([a-f0-9]{64})$/.test(body.token||''))return json({error:'Enlace no válido o caducado'},404);
