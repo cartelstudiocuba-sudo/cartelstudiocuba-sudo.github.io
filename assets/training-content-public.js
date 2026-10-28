@@ -70,6 +70,25 @@ async function exportTrainingContentPdf(){
    const canvas=await html2canvas(pages[i],{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
    pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,215.9,279.4,undefined,'FAST');
   }
-  const blob=pdf.output('blob'),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='Contenido de la plaza - '+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);
+  const blob=pdf.output('blob');
+  const filename='Contenido de la plaza - '+String(role.title||'Plaza').replace(/[\\/:*?"<>|]+/g,'-')+'.pdf';
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isIOS&&navigator.share&&typeof File!=='undefined'){
+   const file=new File([blob],filename,{type:'application/pdf'});
+   if(!navigator.canShare||navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:filename});return;}
+    catch(error){if(error?.name==='AbortError')return;}
+   }
+  }
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+  if(isIOS){
+   const notice=document.getElementById('trainingContentSaveHelp')||document.createElement('p');
+   notice.id='trainingContentSaveHelp';notice.setAttribute('role','status');
+   notice.style.cssText='padding:12px 16px;margin:12px 0;background:#fff9dc;color:#242424;border-left:4px solid #ffda03;border-radius:8px;font-size:14px;line-height:1.5';
+   notice.textContent='Si el PDF se abre en una vista previa, toca Compartir (cuadrado con flecha hacia arriba) y selecciona Guardar en Archivos.';
+   document.getElementById('trainingPublicContent')?.querySelector('header')?.after(notice);
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),120000);
  }finally{stage.remove();}
 }
