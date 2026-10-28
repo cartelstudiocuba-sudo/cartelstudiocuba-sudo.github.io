@@ -2815,7 +2815,7 @@ async function openTrainingDocumentation(candidateId){
    let completeMessage='Perfecto, '+first+'. Nos complace darte la bienvenida a esta nueva etapa de capacitación. Tu tutor '+v.tutor+' será el encargado de acompañarte durante el proceso, entregarte los medios básicos y supervisar tu aprendizaje bajo las siguientes condiciones:\n\n📅 Fecha de inicio: '+date+'\n⏱️ Duración: '+v.days+' días\n📆 Días laborables: '+v.workdays+'\n🕘 Horario: '+v.hours+'\n💰 Remuneración: '+v.salary+' · '+v.frequency+'\n👤 Tutor asignado: '+v.tutor+'\n📞 Contacto del tutor: '+v.phone+'\n\nAdemas en el siguiente enlace te agrupamos toda la documentación integral de tu puesto. Es importante que revises detenidamente estos materiales y te familiarices con su contenido antes de comenzar tus actividades.\n\n🔗 Consultar y descargar documentación: '+contentUrl.href;
    let presentation='',presentationExpiry=null;
    const waitingLink='⏳ Enlace en preparación…';
-   if(recipient==='tutor')completeMessage=`Hola, *${v.tutor}*. Te informamos que *${candidate.full_name.trim()}* ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de *${role.title}*. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
+   if(recipient==='tutor')completeMessage=`Hola, ${v.tutor}. Te informamos que ${String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—-]\s*/i,'')} ha concluido satisfactoriamente su período de prueba y ha sido aprobado para iniciar su capacitación en la plaza de ${role.title}. Has sido designado como su tutor, por lo que estarás a cargo de acompañar, orientar y supervisar esta etapa.
 
 📅 *Inicio:* ${date}
 ⏳ *Duración:* ${v.days} días
