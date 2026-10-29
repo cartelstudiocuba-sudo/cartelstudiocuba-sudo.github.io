@@ -35,11 +35,12 @@ async function bootTutorPresentation(){
   if(!guide)return;
   const pages=box.querySelector('.training-guide-pages');
   if(!pages)return;
-  const available=Math.max(1,box.getBoundingClientRect().width);
+  const available=Math.max(1,Math.min(document.documentElement.clientWidth,window.innerWidth)-24);
   const scale=Math.min(1,available/816);
+  box.style.width=available+'px';box.style.maxWidth='100%';box.style.minWidth='0';box.style.overflow='hidden';
   pages.style.width='816px';
   pages.style.maxWidth='none';
-  pages.style.zoom=String(scale);
+  pages.style.setProperty('zoom',String(scale),'important');
   pages.querySelectorAll('.training-guide-page').forEach(page=>{page.style.width='816px';page.style.maxWidth='none';});
  };
  window.addEventListener('resize',fitGuidePreview,{passive:true});
