@@ -31,9 +31,22 @@ async function bootTutorPresentation(){
   agencyPolicies=by('normas_politicas');agencyInstitutional=by('informacion_institucional');agencyDiscipline=by('regimen_disciplinario');agencyEvaluationParams=by('parametros_evaluacion');
   return true;
  };
+ const fitGuidePreview=()=>{
+  if(!guide)return;
+  const pages=box.querySelector('.training-guide-pages');
+  if(!pages)return;
+  const available=Math.max(1,box.getBoundingClientRect().width);
+  const scale=Math.min(1,available/816);
+  pages.style.width='816px';
+  pages.style.maxWidth='none';
+  pages.style.zoom=String(scale);
+  pages.querySelectorAll('.training-guide-page').forEach(page=>{page.style.width='816px';page.style.maxWidth='none';});
+ };
+ window.addEventListener('resize',fitGuidePreview,{passive:true});
  const render=async()=>{
   await document.fonts.ready;
   box.innerHTML=guide?trainingGuideHtml():trainingPresentationHtml();
+  if(guide)fitGuidePreview();
   if(!guide){paginateTrainingPresentation(box);trainingPresentationObserve(box);trainingPresentationScale(box);}
  };
  const save=()=>{
