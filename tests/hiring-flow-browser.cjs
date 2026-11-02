@@ -36,19 +36,26 @@ for(const width of [390,1440]){
  const countListener=read('dashboard.html').match(/<script id="hiring-dashboard-refresh">([\s\S]*?)<\/script>/)[1];await page.evaluate(()=>{window.employeeRefreshes=0;window.refreshEmployeeCount=()=>window.employeeRefreshes++;window.CartelLoad.run=(_,fn)=>fn()});await page.addScriptTag({content:countListener});await page.evaluate(()=>{window.dispatchEvent(new MessageEvent('message',{origin:location.origin,data:{type:'cartel-hr-candidate-status-updated'}}));window.dispatchEvent(new MessageEvent('message',{origin:'https://wrong.test',data:{type:'cartel-hr-candidate-status-updated'}}))});assert.equal(await page.evaluate(()=>window.employeeRefreshes),1);
  await page.addScriptTag({content:`const candidates=[{id:'synthetic',status:'trial',full_name:'CANDIDATO DE PRUEBA — Persona prueba',whatsapp:'5355555555'}],trialPeriodsByCandidate={synthetic:{id:'trial',stage:'in_trial'}},trainingNotificationByTrial={trial:true},trainingDecisionByTrial={trial:'continue'};const esc=s=>String(s);function dashboardCandidateRoleName(){return 'Gestor prueba'}function candidatePhone(){return '5355555555'}function candidateExitPhase(){return -1}function preserveCandidateSheet(){}async function refreshCandidateAfterStatusChange(){document.getElementById('detailBody').innerHTML=candidateGuidedFlow(candidates[0])}function trialFinishDialog(title){const overlay=document.createElement('div'),dialog=document.createElement('div');overlay.id='testDialog';overlay.append(dialog);document.body.append(overlay);return {overlay,dialog}};let failNotify=true;const sb={rpc:async(n,a)=>{window.calls.push({n,a});if(n==='hr_prepare_hiring')return {data:{expires_at:'2026-12-01'}};if(n==='hr_manage_hiring'){if(failNotify)return {error:{message:'Error sintético'}};hiringCases.synthetic={candidate_id:'synthetic',notified_at:'now'};}return {data:null}},from:()=>({select:async()=>({data:Object.values(hiringCases)})})};`});
  await page.addScriptTag({content:read('assets/hiring.js')+'\n'+flow+'\n'+prev+'\nrefreshCandidateAfterStatusChange()'});
- assert((await page.locator('#detailBody').innerText()).includes('11 · Preparar contratación'));await page.getByRole('button',{name:'Notificar al candidato',exact:false}).click();await page.locator('.hiring-message').waitFor();const message=await page.locator('.hiring-message').textContent();assert(message.startsWith('Felicidades, Persona prueba, has completado'));assert(message.includes('1. Completar tu expediente laboral: Accede'));assert(message.includes('2. Revisar y descargar tu contrato: Accede'));assert(!/[!¡]|\p{Extended_Pictographic}/u.test(message));assert.equal((message.match(/#token=/g)||[]).length,2);
+ assert((await page.locator('#detailBody').innerText()).includes('11 · Preparar contratación'));await page.getByRole('button',{name:'Notificar al candidato',exact:false}).click();await page.locator('textarea.hiring-message').waitFor();const message=await page.locator('textarea.hiring-message').inputValue();assert(message.startsWith('Felicidades, Persona prueba, has completado'));assert(message.includes('1. Completar tu expediente laboral: Accede'));assert(message.includes('2. Revisar y descargar tu contrato: Accede'));assert(!/[!¡]|\p{Extended_Pictographic}/u.test(message));assert.equal((message.match(/#token=/g)||[]).length,2);
 
- assert.equal(await page.locator('.hiring-message a').count(),2);
+ assert.equal(await page.locator('.hiring-links a').count(),2);
  assert.equal(await page.getByRole('button',{name:'Confirmar notificación enviada'}).isVisible(),false);
  assert.equal(await page.evaluate(()=>candidates[0].full_name),'CANDIDATO DE PRUEBA — Persona prueba');
  assert.equal(await page.evaluate(()=>hiringGreetingName({full_name:'Ana María — Pérez'})),'Ana María — Pérez');
  assert.equal(await page.evaluate(()=>hiringGreetingName({full_name:'Candidato de Prueba'})),'Candidato de Prueba');
- assert.equal(message,await page.evaluate(()=>hiringMessage('Persona prueba','Gestor prueba',...Array.from(document.querySelectorAll('.hiring-message a'),a=>a.href))));
+ assert.equal(message,await page.evaluate(()=>hiringMessage('Persona prueba','Gestor prueba',...Array.from(document.querySelectorAll('.hiring-links a'),a=>a.href))));
  assert(await page.locator('.hiring-notification-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
- assert.equal(await page.locator('.hiring-message').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(13, 16, 18)');
+ assert.equal(await page.locator('textarea.hiring-message').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(13, 16, 18)');
  await page.screenshot({path:artifacts+'/notification-'+width+'.png',fullPage:true});
+ const edited='  Texto editado & + # ñ\n'+message+'\nPegado <img src=x onerror=alert(1)>\n'+('Línea larga\n'.repeat(40));
+ await page.context().grantPermissions(['clipboard-read','clipboard-write']);await page.evaluate(text=>navigator.clipboard.writeText(text),edited);await page.locator('textarea.hiring-message').focus();await page.locator('textarea.hiring-message').press('ControlOrMeta+A');await page.locator('textarea.hiring-message').press('ControlOrMeta+V');assert.equal(await page.locator('textarea.hiring-message').inputValue(),edited);
+ await page.locator('textarea.hiring-message').press('End');
+ await page.locator('textarea.hiring-message').press('Enter');
+ await page.locator('textarea.hiring-message').pressSequentially('Otra línea');
+ const finalText=await page.locator('textarea.hiring-message').inputValue();assert(finalText.includes('Otra línea'));assert(finalText.includes('<img src=x'));assert.equal(await page.locator('.hiring-notification-dialog img').count(),0);
+ assert(await page.locator('textarea.hiring-message').evaluate(el=>el.scrollHeight>el.clientHeight));
  await page.getByRole('button',{name:'Abrir WhatsApp',exact:true}).click();
- assert.equal(await page.evaluate(()=>new URL(window.opened[0]).searchParams.get('text')),message);
+ assert.equal(await page.evaluate(()=>new URL(window.opened[0]).searchParams.get('text')),finalText);
  assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);
  await page.screenshot({path:artifacts+'/notification-confirm-'+width+'.png',fullPage:false});
 assert((await page.evaluate(()=>window.opened[0])).startsWith('https://wa.me/'));await page.getByRole('button',{name:'Confirmar notificación enviada'}).click();assert((await page.locator('#hiringNotificationOverlay').innerText()).includes('Error sintético'));assert((await page.locator('#detailBody').innerText()).includes('Preparar contratación'));
@@ -62,7 +69,7 @@ assert((await page.evaluate(()=>window.opened[0])).startsWith('https://wa.me/'))
  await page.goto('https://test.local/rrhh.html?embedded=1&candidate=synthetic');try{await page.locator('#detail .candidate-flow').waitFor({state:'visible',timeout:5000})}catch(e){console.error({bootError:await page.evaluate(()=>window.bootError),errors,body:(await page.locator('body').innerText()).slice(0,1800)});throw e;}assert((await page.locator('#detail .candidate-flow').innerText()).includes('Preparar contratación'));assert.equal(await page.evaluate(()=>window.bootError),undefined);
 
  await page.getByRole('button',{name:'Notificar al candidato',exact:false}).click();
- await page.locator('.hiring-message').waitFor();
+ await page.locator('textarea.hiring-message').waitFor();
  await page.screenshot({path:artifacts+'/notification-full-app-'+width+'.png',fullPage:true});
  assert(await page.locator('.hiring-notification-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
  await page.locator('.hiring-notification-dialog').getByRole('button',{name:'Cerrar',exact:true}).click();
