@@ -4,6 +4,6 @@
 .vacancy-tone-assistant{--vacancy-accent:#786c91;--vacancy-bg:#292733;--vacancy-end:#23232d}
 .vacancy-tone-operations{--vacancy-accent:#66806a;--vacancy-bg:#243129;--vacancy-end:#1e2a25}
 .vacancy-tone-neutral{--vacancy-accent:#647784;--vacancy-bg:#1d2b35;--vacancy-end:#1b2832}
-html body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"],html body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"],html body #candidateWorkspace #cards .card[class*="vacancy-tone-"]{background:linear-gradient(105deg,var(--vacancy-bg),var(--vacancy-end))!important;border-left:5px solid var(--vacancy-accent)!important}
-html body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"]>.global-candidate-card,html body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"]>.global-candidate-card{background:transparent!important}
-html body .global-candidate-card[class*="vacancy-tone-"] .candidate-inline-role svg{color:var(--vacancy-accent)!important;opacity:1}
+html:root body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"],html:root body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"],html:root body #candidateWorkspace #cards .card[class*="vacancy-tone-"]{background:linear-gradient(105deg,var(--vacancy-bg),var(--vacancy-end))!important;border-left:5px solid var(--vacancy-accent)!important}
+html:root body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"]>.global-candidate-card,html:root body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"]>.global-candidate-card{background:transparent!important}
+html:root body .global-candidate-card[class*="vacancy-tone-"] .candidate-inline-role svg{color:var(--vacancy-accent)!important;opacity:1}
