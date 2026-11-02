@@ -50,12 +50,66 @@ async function openHiringPreparationNotification(candidateId){
   const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
   status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Abrir WhatsApp no confirma su envío.';
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;dialog.append(editor);
-  const send=document.createElement('button');send.className='hiring-whatsapp';send.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg><span>Abrir WhatsApp</span>';send.onclick=()=>{const phone=candidatePhone(candidate);if(phone.length<8)return alert('Falta un WhatsApp válido.');try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,'1')}catch(_){}confirmSend.hidden=false;window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value),'_blank','noopener,noreferrer');};
-  const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;confirmSend.onclick=async()=>{confirmSend.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:trial.id,p_action:'notify'});try{sessionStorage.removeItem('cartel-hiring-pending:'+trial.id)}catch(_){}await loadHiringCases();overlay.remove();await refreshCandidateAfterStatusChange(candidateId);}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
-  dialog.append(send,confirmSend);
+  const send=document.createElement('button');send.className='hiring-whatsapp';send.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg><span>Abrir WhatsApp</span>';let opened=false;
+  send.onclick=async()=>{
+   if(send.disabled)return;
+   const phone=candidatePhone(candidate);
+   if(phone.length<8)return alert('Falta un WhatsApp válido.');
+   if(!editor.value.trim())return alert('Escribe un mensaje.');
+   if(Date.parse(prepared.expires_at)<=Date.now())return status.textContent='Los enlaces han caducado. Cierra y vuelve a preparar la contratación.';
+   send.disabled=true;
+   try{
+    if(!opened){
+     // Reserve synchronously so popup blocking never advances the route.
+     const tab=window.open('about:blank','_blank');
+     if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
+     try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
+     opened=true;
+     const pending={version:2,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened'};
+     try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify(pending));}catch(_){}
+    }
+    editor.readOnly=true;preserveCandidateSheet(candidateId);
+    status.textContent='WhatsApp abierto · notificación iniciada. Guardando avance al paso 12…';
+    await persistHiringNotification(candidateId,trial);
+    overlay.remove();
+   }catch(e){status.textContent=(opened?'WhatsApp abierto; el avance sigue pendiente. ':'')+e.message;send.textContent=opened?'Reintentar avance al paso 12':'Abrir WhatsApp';send.disabled=false;}
+  };
+  dialog.append(send);
  }catch(e){status.textContent=e.message;}
 }
-async function resumeHiringConfirmation(id){const t=trialPeriodsByCandidate[String(id)];if(!t)return;let pending=false;try{pending=sessionStorage.getItem('cartel-hiring-pending:'+t.id)==='1'}catch(_){}if(!pending)return;const {overlay,dialog}=hiringNotificationDialog('Confirmar notificación de contratación');const p=document.createElement('p');p.textContent='Si enviaste el mensaje preparado, confirma el envío para avanzar al paso 12. Si no lo enviaste, cierra esta ventana.';const b=document.createElement('button');b.className='hiring-confirm';b.textContent='Confirmar notificación enviada';b.onclick=async()=>{b.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:'notify'});sessionStorage.removeItem('cartel-hiring-pending:'+t.id);await loadHiringCases();overlay.remove();await refreshCandidateAfterStatusChange(id);}catch(e){p.textContent=e.message;b.disabled=false;}};const close=document.createElement('button');close.textContent='Cerrar';close.onclick=()=>overlay.remove();dialog.append(p,b,close);}
+// Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
+const hiringNotificationSaves=new Map();
+async function persistHiringNotification(id,trial){
+ if(hiringNotificationSaves.has(trial.id))return hiringNotificationSaves.get(trial.id);
+ const save=(async()=>{
+  if(!hiringCases[String(id)]?.notified_at){
+   let timeout;
+   try{await Promise.race([hiringRpc('hr_manage_hiring',{p_trial:trial.id,p_action:'notify'}),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('El guardado tarda demasiado. Reintenta para comprobar el avance.')),15000);})]);}finally{clearTimeout(timeout);}
+  }
+  await loadHiringCases();
+  if(!hiringCases[String(id)]?.notified_at)throw Error('No se pudo comprobar el guardado. Reintenta.');
+  preserveCandidateSheet(id);
+  await refreshCandidateAfterStatusChange(id);
+  try{sessionStorage.removeItem('cartel-hiring-pending:'+trial.id);}catch(_){}
+ })();
+ hiringNotificationSaves.set(trial.id,save);
+ try{return await save;}finally{hiringNotificationSaves.delete(trial.id);}
+}
+async function resumeHiringConfirmation(id){
+ const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||candidate?.status!=='trial')return;
+ let p;try{p=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+t.id)||'null');}catch(_){return;}
+ // Old explicit-send confirmations are not evidence of a new automatic action.
+ if(p?.version!==2||p.action!=='whatsapp_opened')return;
+ const h=hiringCases[String(id)];
+ if(p.stage!==t.stage||!h||h.revoked_at||Date.parse(h.expires_at)!==Date.parse(p.expires_at)||!Number.isFinite(Date.parse(p.expires_at))||Date.parse(p.expires_at)<=Date.now()||!Number.isFinite(p.at)||Date.now()-p.at>=86400000||p.at>Date.now()){
+  try{sessionStorage.removeItem('cartel-hiring-pending:'+t.id);}catch(_){}return;
+ }
+ try{await persistHiringNotification(id,t);}catch(e){
+  const {overlay,dialog}=hiringNotificationDialog('Avance pendiente al paso 12');
+  const info=document.createElement('p');info.setAttribute('role','status');info.textContent='WhatsApp abierto · notificación iniciada. No se pudo guardar el avance: '+e.message;
+  const retry=document.createElement('button');retry.textContent='Reintentar avance al paso 12';retry.onclick=async()=>{retry.disabled=true;try{await persistHiringNotification(id,t);overlay.remove();}catch(e){info.textContent=e.message;retry.disabled=false;}};dialog.append(info,retry);
+ }
+}
 async function openHiringReview(id){
  const {overlay,dialog}=trialFinishDialog('Contratación en trámite');const t=trialPeriodsByCandidate[String(id)];
  const status=document.createElement('p');dialog.append(status);

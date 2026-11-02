@@ -1,0 +1,7 @@
+# Automatic hiring notification initiation
+
+Opening WhatsApp from step 11 saves the route to step 12. The existing idempotent `hr_manage_hiring(..., 'notify')` operation records `hiring_notify` and `notified_at`: these represent notification initiation, not verified sending or delivery. No candidate status is changed; `trial` displays as “Contratación en trámite”. Finalization still requires a reviewed dossier and validated signed contract.
+
+The popup is reserved during the click. Blocking it prevents the transition. The new window has its opener removed and a no-referrer policy. The editable message and existing 256-bit fragment links are preserved. Retries never reopen WhatsApp, rotate links or duplicate the server transition. Interrupted saves resume from a versioned, 24-hour session marker containing stage and expiry, without message, phone or token. A legacy confirmation marker is not treated as evidence of a new initiation. Expired, renewed or revoked links invalidate recovery.
+
+Verification uses intercepted browser requests and an isolated PostgreSQL database. No WhatsApp messages or production candidate writes are used. Run `tests/hiring-whatsapp-browser.cjs` at 390/1440px, `tests/hiring-flow-sql.cjs`, `tests/recruitment-regressions.cjs` and `tests/hiring-submission-browser.cjs`. The earlier hiring-flow browser suite still contains its pre-progress completion expectation; the current submission suite covers that replacement flow.

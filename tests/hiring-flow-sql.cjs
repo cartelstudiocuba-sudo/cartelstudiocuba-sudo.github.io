@@ -85,6 +85,10 @@ await fail('select hr_submit_hiring($1,$2,0)',[token,data],/cambió/);
 await db.query('select hr_submit_hiring($1,$2,5)',[token,{...data,_baseline:await baseline(),address:'Dirección corregida'}]);
 await db.exec("reset role;select set_config('test.owner','yes',false);select set_config('test.uid','00000000-0000-0000-0000-000000000001',false)");
 await db.query("select hr_manage_hiring($1,'notify')",[trial]);assert.equal((await one('select status from hr_candidates')).status,'trial');
+const notifiedBefore=await one('select notified_at from hr_hiring_cases'),historyBefore=await one('select count(*)::int as n from hr_candidate_history');
+await db.query("select hr_manage_hiring($1,'notify')",[trial]);
+assert.deepEqual(await one('select notified_at from hr_hiring_cases'),notifiedBefore);
+assert.deepEqual(await one('select count(*)::int as n from hr_candidate_history'),historyBefore);
 await db.query("select hr_manage_hiring($1,'back')",[trial]);assert.equal((await one('select data from hr_hiring_cases')).data.address,'Dirección corregida');await fail('select hr_read_hiring($1,false)',[token],/Enlace no válido/);
 const oldToken=token;token='b'.repeat(64);await prepare();await fail('select hr_read_hiring($1,false)',[oldToken],/Enlace no válido/);await db.query("select hr_manage_hiring($1,'notify')",[trial]);
 
