@@ -1,0 +1,9 @@
+/* One vacancy palette for capture, overview and per-vacancy lists. Status pills and actions keep their own colors. */
+.vacancy-tone-tech{--vacancy-accent:#547c87;--vacancy-bg:#1b3039;--vacancy-end:#182a33}
+.vacancy-tone-admin{--vacancy-accent:#b39651;--vacancy-bg:#302b22;--vacancy-end:#28261f}
+.vacancy-tone-assistant{--vacancy-accent:#786c91;--vacancy-bg:#292733;--vacancy-end:#23232d}
+.vacancy-tone-operations{--vacancy-accent:#66806a;--vacancy-bg:#243129;--vacancy-end:#1e2a25}
+.vacancy-tone-neutral{--vacancy-accent:#647784;--vacancy-bg:#1d2b35;--vacancy-end:#1b2832}
+html body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"],html body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"],html body #candidateWorkspace #cards .card[class*="vacancy-tone-"]{background:linear-gradient(105deg,var(--vacancy-bg),var(--vacancy-end))!important;border-left:5px solid var(--vacancy-accent)!important}
+html body #candidateDashboard .capture-candidate-row[class*="vacancy-tone-"]>.global-candidate-card,html body #globalModalList .global-candidate-action-row[class*="vacancy-tone-"]>.global-candidate-card{background:transparent!important}
+html body .global-candidate-card[class*="vacancy-tone-"] .candidate-inline-role svg{color:var(--vacancy-accent)!important;opacity:1}
