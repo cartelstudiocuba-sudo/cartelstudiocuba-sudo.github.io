@@ -45,12 +45,13 @@ for(const width of [390,1440]){
  await page.addScriptTag({content:read('assets/hiring.js')+'\n'+flow+'\n'+prev+'\nrefreshCandidateAfterStatusChange()'});
  assert((await page.locator('#detailBody').innerText()).includes('11 · Preparar contratación'));await page.getByRole('button',{name:'Notificar al candidato',exact:false}).click();await page.locator('textarea.hiring-message').waitFor();const message=await page.locator('textarea.hiring-message').inputValue();assert(message.startsWith('Felicidades, Persona prueba, has completado'));assert(message.includes('1. Completar tu expediente laboral: Accede'));assert(message.includes('2. Revisar y descargar tu contrato: Accede'));assert(!/[!¡]|\p{Extended_Pictographic}/u.test(message));assert.equal((message.match(/#token=/g)||[]).length,2);
 
- assert.equal(await page.locator('.hiring-links a').count(),2);
+ assert.equal(await page.locator('.hiring-links').count(),0);
+ const urls=message.match(/https:\/\/[^\s]+/g);assert.equal(urls.length,2);assert(urls[0].includes('/expediente-contratacion.html#token='));assert(urls[1].includes('/contrato-laboral.html#token='));const token=urls[0].split('#token=')[1];assert.match(token,/^[a-f0-9]{64}$/);assert.equal(urls[1].split('#token=')[1],token);assert.equal(await page.evaluate(()=>window.calls.find(c=>c.n==='hr_prepare_hiring').a.p_token),token);assert((await page.locator('[role=status]').innerText()).includes('Los enlaces vencen el '));
  assert.equal(await page.getByRole('button',{name:'Confirmar notificación enviada'}).isVisible(),false);
  assert.equal(await page.evaluate(()=>candidates[0].full_name),'CANDIDATO DE PRUEBA — Persona prueba');
  assert.equal(await page.evaluate(()=>hiringGreetingName({full_name:'Ana María — Pérez'})),'Ana María — Pérez');
  assert.equal(await page.evaluate(()=>hiringGreetingName({full_name:'Candidato de Prueba'})),'Candidato de Prueba');
- assert.equal(message,await page.evaluate(()=>hiringMessage('Persona prueba','Gestor prueba',...Array.from(document.querySelectorAll('.hiring-links a'),a=>a.href))));
+ assert.equal(message,await page.evaluate(()=>hiringMessage('Persona prueba','Gestor prueba',...document.querySelector('textarea.hiring-message').value.match(/https:\/\/[^\s]+/g))));
  assert(await page.locator('.hiring-notification-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
  assert.equal(await page.locator('textarea.hiring-message').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(13, 16, 18)');
  await page.screenshot({path:artifacts+'/notification-'+width+'.png',fullPage:true});
