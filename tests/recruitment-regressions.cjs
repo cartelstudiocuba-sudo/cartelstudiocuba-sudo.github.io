@@ -14,7 +14,7 @@ function extract(source,start,end){const a=source.indexOf(start),b=source.indexO
  const ranges=[];
  const ctx={sb:{from:()=>({select:()=>({order:()=>({range:async(a,b)=>{ranges.push([a,b]);return {data:pages[ranges.length-1],error:null}}})})})}};
  vm.createContext(ctx);
- vm.runInContext(extract(interviews,'async function fetchInterviewAnswers()','const Q='),ctx);
+ vm.runInContext(extract(interviews,'async function fetchInterviewAnswers()','const esc='),ctx);
  const result=await ctx.fetchInterviewAnswers();
  assert.equal(result.data.length,1001);assert.equal(result.data[1000].answer,'recent candidate');
  assert.deepEqual(ranges,[[0,999],[1000,1999]]);
@@ -26,7 +26,7 @@ function extract(source,start,end){const a=source.indexOf(start),b=source.indexO
  assert.equal(roleContext.interviewRole({vacancy_id:'missing'}),'Plaza no indicada');
  const rrhh=read('rrhh.html');let dashboardRenders=0,modalRefreshes=0;
  const modal={classList:{contains:()=>true},dataset:{view:'overview',mode:'preselected'}};
- const renderContext={document:{body:{classList:{contains:()=>true}}},$:()=>modal,renderCandidateDashboard:()=>dashboardRenders++,openOverviewCandidates:mode=>{assert.equal(mode,'preselected');modalRefreshes++}};
+ const renderContext={closeCaptureMenu(){},filterOverviewCandidates(){},document:{body:{classList:{contains:()=>true}}},$:id=>id==='globalCandidatesModal'?modal:{value:'',tagName:'INPUT',scrollTop:0,options:[]},renderCandidateDashboard:()=>dashboardRenders++,openOverviewCandidates:mode=>{assert.equal(mode,'preselected');modalRefreshes++}};
  vm.createContext(renderContext);vm.runInContext(extract(rrhh,'function render(){','const gestorKeys='),renderContext);renderContext.render();
  assert.equal(dashboardRenders,1);assert.equal(modalRefreshes,1);
  const steps=Array.from({length:4},()=>({classList:{toggle(){}},dataset:{}}));

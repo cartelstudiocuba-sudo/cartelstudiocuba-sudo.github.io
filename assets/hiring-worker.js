@@ -1,0 +1,10 @@
+// Existing worker view keeps ownership checks in Supabase.
+const hiringWorkerRender=render;
+render=function(){hiringWorkerRender();if(active==='Contratación'){
+ const section=document.createElement('section');section.textContent='Cargando contrato del expediente…';panel.replaceChildren(section);
+ sb.from('hr_hiring_cases').select('contract,data,revision,signed_at,verified_at').eq('employee_id',id).maybeSingle().then(({data,error})=>{if(!section.isConnected)return;if(error||!data){section.textContent='No hay contrato de este flujo en el expediente.';return;}renderHiringContract(section,data);});
+ }if(active==='Resumen'){
+ const section=document.createElement('section');section.id='hiringPersonal';section.innerHTML='<h2>Datos personales del expediente</h2><p>Cargando…</p>';panel.append(section);
+ sb.from('hr_employee_personal_details').select('data').eq('employee_id',id).maybeSingle().then(({data,error})=>{if(!section.isConnected)return;section.textContent='';const h=document.createElement('h2');h.textContent='Datos personales del expediente';section.append(h);if(error){section.append('No se pudo leer el expediente.');return;}const labels=Object.fromEntries(hiringFields.flat());labels.truth_confirmed='Veracidad confirmada';labels.academic_required='Documentación académica pertinente';for(const [k,v] of Object.entries(data?.data||{})){if(!labels[k])continue;const p=document.createElement('p');p.textContent=labels[k]+': '+(typeof v==='boolean'?(v?'Sí':'No'):String(v));section.append(p);}});
+ }if(active==='Documentación'){panel.querySelectorAll('.row').forEach((row,i)=>{const doc=docs[i],bucket=doc?.file_url?.split('/')[0];if(!['hr-hiring-private','hr-identity-private'].includes(bucket))return;const b=document.createElement('button');b.textContent='Abrir documento';b.onclick=async()=>{const{data,error}=await sb.storage.from(bucket).download(doc.file_url.slice(bucket.length+1));if(error)return alert('No se pudo abrir el documento.');const url=URL.createObjectURL(data);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);};row.append(b);});}};
+if(emp)render();
