@@ -77,7 +77,9 @@ const hiringFields=[
  [['education_level','Nivel de escolaridad']]
 ];
 async function initHiringPublic(documentMode){
- const root=document.getElementById('hiring'),token=new URLSearchParams(location.hash.slice(1)).get('token');
+ const root=document.getElementById('hiring');
+ if(!documentMode&&history.state?.cartelHiringComplete){hiringCompletedScreen(root);return;}
+ const token=new URLSearchParams(location.hash.slice(1)).get('token');
  if(!/^[a-f0-9]{64}$/.test(token||''))throw Error('Enlace no válido, caducado o revocado. Solicita uno nuevo a RRHH.');
  const result=await hiringRpc('hr_read_hiring',{p_token:token,p_document:documentMode});
  if(documentMode)return renderHiringContract(root,result);
@@ -94,10 +96,6 @@ async function initHiringPublic(documentMode){
  }
  const show=()=>{sections.forEach((s,i)=>s.hidden=i!==step);document.getElementById('hiringPrev').hidden=step===0;document.getElementById('hiringNext').hidden=step===3;document.getElementById('hiringSubmit').hidden=step!==3;form.querySelector('nav').textContent='Sección '+(step+1)+' de 4';if(step===3){document.getElementById('hiringSummary').innerHTML=hiringFields.flat().map(([k,l])=>'<p><b>'+hiringEsc(l)+':</b> '+hiringEsc(form.elements[k].value||'Sin declarar')+'</p>').join('')+['front','back','portrait'].map(k=>'<p>'+({front:'Anverso del CI',back:'Reverso del CI',portrait:'Fotografía del trabajador'}[k])+': '+(pending[k]?'Preparado':result[k]?'Recibido':'No adjunto')+'</p>').join('');}};
  document.getElementById('hiringPrev').onclick=()=>{step--;show()};document.getElementById('hiringNext').onclick=async()=>{await Promise.all(Object.values(processing));for(const el of sections[step].querySelectorAll('input,select'))if(!el.reportValidity())return;step++;show();sections[step].scrollIntoView({block:'start',behavior:'smooth'})};show();
- form.noValidate=true;form.onsubmit=async e=>{e.preventDefault();await Promise.all(Object.values(processing));for(let i=0;i<sections.length;i++)for(const el of sections[i].querySelectorAll('input,select'))if(!el.checkValidity()){step=i;show();el.reportValidity();return;}const b=document.getElementById('hiringSubmit'),status=document.getElementById('hiringResult');b.disabled=true;try{
- const canonical=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));const before=await hiringRpc('hr_read_hiring',{p_token:token,p_document:false});if(before.revision!==result.revision||canonical(before.data)!==canonical(result.data))throw Error('El expediente cambió en otra ventana. Recarga antes de guardar.');
- for(const [key,file] of Object.entries(pending)){status.textContent='Guardando documentos…';const guardedUpload=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'x-hiring-token':token,'x-hiring-revision':String(result.revision)}}});const {error}=await guardedUpload.storage.from('hr-hiring-private').upload(result.trial_id+'/'+key,file,{contentType:file.type,upsert:true});if(error)throw Error(error.message);result[key]=true;result.revision++;delete pending[key];}
- const values=Object.fromEntries(hiringFields.flat().map(([k])=>[k,form.elements[k].value.trim()]));values.truth_confirmed=form.elements.truth_confirmed.checked;values._baseline=result.data;
- result.revision=await hiringRpc('hr_submit_hiring',{p_token:token,p_data:values,p_revision:result.revision});result.data=Object.fromEntries(hiringFields.flat().map(([k])=>[k,values[k]]));show();status.textContent='Expediente recibido. Entrega tu contrato firmado al tutor. Puedes corregir los datos hasta que RRHH valide el expediente.';
- }catch(e){status.textContent=e.message;}finally{b.disabled=false;}};
+ const send=hiringSubmission(root,form,token,result,pending);let validating=false;
+ form.noValidate=true;form.onsubmit=async e=>{e.preventDefault();if(validating)return;validating=true;try{await Promise.all(Object.values(processing));for(let i=0;i<sections.length;i++)for(const el of sections[i].querySelectorAll('input,select'))if(!el.checkValidity()){step=i;show();el.reportValidity();return;}await send();}finally{validating=false;}};
 }
