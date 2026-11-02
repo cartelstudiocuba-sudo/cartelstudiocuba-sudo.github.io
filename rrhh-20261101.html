@@ -2718,11 +2718,36 @@ function applyTrainingRouteEvents(events){
   else if(ev.action==='training_notification_back')trainingNotificationByTrial[key]=false;
  }
 }
+// Persist only the pending operator confirmation, never message text or contact data.
+function trainingNotificationPending(trial){
+ try{const p=JSON.parse(sessionStorage.getItem('cartel-training-notification:'+trial?.id)||'null');return p&&p.stage===trial?.stage&&Date.now()-p.at<86400000&&p.at<=Date.now();}catch(_){return false;}
+}
+function rememberTrainingNotification(trial){
+ try{sessionStorage.setItem('cartel-training-notification:'+trial.id,JSON.stringify({stage:trial.stage,at:Date.now()}));}catch(_){}
+ renderTrainingNotificationRoute(trial.candidate_id);
+}
+function clearTrainingNotification(trial){try{sessionStorage.removeItem('cartel-training-notification:'+trial.id);}catch(_){} }
+function renderTrainingNotificationRoute(candidateId){
+ const candidate=candidates.find(c=>String(c.id)===String(candidateId));
+ const flow=document.querySelector('#detail .candidate-flow');
+ if(candidate&&flow&&document.getElementById('detail')?.dataset.candidateId===String(candidateId))flow.outerHTML=candidateGuidedFlow(candidate);
+}
+function resumeTrainingNotification(candidateId){
+ const trial=trialPeriodsByCandidate[String(candidateId)];
+ if(!trainingNotificationPending(trial))return alert('Vuelve a preparar la documentación antes de confirmar.');
+ const {overlay,dialog}=trialFinishDialog('Confirmar notificación enviada');
+ const note=document.createElement('p');note.textContent='¿Enviaste al candidato el mensaje con la documentación de adiestramiento? Confirma solo después de enviarlo en WhatsApp.';dialog.append(note);
+ const error=document.createElement('p');error.setAttribute('role','alert');dialog.append(error);
+ const button=document.createElement('button');button.type='button';button.className='candidate-back-cancel';button.textContent='Confirmar notificación enviada';
+ button.onclick=async()=>{button.disabled=true;try{await confirmTrainingCandidateNotification(candidateId,trial.id,trial.stage);overlay.remove();}catch(ex){error.textContent=ex.message;button.disabled=false;}};dialog.append(button);
+ const cancel=document.createElement('button');cancel.type='button';cancel.className='candidate-back-cancel';cancel.textContent='Todavía no';cancel.onclick=()=>overlay.remove();dialog.append(cancel);
+}
 async function confirmTrainingCandidateNotification(candidateId,expectedTrial,expectedStage){
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
  if(!candidate||candidate.status!=='trial'||String(trial?.id)!==String(expectedTrial)||trial.stage!==expectedStage||trainingDecisionByTrial[String(trial.id)]!=='continue')throw Error('La candidatura cambió. Actualiza la ficha.');
  const {error}=await sb.rpc('hr_manage_trial_closure',{p_trial:trial.id,p_action:'training_notification_confirmed',p_payload:{expected_stage:trial.stage}});
  if(error)throw Error(error.message||'No se pudo guardar la confirmación.');
+ clearTrainingNotification(trial);
  trainingNotificationByTrial[String(trial.id)]=true;
  preserveCandidateSheet(candidateId);
  const flow=document.querySelector('#detail .candidate-flow');
@@ -2846,7 +2871,7 @@ Te corresponde preparar la presentación que utilizarás durante la capacitació
    const preview=document.createElement('textarea');preview.rows=18;preview.setAttribute('aria-label','Mensaje WhatsApp editable');preview.style.cssText='width:100%;box-sizing:border-box;background:#223247;color:white;margin-top:15px;border:1px solid #4b5f76;border-radius:15px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow-wrap:anywhere';preview.value=completeMessage;previewLabel.append(preview);
    const send=document.createElement('button');send.type='button';send.textContent='Abrir WhatsApp con este mensaje →';send.style.cssText='background:#ffda03;color:#111;border:0;border-radius:12px;padding:14px;margin-top:14px;font-weight:800;width:100%';
    send.disabled=recipient==='tutor';
-   send.onclick=()=>{if(recipient==='tutor'&&(!presentation||!Number.isFinite(Date.parse(presentationExpiry))||Date.parse(presentationExpiry)<=Date.now())){err.textContent='La presentación no está disponible o ha caducado. Reintenta la publicación.';return;}if(!preview.value.trim()){err.textContent='El mensaje está vacío.';return;}if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(preview.value),'_blank','noopener,noreferrer');if(recipient==='candidate'){confirmSent.hidden=false;confirmSent.style.removeProperty('display');confirmSent.focus();}};
+   send.onclick=()=>{if(recipient==='tutor'&&(!presentation||!Number.isFinite(Date.parse(presentationExpiry))||Date.parse(presentationExpiry)<=Date.now())){err.textContent='La presentación no está disponible o ha caducado. Reintenta la publicación.';return;}if(!preview.value.trim()){err.textContent='El mensaje está vacío.';return;}if(!validate()){invalidate();return;}if(JSON.stringify([...new FormData(form).entries()])!==formSnapshot){invalidate();err.textContent='Los datos cambiaron. Vuelve a preparar el mensaje.';return;}preserveCandidateSheet(candidateId);if(recipient==='candidate'){rememberTrainingNotification(trial);confirmSent.hidden=false;confirmSent.style.setProperty('display','block','important');notice.textContent='Al regresar de WhatsApp, pulsa Confirmar notificación enviada para avanzar al paso 11. También puedes confirmarlo desde la ficha si se cierra esta ventana.';confirmSent.scrollIntoView({block:'nearest'});}window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(preview.value),'_blank','noopener,noreferrer');};
    panel.querySelector('[data-preview]')?.remove();const area=document.createElement('div');area.dataset.preview='1';const notice=document.createElement('p');notice.textContent='Se abrirá WhatsApp para que revises y envíes el mensaje manualmente. Abrirlo no confirma su entrega.';area.append(previewLabel,notice);
    const confirmSent=document.createElement('button');confirmSent.type='button';confirmSent.hidden=true;confirmSent.textContent='Confirmar notificación enviada';confirmSent.style.cssText='background:#263c55;color:white;border:1px solid #6c8298;border-radius:12px;padding:14px;margin-top:14px;width:100%;font-weight:800';
    confirmSent.style.setProperty('display','none','important');
@@ -2901,6 +2926,9 @@ if(st==='trial'&&['agreement_sent','agreement_accepted','in_trial','evaluation_p
  actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="openTrialClosureDecision(\''+x.id+'\')">Notificar al candidato →</button>';
 }
 if(trainingStarted&&st==='trial'&&!trialClosed){labels.trial='Comienzo de adiestramiento';actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="openTrainingDocumentation(\''+x.id+'\')">Enviar documentación →</button>';}
+if(trainingStarted&&st==='trial'&&!trialClosed&&!trainingNotificationByTrial[String(currentTrial.id)]&&trainingNotificationPending(currentTrial)){
+ actions.trial+='<button type="button" class="candidate-flow-action" onclick="resumeTrainingNotification(\''+x.id+'\')">Confirmar notificación enviada</button>';
+}
 if(trainingStarted&&st==='trial'&&!trialClosed&&trainingNotificationByTrial[String(currentTrial.id)]){
  labels.trial='Preparar contratación';actions.trial='<button type="button" class="candidate-flow-action" style="text-align:left!important;justify-content:flex-start!important" onclick="openHiringPreparationNotification(\''+x.id+'\')">Notificar al candidato →</button>';
 }
@@ -2965,7 +2993,7 @@ async function openCandidateStageBack(id){
    try{
     const {error}=await sb.rpc('hr_manage_trial_closure',{p_trial:t.id,p_action:'training_notification_back',p_payload:{expected_stage:t.stage}});
     if(error)throw Error(error.message);
-    trainingNotificationByTrial[String(t.id)]=false;preserveCandidateSheet(id);overlay.remove();await refreshCandidateAfterStatusChange(id);
+    clearTrainingNotification(t);trainingNotificationByTrial[String(t.id)]=false;preserveCandidateSheet(id);overlay.remove();await refreshCandidateAfterStatusChange(id);
    }catch(e){button.disabled=false;alert(e.message)}
    return;
   }
@@ -2973,7 +3001,7 @@ async function openCandidateStageBack(id){
    try{
     const {error}=await sb.rpc('hr_manage_trial_closure',{p_trial:t.id,p_action:'training_step_back',p_payload:{expected_stage:t.stage}});
     if(error)throw Error(error.message);
-    trainingDecisionByTrial[String(t.id)]='trial';trainingNotificationByTrial[String(t.id)]=false;
+    clearTrainingNotification(t);trainingDecisionByTrial[String(t.id)]='trial';trainingNotificationByTrial[String(t.id)]=false;
     preserveCandidateSheet(id);overlay.remove();
     await refreshCandidateAfterStatusChange(id);
    }catch(e){button.disabled=false;alert(e.message)}
