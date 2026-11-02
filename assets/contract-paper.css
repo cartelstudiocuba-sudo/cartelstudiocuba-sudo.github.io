@@ -1,0 +1,120 @@
+
+.contract-pages{display:flex;flex-direction:column;align-items:center;gap:18px;overflow-x:auto;padding:2px 0 8px}
+
+.contract-paper-page{position:relative;width:816px;height:1056px;flex:0 0 auto;background:#fff;box-shadow:0 5px 22px rgba(0,0,0,.10);box-sizing:border-box;padding:58px 66px 54px;color:#222;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+
+.contract-first-logo{position:absolute;top:34px;right:46px;width:74px;height:58px;object-fit:contain;object-position:center;z-index:2}
+
+.contract-page-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
+
+.contract-page-watermark img{width:430px;max-height:430px;object-fit:contain;opacity:.055}
+
+.contract-paper-header{position:relative;z-index:1;text-align:center;margin:12px 90px 28px 0;min-height:66px;display:flex;flex-direction:column;justify-content:center}
+
+.contract-paper-header h2{font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:1.3;margin:0;font-weight:700;text-transform:uppercase}
+
+.contract-paper-role{font-size:12px;font-weight:600;margin-top:7px}
+
+.contract-page-content{position:relative;z-index:1;height:827px;font-size:12.5px;line-height:1.62;text-align:justify;font-weight:400;overflow:hidden}
+
+.contract-paper-page:not(.first-page) .contract-page-content{height:900px}
+
+.contract-paper-body p,.contract-page-content p{margin:0 0 15px}
+
+.contract-paper-preamble{margin-bottom:13px}
+.contract-paper-preamble p:first-child{margin-top:0}
+
+.contract-paper-agreement{margin:18px 0 24px!important}
+
+.contract-paper-clause{margin:0 0 25px;padding-top:4px}
+
+.contract-paper-clause h3{font-family:Arial,Helvetica,sans-serif;font-size:12.5px;line-height:1.4;margin:0 0 11px;font-weight:700}
+
+.contract-paper-clause p{margin-bottom:14px}
+
+.contract-paper-lines{margin:0 0 15px}
+.contract-paper-lines>div{margin:4px 0}
+
+.contract-fill-block{width:100%;max-width:100%;box-sizing:border-box;margin:0 0 15px}
+
+.contract-fill-block>p{margin-bottom:7px}
+
+.contract-fill-line{display:block;width:100%;max-width:100%;height:18px;border-bottom:1px solid #777;box-sizing:border-box;margin:0}
+
+.contract-paper-missing{font-style:normal;color:#555}
+
+.contract-paper-footer{position:absolute;z-index:1;left:66px;right:66px;bottom:22px;padding-top:9px;border-top:1px solid #d8d8d8;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:8px;color:#999}
+
+
+
+.contract-page-content{box-sizing:border-box}
+
+.contract-paper-footer{background:#fff}
+
+.contract-paper-page .contract-page-content::after{content:"";display:block;height:1px}
+
+.picked-contract-pdf-stage .contract-pages{width:816px;align-items:stretch;overflow:visible}
+.picked-contract-pdf-stage .contract-paper-page{width:816px;height:1056px;box-shadow:none}
+
+.contract-page-content,.contract-paper-clause,.contract-paper-preamble,.contract-paper-subclause{min-width:0;max-width:100%}
+
+.contract-page-content p,.contract-page-content div,.contract-page-content span,.contract-page-content b,.contract-page-content h3,.contract-page-content h4{max-width:100%;overflow-wrap:anywhere;word-break:normal}
+
+.contract-paper-lines,.contract-paper-lines>div{max-width:100%;overflow-wrap:anywhere}
+.contract-paper-date{text-align:left;font-size:10px;font-weight:400;margin-top:24px}
+
+.contract-first-logo{left:auto;right:auto;height:auto;max-height:72px;object-fit:contain;transition:width .08s ease}
+.contract-first-logo.logo-left{left:46px;transform:none}
+.contract-first-logo.logo-center{left:50%;transform:translateX(-50%)}
+.contract-first-logo.logo-right{right:46px;transform:none}
+
+.contract-paper-header{margin:78px 0 28px!important}
+
+
+
+.contract-paper-page{aspect-ratio:8.5/11}
+
+.contract-paper-clause[data-split-clause="1"]{margin-top:0}
+
+.contract-page-content p{orphans:3;widows:3}
+
+.contract-paper-subclause{margin:13px 0 16px}
+.contract-paper-subclause h4{font-size:12px;line-height:1.35;margin:0 0 5px;font-weight:800;color:#222}
+.contract-paper-subclause p{margin:0!important}
+
+.contract-page-watermark img{max-height:520px}
+
+.contract-annex-page{height:100%;box-sizing:border-box;padding:4px 4px 0}
+
+.contract-annex-label{font-size:15px;margin:0 0 30px;font-weight:500}
+
+.contract-annex-table{width:100%;border-collapse:collapse;font-size:12px}
+
+.contract-annex-table th,.contract-annex-table td{border:1px solid #555;padding:8px 10px;height:24px;box-sizing:border-box}
+
+.contract-annex-table thead th{text-align:left;font-size:15px;background:#f7f7f7}
+
+.contract-annex-table tbody th{width:42%;text-align:left;font-weight:700}
+
+.contract-annex-table tr.section th{font-style:italic;background:#f7f7f7}
+
+.contract-annex-table tr:last-child th,.contract-annex-table tr:last-child td{height:78px;vertical-align:top}
+
+.contract-annex-box{border:1px solid #555;height:770px;box-sizing:border-box}
+
+.contract-annex-box-title{height:38px;border-bottom:1px solid #555;padding:9px 10px;box-sizing:border-box;font-size:13px}
+
+.contract-annex-id-space{height:calc(100% - 38px);display:flex;align-items:center;justify-content:center;color:#c2c2c2;font-size:12px}
+
+
+
+.contract-transport-photos h3{font-size:14px;margin:8px 0 14px;text-align:center}
+
+.transport-photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.transport-photo-slot{height:340px;border:1px solid #777;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:#fff;box-sizing:border-box;overflow:hidden}
+
+.transport-photo-slot b{position:absolute;top:9px;left:10px;right:10px;font-size:10px;text-align:left}
+
+.transport-photo-slot span{font-size:10px;color:#b3b3b3;letter-spacing:.05em}
+.doc-info-paper .contract-paper-footer{font-size:7px}

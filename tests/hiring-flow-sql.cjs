@@ -21,6 +21,7 @@ await db.exec(schema+`alter table hr_trial_periods add column superseded_at time
 await db.exec(fs.readFileSync(__dirname+'/fixtures/hiring-legacy-hire.sql','utf8'));
 await db.exec(fs.readFileSync(repo+'/sql/hiring-flow.sql','utf8'));
 await db.exec(fs.readFileSync(repo+'/sql/expediente-unico.sql','utf8'));
+if(process.env.TEST_CONTRACT_VERSIONING)await db.exec(fs.readFileSync(repo+'/sql/hiring-contract-versioning.sql','utf8'));
 const one=async(q,p=[])=>(await db.query(q,p)).rows[0];
 const fail=async(q,p,re)=>assert.rejects(()=>db.query(q,p),re);
 const role=(await one(`insert into hr_roles(title,work_content) values('Plaza de prueba',$1) returning id`,[{contract_templates:{employment:{documents:[{key:'employment_contract',blocks:[{title:'Texto',source:'custom',text:'Cláusula maestra inalterada'}]}]}}}])).id;
@@ -34,6 +35,23 @@ let token='a'.repeat(64);const prepare=()=>db.query('select hr_prepare_hiring($1
 await fail('select hr_prepare_hiring($1,$2)',[trial,token],/adiestramiento/);
 await db.query("insert into hr_trial_closure_events(trial_id,action,payload,created_at) values($1,'message_opened','{\"decision\":\"continue\"}',clock_timestamp()),($1,'training_notification_confirmed','{}',clock_timestamp()+interval '1 second')",[trial]);
 await prepare();assert.equal((await one('select data from hr_hiring_cases')).data.full_name,'Persona inicial');
+if(process.env.TEST_CONTRACT_VERSIONING){
+ const first=(await one('select contract from hr_hiring_cases')).contract;
+ assert.equal(first.renderer_version,2);assert.match(first.source_version,/^[a-f0-9]{64}$/);
+ await db.query("update hr_hiring_cases set contract=jsonb_set(contract,'{template,presentation}','{\"logo_path\":\"contract-presentation/synthetic/logo.png\"}')");
+ await db.query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-hiring-token':token})]);
+ assert.equal((await one("select studio_hiring_private.presentation_allowed('contract-presentation/synthetic/logo.png') ok")).ok,true);
+ assert.equal((await one("select studio_hiring_private.presentation_allowed('contracts/another/private.docx') ok")).ok,false);
+ await db.query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-hiring-token':'f'.repeat(64)})]);
+ assert.equal((await one("select studio_hiring_private.presentation_allowed('contract-presentation/synthetic/logo.png') ok")).ok,false);
+ await db.query("update hr_roles set work_content=jsonb_set(work_content,'{contract_templates,employment,documents,0,blocks,0,text}','\"Nueva versión simulada\"') where id=$1",[role]);
+ assert.equal((await one('select hr_read_hiring($1,true) d',[token])).d.contract.source_version,first.source_version);
+ const oldToken=token;token='b'.repeat(64);await prepare();
+ await fail('select hr_read_hiring($1,true)',[oldToken],/Enlace no válido/);
+ assert.equal((await one('select contract from hr_hiring_cases')).contract.template.blocks[0].text,'Nueva versión simulada');
+ assert.notEqual((await one('select contract from hr_hiring_cases')).contract.source_version,first.source_version);
+ await db.query("update hr_roles set work_content=jsonb_set(work_content,'{contract_templates,employment,documents,0,blocks,0,text}','\"Cláusula maestra inalterada\"') where id=$1",[role]);token='c'.repeat(64);await prepare();
+}
 const seeded=(await one('select data,inherited_documents from hr_hiring_cases'));assert.equal(seeded.data.education_level,'Universitaria');assert.equal(seeded.data.identity_number,'99010112345');assert.equal(seeded.data.address,'Dirección previamente declarada');assert(!('interview_health_condition' in seeded.data));assert.equal(seeded.inherited_documents.front,trial+'/front');
 await db.exec("update hr_hiring_cases set expires_at=now()-interval '1 second'");await fail('select hr_read_hiring($1,false)',[token],/Enlace no válido/);await prepare();
 await fail('select hr_confirm_trial_hire($1)',[trial],/Falta validar/);
@@ -84,6 +102,15 @@ await db.query("select hr_manage_hiring($1,'verify',7)",[trial]);
 await fail('select hr_submit_hiring($1,$2,7)',[token,data],/validado/);
 await fail("update storage.objects set metadata='{}' where bucket_id='hr-hiring-private'",[],/validado/);
 await db.query("select hr_manage_hiring($1,'signed',7)",[trial]);
+if(process.env.TEST_CONTRACT_VERSIONING){
+ const signed=(await one('select contract from hr_hiring_cases')).contract;
+ assert.equal(signed.signed_data.address,'Dirección corregida');
+ await fail("select hr_manage_hiring($1,'reopen',7)",[trial],/Contrato firmado/);
+ await fail("update hr_hiring_cases set contract='{}'",[],/Contrato firmado/);
+ await db.query("update hr_roles set work_content='{}' where id=$1",[role]);
+ assert.deepEqual((await one('select contract from hr_hiring_cases')).contract,signed);
+ assert.equal((await one('select hr_read_hiring($1,true) d',[token])).d.data.address,'Dirección corregida');
+}
 const e=(await one('select hr_confirm_trial_hire($1) as id',[trial])).id;
 assert.equal((await one('select status from hr_candidates')).status,'hired');assert.equal((await one('select data from hr_employee_personal_details')).data.address,'Dirección corregida');assert.equal((await one('select count(*)::int as n from hr_employee_documents')).n,3);
 assert.equal((await one('select hr_finalize_hiring($1) as id',[trial])).id,e);

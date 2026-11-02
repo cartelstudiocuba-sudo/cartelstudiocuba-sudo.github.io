@@ -1,5 +1,6 @@
 // Source resolvers extracted verbatim from plaza-ficha.html; tested for parity.
 function renderHiringContract(root,result){
+ if(result.contract.renderer_version===2)return renderHiringContractPaper(root,result);
  const role=result.contract.role,n=result.contract.nomenclators||[];
  const agencyPolicies=n.filter(x=>x.category==='normas_politicas'),agencyDiscipline=n.filter(x=>x.category==='regimen_disciplinario'),agencyContractData=n.filter(x=>x.category==='datos_contractuales_empresa'),agencyContractClauses=n.filter(x=>x.category==='clausulas_contractuales');
 const workDefaults=[

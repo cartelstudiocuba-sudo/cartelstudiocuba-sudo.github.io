@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "files": {
+    "assets/contract-paper.js": "a86b02f151a25e7ac9ea8b7ececa0f8af1a15e2d8343a03144d30895476be049",
+    "assets/contract-paper.css": "56099dcb58b07132010e35c1ba57e098438a9a4c49da12b0425ba223b579a77e",
+    "assets/hiring-contract-paper.js": "17b939963ba6374050b60b3373bceaafe784ee1ad91981d57ca36b133dd10f21",
+    "assets/hiring-contract-paper.css": "8fd29b30ae342482c94ea5acc9088fc0d2386785a27f79ac2a666c1f321cd4b1",
+    "assets/hiring-contract.js": "4a57b312a9c64d77479cc682c21b11ce4296456a1112f5d8c8d5bac310fb39ca",
+    "assets/trial-closure-document.js": "73d3406acdaa9481d6bd0ee7d44f7c7d017e950b739e39c32bd16496ebb06b15",
+    "assets/cartel-studio-lettering-black.svg": "f72d5900e9b578b5e4aa52179b27315e605813af16787385985fe5b55e2dc4fe",
+    "assets/vendor/html2canvas-1.4.1.min.js": "e87e550794322e574a1fda0c1549a3c70dae5a93d9113417a429016838eab8cb",
+    "assets/vendor/jspdf-2.5.2.umd.min.js": "85ba2cc3ff858a20fa49fe6e457bec863ea40b55a9f3725e58a940e62f6f61a4"
+  }
+}
