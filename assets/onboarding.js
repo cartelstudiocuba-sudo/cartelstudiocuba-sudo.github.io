@@ -29,7 +29,7 @@ async function openSystemOnboarding(id){
  const candidate=candidates.find(c=>String(c.id)===String(id));if(!candidate)return;
  const {overlay,dialog}=hiringNotificationDialog('12 · Inserción en sistema');
  dialog.classList.add('onboarding-dialog');
- if(!document.getElementById('onboardingVisualStyles')){const style=document.createElement('link');style.id='onboardingVisualStyles';style.rel='stylesheet';style.href='/assets/onboarding.css?v=20261104-visual';document.head.append(style);}
+ if(!document.getElementById('onboardingVisualStyles')){const style=document.createElement('link');style.id='onboardingVisualStyles';style.rel='stylesheet';style.href='/assets/onboarding.css?v=20261104-guided';document.head.append(style);}
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
  const content=document.createElement('div');dialog.append(content);
  let state,activation='',opened=false,dirty=false,editingConfiguration=false;
