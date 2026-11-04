@@ -32,7 +32,7 @@ async function openSystemOnboarding(id){
  if(!document.getElementById('onboardingVisualStyles')){const style=document.createElement('link');style.id='onboardingVisualStyles';style.rel='stylesheet';style.href='/assets/onboarding.css?v=20261104-guided';document.head.append(style);}
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
  const content=document.createElement('div');dialog.append(content);
- let state,activation='',opened=false,dirty=false,editingConfiguration=false;
+ let state,activation='',opened=false,editingConfiguration=false;
  const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/usuarios-permisos.html?section=users&employee='+encodeURIComponent(state.employee_id||'');a.textContent='Gestionar acceso';return a;};
  const update=async()=>{
   state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
@@ -76,11 +76,9 @@ async function openSystemOnboarding(id){
   const expiry=document.createElement('p');expiry.textContent='Enlace de un uso · vence: '+new Date(state.expires_at).toLocaleString('es')+'. Abrir WhatsApp no confirma el envío.';section.append(expiry);
   const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje de acceso para WhatsApp (editable)');editor.maxLength=12000;
   const guide='https://gestion.elcartelstudio.com/guia-acceso-movil.html';
-  editor.value=(state.message||onboardingMessage(hiringGreetingName(candidate),state.username,state.email,onboardingActivationMarker,guide)).split(onboardingActivationMarker).join(activation||onboardingActivationMarker);editor.oninput=()=>{dirty=true;};section.append(editor);
-  const save=async()=>{const text=editor.value.split(activation||onboardingActivationMarker).join(onboardingActivationMarker);await onboardingCall(id,'message',{message:text});dirty=false;};
+  editor.value=(state.message||onboardingMessage(hiringGreetingName(candidate),state.username,state.email,onboardingActivationMarker,guide)).split(onboardingActivationMarker).join(activation||onboardingActivationMarker);section.append(editor);
   const actions=document.createElement('div');actions.className='onboarding-actions';section.append(actions);
-  const saveButton=document.createElement('button');saveButton.type='button';saveButton.textContent='Guardar mensaje';saveButton.onclick=async()=>{saveButton.disabled=true;try{await save();info.textContent='Mensaje guardado.';}catch(e){info.textContent=e.message;}finally{saveButton.disabled=false;}};
-  const send=document.createElement('button');send.type='button';send.className='hiring-whatsapp';send.textContent='3 · Abrir WhatsApp';send.disabled=expired||!activation;
+  const send=document.createElement('button');send.type='button';send.className='hiring-whatsapp';send.textContent='Notificar vía WhatsApp';send.disabled=expired||!activation;
   send.onclick=async()=>{
    if(send.disabled)return;const phone=candidatePhone(candidate);if(phone.length<8){info.textContent='Falta un WhatsApp válido.';return;}if(!editor.value.trim()){info.textContent='Escribe un mensaje.';return;}
    if(Date.parse(state.expires_at)<=Date.now()){send.disabled=true;info.textContent='El enlace venció. Renueva la activación.';return;}
@@ -88,14 +86,13 @@ async function openSystemOnboarding(id){
    let tab;if(!opened){tab=window.open('about:blank','_blank');if(!tab){info.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}}
    send.disabled=true;
    try{
-    await save();
     if(!opened){try{tab.opener=null;tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));opened=true;}catch(e){tab.close();throw e;}}
     await onboardingCall(id,'opened');editor.readOnly=true;info.textContent='WhatsApp abierto. El envío no está confirmado. El progreso quedó guardado.';
     send.textContent='WhatsApp abierto';
-   }catch(e){if(!opened)tab?.close();info.textContent=(opened?'WhatsApp abierto; falta guardar el progreso. ':'')+e.message;send.textContent=opened?'Reintentar guardar apertura':'3 · Abrir WhatsApp';send.disabled=false;}
+   }catch(e){if(!opened)tab?.close();info.textContent=(opened?'WhatsApp abierto; falta guardar el progreso. ':'')+e.message;send.textContent=opened?'Reintentar registrar apertura':'Notificar vía WhatsApp';send.disabled=false;}
   };
-  const renew=document.createElement('button');renew.type='button';renew.textContent='Renovar activación';renew.onclick=async()=>{if(!confirm('¿Invalidar el enlace anterior y preparar uno nuevo?'))return;renew.disabled=true;try{if(dirty)await save();activation=(await onboardingEdge(id,'renew')).activation_url;await update();}catch(e){info.textContent=e.message;renew.disabled=false;}};
-  actions.append(saveButton,send,renew);
+  const renew=document.createElement('button');renew.type='button';renew.textContent='Renovar activación';renew.onclick=async()=>{if(!confirm('¿Invalidar el enlace anterior y preparar uno nuevo?'))return;renew.disabled=true;try{activation=(await onboardingEdge(id,'renew')).activation_url;await update();}catch(e){info.textContent=e.message;renew.disabled=false;}};
+  actions.append(send,renew);
  };
  try{await update();}catch(e){info.textContent='No se pudo cargar el acceso: '+e.message;const retry=document.createElement('button');retry.textContent='Reintentar';retry.onclick=()=>{overlay.remove();openSystemOnboarding(id);};content.append(retry);}
 }
