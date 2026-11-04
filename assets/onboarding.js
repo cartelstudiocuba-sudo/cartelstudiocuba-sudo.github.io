@@ -1,6 +1,6 @@
 'use strict';
 const onboardingActivationMarker='[Enlace seguro de activación]';
-function onboardingRouteActions(id,h){return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Continuar inserción en sistema →</button>';}
+function onboardingRouteActions(id,h){return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Configurar acceso al sistema →</button>';}
 function onboardingMessage(name,username,email,activation,guide){return `Hola, ${name}. Tu cuenta de acceso a *nuestra Plataforma Automatizada* ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
 
 *DATOS DE ACCESO*
