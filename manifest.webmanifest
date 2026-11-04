@@ -2,7 +2,7 @@
   "name": "El Cartel Studio · Gestión",
   "short_name": "Cartel Gestión",
   "description": "Plataforma interna de gestión de El Cartel Studio",
-  "start_url": "/rrhh.html",
+  "start_url": "/dashboard.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#090909",

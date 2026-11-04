@@ -1,0 +1,22 @@
+Hola, [Nombre]. Tu cuenta de acceso a nuestra Plataforma Automatizada ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
+
+DATOS DE ACCESO
+
+Usuario: [Nombre de usuario]
+Correo electrónico: [Correo registrado]
+
+Acceso desde tu ordenador:
+https://gestion.elcartelstudio.com
+
+ACTIVACIÓN DE TU CUENTA: Para establecer tu contraseña y activar el acceso, utiliza el siguiente enlace personal:
+
+[Enlace seguro de activación]
+
+ACCESO DESDE TU CELULAR: Puedes instalar un acceso directo a la plataforma en la pantalla de inicio de tu celular para utilizarla como una aplicación.
+
+Instrucciones de instalación:
+[Enlace a la guía para Android y iPhone]
+
+IMPORTANTE — INFORMACIÓN CONFIDENCIAL
+
+Este mensaje contiene información de acceso personal y confidencial. No compartas tu usuario, enlace de activación ni contraseña con otras personas. Una vez completada la activación, podrás acceder a las funciones autorizadas según tu cargo y los permisos asignados. Bienvenido a nuestra plataforma automatizada.

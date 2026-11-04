@@ -1,0 +1,14 @@
+{
+  "name": "cartel-gestion-verification",
+  "private": true,
+  "scripts": {
+    "test:onboarding:sql": "node tests/onboarding-sql.cjs",
+    "test:onboarding:edge": "node tests/onboarding-edge.cjs",
+    "test:onboarding:browser": "node tests/onboarding-browser.cjs",
+    "test:onboarding": "npm run test:onboarding:sql && npm run test:onboarding:edge && npm run test:onboarding:browser"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "playwright": "1.62.1"
+  }
+}

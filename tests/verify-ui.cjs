@@ -6,11 +6,11 @@ for(const name of ['dashboard.html','rrhh-inicio.html','rrhh-login.html','reset-
 }
 for(const name of ['users-roles','module-access','login'])new vm.Script(fs.readFileSync('assets/'+name+'.js','utf8'),{filename:name});
 const source=fs.readFileSync('assets/module-access.js','utf8')+';globalThis.access=CartelAccess;';
-const context={document:{documentElement:{dataset:{}},querySelectorAll:()=>[],querySelector:()=>null}};vm.createContext(context);vm.runInContext(source,context);
+const context={AbortController,window:{},document:{documentElement:{dataset:{}},querySelectorAll:()=>[],querySelector:()=>null}};vm.createContext(context);vm.runInContext(source,context);
 (async()=>{
- const access=await context.access.load({rpc:async(name,p)=>({data:p.module==='inventario_insumos',error:null})});
+ const access=await context.access.load({rpc:(name,p)=>({abortSignal:async()=>({data:p.module==='inventario_insumos',error:null})})});
  assert.equal(access.inventario_insumos,true);assert.equal(access.rrhh,false);assert.equal(access.usuarios_roles,false);
- await assert.rejects(context.access.load({rpc:async()=>({error:Error('network')})}));
+ await assert.rejects(context.access.load({rpc:()=>({abortSignal:async()=>({error:Error('network')})})}));
  const users=fs.readFileSync('assets/users-roles.js','utf8');
  assert(users.includes("sb.rpc('system_set_role_permission'"));assert(users.includes("sb.rpc('system_set_employee_role'"));
  assert(!users.includes('system_user_role_grants'));assert(!fs.readFileSync('assets/login.js','utf8').includes("email!=='cartelstudiocuba@gmail.com'"));

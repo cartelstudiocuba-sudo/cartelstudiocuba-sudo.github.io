@@ -94,6 +94,9 @@ async function loadAccounts(){
       sb.rpc('system_owner_employee_views',{p_employee:u.employee_id}).then(({data,error})=>{
        if(error){editor.textContent='No se pudieron consultar las vistas: '+error.message;return;}
        const assigned=data||[];
+       const snapshot=assigned.find(v=>v.code==='__template__');
+       if(snapshot){editor.innerHTML='<h4>Vistas heredadas de la plantilla</h4><p>Versión '+esc(snapshot.template_revision)+' · Inventario: '+(snapshot.can_write?'lectura y escritura':snapshot.can_read?'solo lectura':'sin acceso')+'</p><p>'+esc(assigned.filter(v=>v.enabled).map(v=>v.code==='inventory_admin'?'Inventario Insumos':v.code).join(', ')||'Sin vistas autorizadas')+'</p><p>Esta copia no cambia al editar la plantilla. Para actualizarla utiliza la acción administrativa explícita en Permisos.</p>';return;}
+
        editor.innerHTML='<h4>Asignación de vistas</h4><p>Estas asignaciones son independientes de la plaza laboral.</p>'+catalog.map(v=>{
         const current=assigned.find(a=>a.code===v.code);
         return '<div class="profile-view-option"><div><strong>'+esc(v.name)+'</strong><small>'+esc(v.description)+'</small></div><label><input type="checkbox" data-view-enabled="'+v.code+'" '+(current?.enabled?'checked':'')+'> Acceso</label><label><input type="radio" name="view-default" data-view-default="'+v.code+'" '+(current?.is_default?'checked':'')+'> Inicio</label></div>';
@@ -188,4 +191,4 @@ function showAccessSection(section){
  document.title=names[selected]+' · El Cartel Studio';
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles','views'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
-CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
+CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');document.dispatchEvent(new Event('cartel-access-ready'));}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});

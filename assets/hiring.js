@@ -30,7 +30,7 @@ function hiringNotificationDialog(title){
  }
  const previous=document.activeElement,overlay=document.createElement('div'),dialog=document.createElement('section');overlay.id='hiringNotificationOverlay';overlay.className='hiring-notification-overlay';dialog.className='hiring-notification-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label',title);
  const head=document.createElement('header'),label=document.createElement('div'),brand=document.createElement('small'),heading=document.createElement('h3'),close=document.createElement('button');brand.textContent='EL CARTEL STUDIO · CONTRATACIÓN';heading.textContent=title;close.type='button';close.className='hiring-close';close.textContent='×';close.setAttribute('aria-label','Cerrar');const dismiss=()=>{overlay.remove();previous?.focus()};close.onclick=dismiss;label.append(brand,heading);head.append(label,close);dialog.append(head);overlay.append(dialog);document.body.append(overlay);close.focus();
- overlay.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button:not([hidden]):not(:disabled),a[href],textarea:not(:disabled)')];const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+ overlay.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button:not([hidden]):not(:disabled),a[href],textarea:not(:disabled),input:not(:disabled),select:not(:disabled)')];const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
  return {overlay,dialog};
 }
 function hiringMessagePreview(text){const preview=document.createElement('div');preview.className='hiring-message';preview.setAttribute('aria-label','Mensaje aprobado para el candidato');for(const part of text.split(/(https:\/\/[^\s]+)/g)){if(/^https:\/\//.test(part)){const a=document.createElement('a');a.href=part;a.textContent=part;a.target='_blank';a.rel='noopener noreferrer';preview.append(a)}else preview.append(document.createTextNode(part))}return preview;}
@@ -41,7 +41,7 @@ async function loadHiringCases(){const {data,error}=await sb.from('hr_hiring_cas
 function hiringToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
 async function openHiringPreparationNotification(candidateId){
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
- if(!candidate||candidate.status!=='trial'||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue')return alert('Actualiza la ficha para comprobar la etapa.');
+ if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue')return alert('Actualiza la ficha para comprobar la etapa.');
  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
  const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Preparando enlaces individuales protegidos…';dialog.append(status);
 
@@ -96,7 +96,7 @@ async function persistHiringNotification(id,trial){
  try{return await save;}finally{hiringNotificationSaves.delete(trial.id);}
 }
 async function resumeHiringConfirmation(id){
- const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||candidate?.status!=='trial')return;
+ const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||!['trial','hired'].includes(candidate?.status))return;
  let p;try{p=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+t.id)||'null');}catch(_){return;}
  // Old explicit-send confirmations are not evidence of a new automatic action.
  if(p?.version!==2||p.action!=='whatsapp_opened')return;
@@ -122,7 +122,7 @@ async function openHiringReview(id){
  const act=(label,action,disabled=false)=>{const b=document.createElement('button');b.textContent=label;b.disabled=disabled;b.onclick=async()=>{if(!confirm(label+' para la versión '+h.revision+' del expediente?'))return;b.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:action,p_revision:h.revision});overlay.remove();await loadHiringCases();openHiringReview(id);}catch(e){status.textContent=e.message;b.disabled=false;}};dialog.append(b);};
  act('Validar expediente revisado','verify',!h.submitted_at||!!h.verified_at);act('Confirmar contrato firmado recibido y validado','signed',!h.verified_at||!!h.signed_at);act('Permitir correcciones del expediente','reopen',!h.verified_at);act('Revocar enlaces','revoke');
  const hire=document.createElement('button');hire.textContent='Formalizar contratación';hire.disabled=!h.verified_at||!h.signed_at||!h.notified_at;hire.onclick=async()=>{if(!confirm('¿Formalizar la contratación con el expediente y el contrato firmado validados?'))return;hire.disabled=true;try{await hiringRpc('hr_finalize_hiring',{p_trial:t.id});overlay.remove();await loadHiringCases();await refreshCandidateAfterStatusChange(id);}catch(e){status.textContent=e.message;hire.disabled=false;}};dialog.append(hire);
- const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>{overlay.remove();openHiringPreparationNotification(id)};dialog.append(renew);
+ const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>{overlay.remove();openHiringPreparationNotification(id)};if(!h.employee_id)dialog.append(renew);
  }catch(e){status.textContent=e.message;}
 }
 const hiringFields=[
