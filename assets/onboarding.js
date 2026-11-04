@@ -1,6 +1,6 @@
 'use strict';
 const onboardingActivationMarker='[Enlace seguro de activación]';
-function onboardingRouteActions(id,h){return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Configurar acceso al sistema →</button>'+(h?'<button type="button" class="candidate-flow-action" onclick="openHiringReview(\''+hiringEsc(id)+'\')">Revisar expediente y contrato</button><small style="grid-column:1/-1">Expediente: '+(h.verified_at?'validado':'pendiente')+' · Contrato firmado: '+(h.signed_at?'validado':'pendiente')+'</small>':'')+'<div style="grid-column:1/-1;display:grid;gap:10px;border-top:1px solid #40556a;padding-top:14px"><b>13 · Efectuar baja</b><button type="button" disabled style="padding:12px;border:1px solid #52667d;background:#223247;color:#bfcddd;border-radius:12px">Cierre de contrato</button><small>Procedimiento pendiente de implementación.</small></div>';}
+function onboardingRouteActions(id,h){return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Continuar inserción en sistema →</button>';}
 function onboardingMessage(name,username,email,activation,guide){return `Hola, ${name}. Tu cuenta de acceso a *nuestra Plataforma Automatizada* ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
 
 *DATOS DE ACCESO*
