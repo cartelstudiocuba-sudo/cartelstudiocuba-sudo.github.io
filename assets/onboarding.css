@@ -1,0 +1,39 @@
+.onboarding-dialog{width:880px;background:linear-gradient(145deg,#202326,#111416);border:1px solid #4b4d40;box-shadow:0 28px 100px #000b;color:#edf0f2}
+.onboarding-dialog header{padding-bottom:22px;border-bottom:1px solid #3c403f}
+.onboarding-dialog h3{font-size:28px;letter-spacing:-.035em}
+.onboarding-dialog .onboarding-status{font-size:12px;line-height:1.7;color:#aeb5b8;margin:16px 0 22px}
+.onboarding-dialog .onboarding-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;padding:0;margin:0 0 28px;gap:12px}
+.onboarding-dialog .onboarding-stages li{position:relative;min-width:0;padding:0;text-align:center;color:#969da1;font-size:12px;line-height:1.5}
+.onboarding-dialog .onboarding-stages li:before{content:'';position:absolute;top:23px;left:calc(-50% - 6px);width:100%;height:2px;background:#44494c}
+.onboarding-dialog .onboarding-stages li:first-child:before{display:none}
+.onboarding-dialog .onboarding-stage-icon{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 auto 12px;border:1px solid #555d61;border-radius:50%;background:#292e31;box-shadow:0 4px 0 #0c0f10}
+.onboarding-dialog .onboarding-stage-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.onboarding-dialog .onboarding-stage-title{display:block;font-weight:750}
+.onboarding-dialog .onboarding-stage-state{display:block;font-size:11px;margin-top:4px;color:inherit}
+.onboarding-dialog .onboarding-stages .is-current{color:#ffda03}
+.onboarding-dialog .is-current .onboarding-stage-icon{color:#171900;background:#ffda03;border-color:#ffe75c;box-shadow:0 4px 0 #8c7600,0 0 24px #ffda031a}
+.onboarding-dialog .onboarding-stages .is-complete{color:#64cd95}
+.onboarding-dialog .is-complete .onboarding-stage-icon{background:#1d4634;border-color:#4aae78;box-shadow:0 4px 0 #0c2519}
+.onboarding-dialog .onboarding-section{padding:24px;margin-top:18px;border:1px solid #414748;border-radius:18px;background:linear-gradient(140deg,#262b2e,#1b1f22);box-shadow:0 8px 24px #0003}
+.onboarding-dialog h4{font-size:18px;margin:0 0 22px;color:#fff}
+.onboarding-dialog .onboarding-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.onboarding-dialog .onboarding-field{min-width:0}
+.onboarding-dialog .onboarding-field-role{grid-column:1/-1}
+.onboarding-dialog label{display:block;margin:0 0 8px;font-size:13px;font-weight:650;color:#d6dadd}
+.onboarding-dialog input,.onboarding-dialog select{display:block;width:100%;min-height:48px;padding:12px 14px;border:1px solid #50575a;border-radius:10px;background:#121618;color:#fff;font:inherit;font-size:14px;box-shadow:inset 0 2px 5px #0004}
+.onboarding-dialog input:focus-visible,.onboarding-dialog select:focus-visible{outline:2px solid #ffda03;outline-offset:3px}
+.onboarding-dialog .onboarding-notice{display:flex;gap:12px;padding:14px 16px;border:1px solid #5a542b;border-radius:12px;background:#ffda0309;font-size:12px;line-height:1.65;color:#d5d4c6;margin:20px 0 12px}
+.onboarding-dialog .onboarding-notice:before{content:'i';flex-shrink:0;display:grid;place-items:center;width:20px;height:20px;border:1px solid #ffda03;border-radius:50%;color:#ffda03;font-weight:800}
+.onboarding-dialog #onboardingRoleSummary{font-size:12px;color:#aeb8bd;overflow-wrap:anywhere}
+.onboarding-dialog #onboardingRoleSummary:empty{display:none}
+.onboarding-dialog button:not(.hiring-close){border-radius:12px;box-shadow:0 5px 0 #0b0d0e,0 8px 14px #0004;border:1px solid #666e72;background:linear-gradient(#424a4f,#30373b);transition:transform .15s,box-shadow .15s}
+.onboarding-dialog button:not(.hiring-close):enabled:active{transform:translateY(3px);box-shadow:0 2px 0 #0b0d0e}
+.onboarding-dialog button.onboarding-save{width:100%;margin:12px 0 8px;color:#201d00;border-color:#ffe868;background:linear-gradient(#ffe65b,#ffda03);box-shadow:0 5px 0 #927b00,0 8px 18px #0005;font-weight:800}
+.onboarding-dialog button.onboarding-create{width:100%;margin-top:18px}
+.onboarding-dialog button.onboarding-create:enabled{color:#ffdf31;border-color:#8c7c30}
+.onboarding-dialog button:disabled{opacity:1;color:#92999d;background:#303538;border-color:#42494c;cursor:not-allowed;box-shadow:0 4px 0 #15191b}
+.onboarding-dialog .onboarding-actions{display:flex;gap:14px;flex-wrap:wrap}
+.onboarding-dialog a{color:#ffda03}
+.onboarding-dialog [hidden]{display:none!important}
+@media(max-width:600px){.onboarding-dialog h3{font-size:23px}.onboarding-dialog .onboarding-section{padding:18px 14px}.onboarding-dialog .onboarding-fields{grid-template-columns:1fr;gap:16px}.onboarding-dialog .onboarding-stages{gap:8px;margin-bottom:22px}.onboarding-dialog .onboarding-stages li{font-size:11px}.onboarding-dialog .onboarding-stage-icon{width:42px;height:42px}.onboarding-dialog .onboarding-stages li:before{top:20px;left:calc(-50% - 4px)}.onboarding-dialog .onboarding-stage-state{font-size:10px}.onboarding-dialog .onboarding-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.onboarding-dialog button{transition:none!important}}
