@@ -10,3 +10,4 @@ jobs:
           node-version: '22'
       - run: node scripts/build-contract-paper.cjs --check
       - run: node scripts/check-contract-renderer.cjs
+      - run: node scripts/check-candidate-entry.cjs

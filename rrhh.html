@@ -2359,12 +2359,14 @@ body.candidate-opening #app{visibility:hidden}</style><style id="candidate-route
 @media(max-width:950px){}
 @media(max-width:550px){}
 </style><style id="route-arrows-approved">@media(max-width:800px){}</style><style id="candidate-route-approved-20261028">
-/* Single source of truth for the five-stage incorporation route. */
+/* Six-stage route shared by the canonical page and compatibility entry point. */
 #detail .candidate-flow-steps{--route-size:clamp(48px,7vw,72px);display:grid;grid-template-columns:minmax(0,1fr) repeat(5,20px minmax(0,1fr));align-items:start;gap:0;width:100%;min-width:0;margin:24px 0;padding:5px 5px 14px}
 #detail .candidate-flow-step{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:flex-start;gap:9px;padding:0;text-align:center;color:#e0e8f2;background:none;border:0;border-radius:0;box-shadow:none;transform:none}
 #detail .candidate-flow-step::before,#detail .candidate-flow-step::after{content:none;display:none}
 #detail .route-icon{display:grid;place-items:center;width:var(--route-size);height:var(--route-size);flex:0 0 var(--route-size);border-radius:50%;border:1px solid #5586b3;background:linear-gradient(145deg,#244766,#122b44);color:#60acff;box-shadow:0 6px 12px #0006,inset 0 2px 3px #ffffff20}
 #detail .route-icon svg{width:36px;height:36px}
+#detail .candidate-flow-step:last-child:not(.current):not(.done):not(.ended) .route-icon{color:#a4adb8;border-color:#697583;background:linear-gradient(145deg,#303b47,#202a35)}
+#detail .candidate-flow-step:last-child:not(.current):not(.done):not(.ended) .route-status-symbol{color:#a4adb8;border-color:#697583;background:#27323e}
 #detail .candidate-flow-step.done .route-icon{border-color:#ffda03;color:#ffda03;background:linear-gradient(145deg,#263e50,#112537)}
 #detail .candidate-flow-step.current .route-icon{border:3px solid #9d7d14;background:linear-gradient(145deg,#fff582,#ffda03 60%,#edb700);color:#15202b;box-shadow:0 0 0 4px #ffda0325,0 0 22px #ffda0355,inset 0 2px 3px #fffbc9}
 #detail .route-step-text{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;min-width:0;line-height:1.25}
