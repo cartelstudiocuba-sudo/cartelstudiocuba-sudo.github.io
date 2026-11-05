@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "checks": 36,
+  "widths": [
+    390,
+    1440
+  ],
+  "environment": "Navegador Edge con RPC simuladas; sin solicitudes a producción",
+  "screenshots": "test-results/offboarding"
+}

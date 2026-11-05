@@ -1,0 +1,20 @@
+{
+  "checks": 31,
+  "result": "PASS",
+  "environment": "PGlite aislado; solo datos sintéticos",
+  "verified": [
+    "RRHH exclusivo",
+    "RLS privada",
+    "token inválido y revocado",
+    "idempotencia inicio/envío/finalización",
+    "datos externos limitados",
+    "medios solo lectura trabajador",
+    "sin carné",
+    "concurrencia por revisión",
+    "WhatsApp separado de confirmación",
+    "bloqueos por pendientes/incidencias/firma/confirmación",
+    "revocación sesiones y acceso",
+    "historial y contrato original preservados",
+    "registro ajeno intacto"
+  ]
+}
