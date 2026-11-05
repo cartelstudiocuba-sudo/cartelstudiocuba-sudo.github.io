@@ -21,3 +21,6 @@ form.addEventListener('submit',async event=>{
  }catch(e){showError(e.message||'No se pudo iniciar sesión. Inténtalo nuevamente.');}
  finally{document.getElementById('password').value='';btn.disabled=false;btn.textContent='Entrar →';}
 });
+
+// A failed remote revocation must not be presented as a fully confirmed server logout.
+if(new URLSearchParams(location.search).get('logout')==='local-only')showError('La sesión se cerró en este navegador, pero no se pudo confirmar el cierre en el servidor. Comprueba la conexión.');

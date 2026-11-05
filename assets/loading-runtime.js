@@ -35,14 +35,66 @@
  }
  function session(client,name,method,args){if(args.length)return deadline(()=>method.apply(client.auth,args),LIMITS.sessionMs).then(required);let flights=authFlights.get(client.auth);if(!flights){flights=new Map();authFlights.set(client.auth,flights);}if(flights.has(name))return flights.get(name);const promise=deadline(()=>method.apply(client.auth,args),LIMITS.sessionMs).then(required).finally(()=>flights.delete(name));flights.set(name,promise);return promise;}
  function wrap(client){for(const name of ['getSession','getUser']){const original=client.auth[name];if(typeof original!=='function')continue;client.auth[name]=function(...args){return session(client,name,original,args);};}return client;}
- function createClient(url,key,options={}){if(!root.supabase||!root.supabase.createClient)throw failure('sdk_unavailable');const config={...options,global:{...(options.global||{}),fetch:guardedFetch}};return wrap(root.supabase.createClient(url,key,config));}
+ function createClient(url,key,options={}){if(!root.supabase||!root.supabase.createClient)throw failure('sdk_unavailable');const config={...options,global:{...(options.global||{}),fetch:guardedFetch}};const client=wrap(root.supabase.createClient(url,key,config));installSession(client);return client;}
 
- let readonly=false;root.addEventListener('click',event=>{const button=event.target.closest&&event.target.closest('button');if(readonly&&button&&!button.classList.contains('tab')&&!button.closest('#cartel-load-notice')){event.preventDefault();event.stopImmediatePropagation();notice('La información complementaria no está completa. La edición está temporalmente deshabilitada.',()=>root.location.reload());}},true);root.addEventListener('submit',event=>{if(readonly){event.preventDefault();event.stopImmediatePropagation();}},true);
+ let readonly=false;root.addEventListener('click',event=>{const button=event.target.closest&&event.target.closest('button');if(readonly&&button&&!button.classList.contains('tab')&&!button.closest('#cartel-load-notice')&&button.id!=='cartel-sign-out'&&!/^(cerrar sesi[oó]n|salir)$/i.test(button.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();notice('La información complementaria no está completa. La edición está temporalmente deshabilitada.',()=>root.location.reload());}},true);root.addEventListener('submit',event=>{if(readonly){event.preventDefault();event.stopImmediatePropagation();}},true);
 
- function blockPartialEdit(event){if(!readonly)return;const target=event.target;if(target.closest&&target.closest('#cartel-load-notice'))return;if(target.matches&&target.matches('input,select,textarea,[contenteditable="true"]')){event.preventDefault();event.stopImmediatePropagation();}}
+ function blockPartialEdit(event){if(!readonly)return;const target=event.target;if(target.closest&&(target.closest('#cartel-load-notice')||target.closest('#cartel-sign-out')))return;if(target.matches&&target.matches('input,select,textarea,[contenteditable="true"]')){event.preventDefault();event.stopImmediatePropagation();}}
  for(const type of ['beforeinput','input','change','click'])root.addEventListener(type,blockPartialEdit,true);
  function resizeFrame(frame){try{const body=frame.contentDocument&&frame.contentDocument.body;if(!body)return false;const height=Math.ceil(Math.max(body.scrollHeight,body.offsetHeight,body.getBoundingClientRect().height));if(height<=0)return false;const target=(height+8)+'px';if(frame.style.height!==target)frame.style.height=target;return true;}catch(_){return false;}}
  root.CartelLoad={resizeFrame,clearNotice:()=>{const bar=document.getElementById('cartel-load-notice');if(bar)bar.remove();},publicRead,setReadOnly:value=>{readonly=!!value;},createClient,wrap,fetch:guardedFetch,run,read,required,deadline,fail,notice,limits:LIMITS,diagnostics:()=>diagnostics.map(x=>({...x}))};
  root.addEventListener('unhandledrejection',()=>fail(failure('load_failed')));
  root.addEventListener('error',event=>{if(['ResizeObserver loop completed with undelivered notifications.','ResizeObserver loop limit exceeded'].includes(event.message)){record('layout','observer_deferred',0);return;}if(event.target&&event.target.tagName==='SCRIPT'||event instanceof ErrorEvent)fail(failure('load_failed'));},true);
+ // Session controls are independent of module permissions and never write business data.
+ const privatePages=new Set(['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
+ let sessionClient=null,signingOut=false,leavingSession=false;
+ const privatePage=privatePages.has(root.location.pathname.split('/').pop());
+ function concealSession(){document.documentElement.setAttribute('data-session-pending','');}
+ function revealSession(){document.documentElement.removeAttribute('data-session-pending');}
+ function leaveSession(localOnly=false){
+  if(leavingSession)return;leavingSession=true;concealSession();
+  // Discard in-memory views by replacing the document. Persistent user data stays intact.
+  root.location.replace('/rrhh-login.html?next=%2Fdashboard.html'+(localOnly?'&logout=local-only':''));
+ }
+ async function checkSession(){
+  if(!sessionClient||leavingSession)return;
+  concealSession();
+  try{const {data,error}=await sessionClient.auth.getSession();if(error)throw error;if(!data.session)return leaveSession();revealSession();}
+  catch(_){notice('No se pudo comprobar la sesión. Reintenta para continuar.',checkSession);}
+ }
+ async function closeSession(){
+  if(signingOut||!sessionClient)return;
+  if(!root.confirm('¿Cerrar sesión en este navegador? Los cambios que no hayas guardado se perderán.'))return;
+  signingOut=true;const button=document.getElementById('cartel-sign-out');if(button){button.disabled=true;button.textContent='Cerrando sesión…';}
+  try{
+   const {error}=await sessionClient.auth.signOut({scope:'local'});
+   authFlights.delete(sessionClient.auth);
+   const result=await sessionClient.auth.getSession();
+   if(result.error||result.data.session)throw error||result.error||new Error('session_remaining');
+   leaveSession(!!error);
+  }catch(_){notice('No se pudo completar el cierre de sesión. Comprueba la conexión y vuelve a intentarlo.',closeSession);}
+  finally{signingOut=false;if(button){button.disabled=false;button.textContent='Cerrar sesión';}}
+ }
+ function installSession(client){
+  if(!privatePage||sessionClient)return;sessionClient=client;
+  client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!signingOut)leaveSession();});
+  const mount=()=>{
+   if(root.top===root.self&&!document.getElementById('cartel-sign-out')){
+    const button=document.createElement('button');button.id='cartel-sign-out';button.type='button';button.textContent='Cerrar sesión';button.addEventListener('click',closeSession);
+    document.body.append(button);
+   }
+   void checkSession();
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+ }
+ if(privatePage){
+  concealSession();
+  const style=document.createElement('style');style.textContent='html[data-session-pending] body{visibility:hidden!important}html[data-session-pending] #cartel-load-notice{visibility:visible!important}#cartel-sign-out{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2147482999;min-width:132px;min-height:44px;padding:11px 16px;border:1px solid #FFDA03;border-radius:12px;background:#151515;color:#FFDA03;font:700 14px system-ui;cursor:pointer;box-shadow:0 3px 14px #0004}#cartel-sign-out:focus-visible{outline:3px solid #FFDA03;outline-offset:3px}#cartel-sign-out:disabled{opacity:.7;cursor:wait}body{padding-bottom:80px!important}@media print{#cartel-sign-out{display:none!important}}';document.head.append(style);
+  root.addEventListener('pagehide',concealSession);
+  root.addEventListener('pageshow',()=>{void checkSession();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void checkSession();});
+  // Existing module exit buttons use the same confirmed flow, including embedded modules.
+  root.addEventListener('click',event=>{const control=event.target.closest?.('button,a');if(control&&control.id!=='cartel-sign-out'&&/^(cerrar sesi[oó]n|salir)$/i.test(control.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();void closeSession();}},true);
+ }
+
 })(window);
