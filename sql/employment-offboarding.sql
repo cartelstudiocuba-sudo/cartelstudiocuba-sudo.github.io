@@ -78,7 +78,7 @@ begin
   if c.token_hash is null or c.expires_at<=now() or c.message='' then raise exception 'Prepara enlace y mensaje vigente';end if;
   update studio_offboarding_private.cases set opened_at=now() where id=c.id;
  elsif p_action='notified' then
-  if c.opened_at is null or p_payload->>'confirm'<>'ENVIADO' then raise exception 'Confirma explícitamente el envío';end if;
+  if c.opened_at is null or p_payload->>'confirm' is distinct from 'ENVIADO' then raise exception 'Confirma explícitamente el envío';end if;
   update studio_offboarding_private.cases set notified_at=now() where id=c.id;
  elsif p_action='inventory' then
   if length(trim(coalesce(p_payload->>'notes','')))<10 then raise exception 'Documenta la comprobación de las asignaciones reales';end if;
@@ -137,7 +137,7 @@ begin
  select * into e from public.hr_employees where id=c.employee_id;
  if p_action='submit' then
   if c.submitted_at is not null then return jsonb_build_object('submitted',true);end if;
-  if p_payload->>'truth' is distinct from 'true' or p_payload->>'pending' not in ('yes','no') then raise exception 'Completa la declaración de veracidad y asuntos pendientes';end if;
+  if p_payload->>'truth' is distinct from 'true' or coalesce(p_payload->>'pending','') not in ('yes','no') then raise exception 'Completa la declaración de veracidad y asuntos pendientes';end if;
   if p_payload->>'pending'='yes' and length(trim(coalesce(p_payload->>'pending_details','')))<3 then raise exception 'Describe los asuntos pendientes';end if;
   update studio_offboarding_private.cases set worker_data=jsonb_build_object('declaration',left(coalesce(p_payload->>'declaration',''),10000),'pending',p_payload->>'pending','pending_details',left(coalesce(p_payload->>'pending_details',''),10000),'truth',true),submitted_at=now(),revision=revision+1 where id=c.id;
   insert into studio_offboarding_private.events(case_id,action,details) values(c.id,'worker_submitted','{}');

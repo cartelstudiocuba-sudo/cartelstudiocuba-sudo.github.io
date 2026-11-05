@@ -44,12 +44,15 @@ const root=path.join(__dirname,'..'),owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6
  await identity(null,'anon');const read=(await one('select hr_offboarding_worker($1) result',[token])).result;ok(read.assets.length===2&&!('contract_snapshot' in read)&&!('notes' in read));
  await deny('select hr_offboarding($1)',[employee],/permission denied/);checks++;
  await deny('select hr_offboarding_worker($1,\'submit\',$2)',[token,{truth:false,pending:'no'}],/declaración/);checks++;
+ await deny('select hr_offboarding_worker($1,\'submit\',$2)',[token,{truth:true}],/asuntos pendientes/);checks++;
  await db.query('select hr_offboarding_worker($1,\'submit\',$2)',[token,{truth:true,pending:'yes',pending_details:'Proyecto sintético pendiente.',asset_id:asset1,state:'received',identity_number:'NEVER STORED'}]);
  await db.query('select hr_offboarding_worker($1,\'submit\',$2)',[token,{truth:true,pending:'no'}]);
  await identity(owner);s=await call('read');ok(s.case.worker_data.pending==='yes'&&!JSON.stringify(s.case.worker_data).includes('NEVER STORED'));ok(s.assets.every(a=>a.state==='pending'));
  await mutate('message',{message:'Mensaje sintético editable. https://gestion.elcartelstudio.com/cierre-laboral.html#token='+token+'\nDocumento https://gestion.elcartelstudio.com/cierre-laboral.html?document=1#token='+token});
  await deny('select hr_offboarding($1,\'notified\',$2)',[employee,{revision:s.case.revision,confirm:'ENVIADO'}],/Confirma/);checks++;
- await mutate('opened');ok(!s.case.notified_at);await mutate('notified',{confirm:'ENVIADO'});await mutate('verify_worker');
+ await mutate('opened');ok(!s.case.notified_at);
+ await deny('select hr_offboarding($1,\'notified\',$2)',[employee,{revision:s.case.revision}],/Confirma explícitamente/);checks++;
+ await mutate('notified',{confirm:'ENVIADO'});await mutate('verify_worker');
  await mutate('document',{text:'Documento sintético revisado por RRHH. '+ 'Condiciones de cierre de prueba. '.repeat(8)});
  await deny('select hr_offboarding($1,\'signed\',$2)',[employee,{revision:s.case.revision,path:'missing'}],/Falta archivo/);checks++;
  const signed=s.case.id+'/1/10000000-0000-4000-8000-000000000002.pdf';await db.query("insert into storage.objects(bucket_id,name) values('hr-offboarding-private',$1)",[signed]);await mutate('signed',{path:signed});

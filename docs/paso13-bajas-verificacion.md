@@ -24,7 +24,7 @@ Implementación del diseño aprobado del cierre laboral. Base revisada: `ff40636
 
 ## Pruebas ejecutadas
 
-- PGlite aislado: 31 comprobaciones de autorización, permisos de tablas, duplicados, concurrencia por revisión, privacidad, medios, incidencias, documentación, firma, confirmación, sesiones, archivo, preservación del contrato y registro ajeno intacto. Solo datos sintéticos.
+- PGlite aislado: 33 comprobaciones de autorización, permisos de tablas, duplicados, concurrencia por revisión, privacidad, medios, incidencias, documentación, firma, confirmación, sesiones, archivo, preservación del contrato y registro ajeno intacto. Solo datos sintéticos. Incluye rechazo de respuesta omitida sobre pendientes y confirmación de envío omitida.
 - Edge headless: 36 comprobaciones a 390 y 1440 px, formularios, lectura exclusiva de medios, envío externo, mensaje editable, borrador desde plantilla, emisión, progreso, ausencia de carné y otras responsabilidades, sin desbordamientos ni errores JavaScript. RPC simuladas; no envía mensajes ni modifica producción.
 - Regresión contractual: paginación móvil/escritorio, escaping, impresión y PDF; generador maestro, contrato emitido v2 y entradas de candidatos sincronizadas.
 - Producción: RPC interna anónima devuelve 401; enlace externo inválido devuelve 400. RLS activa en las tres tablas nuevas, cero acceso directo a tablas, bucket privado de 15 MB y cero bajas creadas durante el despliegue.
@@ -34,3 +34,11 @@ Implementación del diseño aprobado del cierre laboral. Base revisada: `ff40636
 No se ejecutó una baja sobre usuarios o candidatos reales. El ensayo transaccional de producción no llegó a ejecutarse porque expiró la confirmación de la herramienta; los escenarios completos se verificaron de forma aislada. La publicación del esquema se realizó mediante la herramienta específica de migraciones y se verificó después.
 
 Resultados detallados: `tests/offboarding-sql-results.json`, `tests/offboarding-browser-results.json`. Evidencia local: `test-results/offboarding/` (no publicada). El control de despliegue compara los doce archivos publicados con los originales locales y comprueba los rechazos de la API.
+
+## Publicación verificada
+
+- Commit funcional: `1bdb26f45b79937bd88ac2e056daf34681001533`.
+- GitHub Pages: ejecución `42111624136`, completada con éxito. Verificación contractual CI `42111625464`, completada con éxito.
+- Los doce archivos de interfaz devolvieron HTTP 200 y coincidieron con la copia verificada, comparando contenido y SHA-256 (normalizando únicamente finales de línea).
+- RPC en producción: gestión anónima HTTP 401 y token inválido HTTP 400. Ninguna baja ni usuario de prueba se creó permanentemente en producción.
+- Migraciones: `employment_offboarding_step13` y `offboarding_require_complete_declarations_and_explicit_notification`. La segunda refuerza las validaciones del formulario y del envío sin modificar datos.

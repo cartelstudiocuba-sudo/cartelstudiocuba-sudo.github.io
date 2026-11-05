@@ -1,5 +1,5 @@
 {
-  "checks": 31,
+  "checks": 33,
   "result": "PASS",
   "environment": "PGlite aislado; solo datos sintéticos",
   "verified": [
