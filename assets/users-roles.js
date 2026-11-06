@@ -21,7 +21,7 @@ async function loadAccounts(){
   const button=document.createElement('button');
   button.type='button';button.className='account-item';
   const name=u.full_name||u.username||u.email||'Usuario';
-  const initials=name.trim().split(/\\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const initials=name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   button.innerHTML='<span class="account-avatar">'+esc(initials)+'</span><span class="account-copy"><strong>'+esc(name)+'</strong><small>'+esc(u.position||(u.roles||[]).map(r=>r.title).join(', ')||'Sin plaza')+'</small><small>'+esc(u.username||u.email||'')+'</small></span><span class="account-arrow">›</span>';
   list.appendChild(button);
   button.onclick=()=>{
@@ -116,6 +116,7 @@ async function loadAccounts(){
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
    const close=()=>{card.style.display='none';list.insertBefore(card,list.firstChild);root.innerHTML='';document.body.style.overflow=''};
+   if(window.CartelUserProfile){CartelUserProfile.enhance({root,u,name,initials,card,renderTab,showHome,close,sb,esc});return;}
    root.querySelector('#close-account').onclick=close;
    root.querySelector('.access-overlay').onclick=e=>{if(e.target.classList.contains('access-overlay'))close()};
   };

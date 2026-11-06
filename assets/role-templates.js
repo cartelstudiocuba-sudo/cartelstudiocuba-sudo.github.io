@@ -33,10 +33,11 @@ loadAccounts=async function(){
   button.onclick=async()=>{if(!select.value||!confirm('¿Reemplazar las vistas y los permisos efectivos de '+(account.full_name||account.username)+' por la plantilla de '+select.selectedOptions[0].text+'? Esta acción explícita solo afecta a este trabajador.'))return;button.disabled=true;try{const {error}=await sb.rpc('system_apply_role_template',{p_employee:account.employee_id,p_role:select.value});if(error)throw error;status.textContent='Plantilla aplicada a este trabajador y registrada en auditoría.';}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
   box.append(label,select,button,status);card.append(box);
  });
- const employee=new URLSearchParams(location.search).get('employee');if(employee){const index=accounts.findIndex(u=>u.employee_id===employee);if(index>=0)document.querySelectorAll('#account-list > .account-item')[index]?.click();}
+ el('account-list').dataset.templatesReady='true';
+ const params=new URLSearchParams(location.search),employee=params.get('employee'),user=params.get('user');if(employee||user){const index=accounts.findIndex(u=>employee?u.employee_id===employee:u.id===user);if(index>=0)document.querySelectorAll('#account-list > .account-item')[index]?.click();}
 };
 const templateNotice=document.createElement('p');templateNotice.className='notice';templateNotice.textContent='Las plantillas permanentes de acceso se administran en Roles. El editor visual conserva únicamente borradores de diseño; no concede permisos.';document.getElementById('views')?.prepend(templateNotice);
 let accountTemplateToolsReady=false;
-function initializeAccountTemplateTools(){if(accountTemplateToolsReady)return;accountTemplateToolsReady=true;CartelLoad.run('account_template_tools',()=>loadAccounts());}
+function initializeAccountTemplateTools(){if(accountTemplateToolsReady)return;accountTemplateToolsReady=true;if(el('account-list').dataset.templatesReady!=='true')CartelLoad.run('account_template_tools',()=>loadAccounts());}
 document.addEventListener('cartel-access-ready',initializeAccountTemplateTools,{once:true});
 if(!el('app').classList.contains('hidden'))initializeAccountTemplateTools();
