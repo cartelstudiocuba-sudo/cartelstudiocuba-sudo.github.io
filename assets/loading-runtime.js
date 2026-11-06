@@ -37,9 +37,9 @@
  function wrap(client){for(const name of ['getSession','getUser']){const original=client.auth[name];if(typeof original!=='function')continue;client.auth[name]=function(...args){return session(client,name,original,args);};}return client;}
  function createClient(url,key,options={}){if(!root.supabase||!root.supabase.createClient)throw failure('sdk_unavailable');const config={...options,global:{...(options.global||{}),fetch:guardedFetch}};const client=wrap(root.supabase.createClient(url,key,config));installSession(client);return client;}
 
- let readonly=false;root.addEventListener('click',event=>{const button=event.target.closest&&event.target.closest('button');if(readonly&&button&&!button.classList.contains('tab')&&!button.closest('#cartel-load-notice')&&button.id!=='cartel-sign-out'&&!/^(cerrar sesi[oó]n|salir)$/i.test(button.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();notice('La información complementaria no está completa. La edición está temporalmente deshabilitada.',()=>root.location.reload());}},true);root.addEventListener('submit',event=>{if(readonly){event.preventDefault();event.stopImmediatePropagation();}},true);
+ let readonly=false;root.addEventListener('click',event=>{const button=event.target.closest&&event.target.closest('button');if(readonly&&button&&!button.classList.contains('tab')&&!button.closest('#cartel-load-notice')&&button.id!=='cartel-sign-out'&&!button.closest('#cartel-logout-modal')&&!/^(cerrar sesi[oó]n|salir)$/i.test(button.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();notice('La información complementaria no está completa. La edición está temporalmente deshabilitada.',()=>root.location.reload());}},true);root.addEventListener('submit',event=>{if(readonly){event.preventDefault();event.stopImmediatePropagation();}},true);
 
- function blockPartialEdit(event){if(!readonly)return;const target=event.target;if(target.closest&&(target.closest('#cartel-load-notice')||target.closest('#cartel-sign-out')))return;if(target.matches&&target.matches('input,select,textarea,[contenteditable="true"]')){event.preventDefault();event.stopImmediatePropagation();}}
+ function blockPartialEdit(event){if(!readonly)return;const target=event.target;if(target.closest&&(target.closest('#cartel-load-notice')||target.closest('#cartel-sign-out')||target.closest('#cartel-logout-modal')))return;if(target.matches&&target.matches('input,select,textarea,[contenteditable="true"]')){event.preventDefault();event.stopImmediatePropagation();}}
  for(const type of ['beforeinput','input','change','click'])root.addEventListener(type,blockPartialEdit,true);
  function resizeFrame(frame){try{const body=frame.contentDocument&&frame.contentDocument.body;if(!body)return false;const height=Math.ceil(Math.max(body.scrollHeight,body.offsetHeight,body.getBoundingClientRect().height));if(height<=0)return false;const target=(height+8)+'px';if(frame.style.height!==target)frame.style.height=target;return true;}catch(_){return false;}}
  root.CartelLoad={resizeFrame,clearNotice:()=>{const bar=document.getElementById('cartel-load-notice');if(bar)bar.remove();},publicRead,setReadOnly:value=>{readonly=!!value;},createClient,wrap,fetch:guardedFetch,run,read,required,deadline,fail,notice,limits:LIMITS,diagnostics:()=>diagnostics.map(x=>({...x}))};
@@ -62,9 +62,36 @@
   try{const {data,error}=await sessionClient.auth.getSession();if(error)throw error;if(!data.session)return leaveSession();updateAccount(data.session.user);revealSession();}
   catch(_){notice('No se pudo comprobar la sesión. Reintenta para continuar.',checkSession);}
  }
+
+ // A native dialog provides top-layer isolation, keyboard focus containment and inert background.
+ let logoutPrompt=null;
+ function confirmSessionExit(){
+  if(logoutPrompt)return logoutPrompt;
+  const previous=document.activeElement,dialog=document.createElement('dialog');dialog.id='cartel-logout-modal';
+  dialog.setAttribute('aria-labelledby','cartel-logout-title');dialog.setAttribute('aria-describedby','cartel-logout-description');dialog.setAttribute('aria-modal','true');
+  dialog.innerHTML='<button type="button" class="logout-x" aria-label="Cerrar confirmación">×</button><div class="logout-power"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10M6.3 5.7a9 9 0 1 0 11.4 0"/></svg></div><h2 id="cartel-logout-title">¿Cerrar sesión?</h2><p id="cartel-logout-description">Tu cuenta se desconectará de este navegador y volverás a la pantalla de acceso.</p><div class="logout-actions"><button type="button" class="logout-cancel">Cancelar</button><button type="button" class="logout-confirm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H4v14h5M14 8l4 4-4 4M8 12h13"/></svg>Cerrar sesión</button></div>';
+  document.body.append(dialog);
+  const overflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';
+  logoutPrompt=new Promise(resolve=>{
+   let done=false;
+   function finish(confirmed){if(done)return;done=true;dialog.close();dialog.remove();document.documentElement.style.overflow=overflow;logoutPrompt=null;if(previous?.isConnected)previous.focus({preventScroll:true});resolve(confirmed);}
+   dialog.querySelector('.logout-x').onclick=()=>finish(false);
+   dialog.querySelector('.logout-cancel').onclick=()=>finish(false);
+   dialog.querySelector('.logout-confirm').onclick=()=>finish(true);
+   dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false);});
+   dialog.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const buttons=[...dialog.querySelectorAll('button')],first=buttons[0],last=buttons[buttons.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
+   let outside=false;
+   const isOutside=event=>{const r=dialog.getBoundingClientRect();return event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom;};
+   dialog.addEventListener('pointerdown',event=>{outside=event.target===dialog&&isOutside(event);});
+   dialog.addEventListener('click',event=>{if(outside&&event.target===dialog&&isOutside(event))finish(false);outside=false;});
+   dialog.showModal();dialog.querySelector('.logout-cancel').focus();
+  });return logoutPrompt;
+ }
+
  async function closeSession(){
   if(signingOut||!sessionClient)return;
-  if(!root.confirm('¿Cerrar sesión en este navegador? Los cambios que no hayas guardado se perderán.'))return;
+  if(!await confirmSessionExit())return;
+  if(signingOut||leavingSession)return;
   signingOut=true;const button=document.getElementById('cartel-sign-out');if(button){button.disabled=true;button.querySelector('span').textContent='Cerrando sesión…';}
   try{
    const {error}=await sessionClient.auth.signOut({scope:'local'});
@@ -100,13 +127,16 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
  }
  if(privatePage){
+  // Suppress stale module unload prompts only after an authenticated exit is committed.
+  root.addEventListener('beforeunload',event=>{if(leavingSession){root.onbeforeunload=null;event.stopImmediatePropagation();}},true);
   concealSession();
+  const modalStyle=document.createElement('style');modalStyle.textContent=`#cartel-logout-modal{box-sizing:border-box;width:min(420px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;margin:auto;padding:28px 24px 24px;border:1px solid #FFDA03;border-radius:18px;background:linear-gradient(145deg,#151615,#090a0b);color:#f5f5f5;text-align:center;font:14px/1.45 system-ui;box-shadow:0 22px 80px #000a}#cartel-logout-modal::backdrop{background:#000b;backdrop-filter:blur(2px)}#cartel-logout-modal .logout-x{position:absolute;right:8px;top:6px;width:44px;height:44px;padding:0;border:0;background:transparent;color:#aaa;font:28px system-ui;cursor:pointer}#cartel-logout-modal .logout-power{display:grid;place-items:center;width:60px;height:60px;margin:0 auto 12px;border:1px solid #FFDA03;border-radius:50%;color:#FFDA03;box-shadow:0 0 24px #ffda0330,inset 0 0 14px #ffda0315}#cartel-logout-modal svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}#cartel-logout-modal h2{margin:0 0 8px;font-size:24px;line-height:1.2;color:#fff}#cartel-logout-modal p{margin:0 auto 24px;max-width:330px;color:#bfc0c3;font-size:13px}#cartel-logout-modal .logout-actions{display:flex;gap:12px}#cartel-logout-modal .logout-actions button{display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;min-height:44px;padding:10px 8px;border-radius:11px;font:700 13px system-ui;cursor:pointer;transition:transform .12s,filter .12s}#cartel-logout-modal .logout-cancel{background:linear-gradient(#202124,#101113);border:1px solid #737780;color:#f5f5f5;box-shadow:0 3px 0 #050505,inset 0 1px 0 #ffffff18}#cartel-logout-modal .logout-confirm{background:linear-gradient(#ffe957,#FFDA03);border:1px solid #ffe766;color:#151500;box-shadow:0 3px 0 #8a7500,inset 0 1px 0 #fff8}#cartel-logout-modal .logout-confirm svg{width:19px;height:19px;flex-shrink:0}#cartel-logout-modal button:focus-visible{outline:3px solid #FFDA03;outline-offset:4px}#cartel-logout-modal .logout-actions button:hover{filter:brightness(1.12)}#cartel-logout-modal .logout-actions button:active{transform:translateY(2px)}@media(max-width:359px){#cartel-logout-modal{padding:25px 16px 20px}#cartel-logout-modal h2{font-size:22px}#cartel-logout-modal .logout-actions{gap:8px}#cartel-logout-modal .logout-actions button{font-size:12px}}@media(prefers-reduced-motion:reduce){#cartel-logout-modal button{transition:none!important}}`;document.head.append(modalStyle);
   const style=document.createElement('style');style.textContent="html[data-session-pending] body{visibility:hidden!important}html[data-session-pending] #cartel-load-notice{visibility:visible!important}\n.app>aside .cartel-account-foot{display:block;margin-top:auto;padding:16px 6px 0;min-width:0}\n#cartel-account{box-sizing:border-box;min-width:0;width:100%;color:#eee;font:13px/1.4 system-ui;text-align:left}\n.cartel-account-info{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:10px}\n#cartel-account svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}\n#cartel-account .cartel-account-avatar{width:34px;height:34px;padding:7px;box-sizing:border-box;border-radius:50%;background:#2b2b26;color:#FFDA03}\n.cartel-account-copy{min-width:0;flex:1}.cartel-account-copy strong{display:block;font-size:13px;color:#f5f5f5}\n#cartel-account-email{display:block;font-size:11px;color:#aaa;overflow-wrap:anywhere}\n#cartel-sign-out{position:static;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;min-height:44px;padding:10px 12px;border:1px solid #51491e;border-radius:9px;background:#20201b;color:#FFDA03;font:600 13px system-ui;cursor:pointer;box-shadow:none}\n#cartel-sign-out svg{width:18px;height:18px}#cartel-sign-out:hover{background:#302d19;border-color:#FFDA03}#cartel-sign-out:focus-visible{outline:3px solid #FFDA03;outline-offset:3px}#cartel-sign-out:disabled{opacity:.7;cursor:wait}\n.cartel-account-navigation{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:20px;background:#151515;padding:14px 20px;width:100%;border-bottom:1px solid #333}.cartel-account-navigation>a{color:#FFDA03;text-decoration:none;font:600 14px system-ui;flex-shrink:0}.cartel-account-navigation #cartel-account{max-width:280px}\n@media(max-width:900px){.app>aside .cartel-account-foot{padding:12px 6px 3px;margin-top:8px}#cartel-account{display:flex;align-items:center;gap:12px}.cartel-account-info{flex:1;margin:0;min-width:0}#cartel-sign-out{width:auto;flex-shrink:0}.cartel-account-navigation{flex-wrap:wrap;padding:12px 14px;gap:12px}.cartel-account-navigation #cartel-account{max-width:none}}\n@media(max-width:359px){#cartel-account{flex-wrap:wrap}#cartel-sign-out{width:100%}}\n@media print{#cartel-account,.cartel-account-navigation{display:none!important}}";document.head.append(style);
   root.addEventListener('pagehide',concealSession);
   root.addEventListener('pageshow',()=>{void checkSession();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void checkSession();});
   // Existing module exit buttons use the same confirmed flow, including embedded modules.
-  root.addEventListener('click',event=>{const control=event.target.closest?.('button,a');if(control&&control.id!=='cartel-sign-out'&&/^(cerrar sesi[oó]n|salir)$/i.test(control.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();void closeSession();}},true);
+  root.addEventListener('click',event=>{const control=event.target.closest?.('button,a');if(control&&control.id!=='cartel-sign-out'&&!control.closest('#cartel-logout-modal')&&/^(cerrar sesi[oó]n|salir)$/i.test(control.textContent.trim())){event.preventDefault();event.stopImmediatePropagation();void closeSession();}},true);
  }
 
 })(window);

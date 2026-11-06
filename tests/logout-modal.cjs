@@ -1,0 +1,28 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+let playwright;try{playwright=require('playwright');}catch(_){playwright=require('C:/Users/julio/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');}const {chromium}=playwright;
+const root=path.resolve(__dirname,'..'),live=process.argv.includes('--live'),origin=live?'https://gestion.elcartelstudio.com':'https://gestion.test',out=path.resolve(__dirname,'../../logout-evidence');
+const key='sb-jhumvctocphyiwhszeaz-auth-token',user={id:'10000000-0000-4000-8000-000000000001',email:'synthetic@example.invalid',aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
+const jwt=[{alg:'HS256',typ:'JWT'},{sub:user.id,exp:4102444800,role:'authenticated'},'synthetic'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
+const session={access_token:jwt,refresh_token:'synthetic-refresh',expires_at:4102444800,expires_in:3600,token_type:'bearer',user};
+const routes=['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html'];
+(async()=>{fs.mkdirSync(out,{recursive:true});const browser=await chromium.launch({channel:'msedge',headless:true});const results=[];try{
+for(const width of [320,390,1440]){const ctx=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});let logouts=0,dialogs=0,writes=0,fail=false;
+await ctx.route('**/*',async r=>{const req=r.request(),u=new URL(req.url());if(u.hostname.endsWith('supabase.co')){if(u.pathname==='/auth/v1/logout'){logouts++;assert.equal(u.searchParams.get('scope'),'local');return r.fulfill({status:fail?500:204,body:fail?'{}':''});}if(u.pathname==='/auth/v1/user')return r.fulfill({json:user});if(u.pathname.includes('system_has_permission'))return r.fulfill({json:true});return r.fulfill({json:[]});}if(req.method()!=='GET'){writes++;return r.abort();}if(u.origin!==origin)return r.abort();if(live)return r.continue();const f=path.join(root,u.pathname.slice(1));return r.fulfill({contentType:f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.svg')?'image/svg+xml':'text/html',body:fs.existsSync(f)&&fs.statSync(f).isFile()?fs.readFileSync(f):''});});
+const p=await ctx.newPage();p.on('dialog',async d=>{dialogs++;await d.dismiss();});
+await p.goto(origin+'/rrhh-login.html');
+for(const route of routes){console.log(width,route);await p.evaluate(({key,session})=>{localStorage.setItem(key,JSON.stringify(session));localStorage.setItem('synthetic-preference','preserve');},{key,session});await p.goto(origin+'/'+route);await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-session-pending'));
+const trigger=p.locator('#cartel-sign-out');await trigger.waitFor();await trigger.click();const modal=p.getByRole('dialog',{name:'¿Cerrar sesión?',exact:true});await modal.waitFor();const before=logouts;
+assert.equal(await p.evaluate(()=>document.activeElement.className),'logout-cancel');
+await p.keyboard.press('Shift+Tab');assert.equal(await p.evaluate(()=>document.activeElement.className),'logout-x');await p.keyboard.press('Shift+Tab');assert.equal(await p.evaluate(()=>document.activeElement.className),'logout-confirm');
+await p.keyboard.press('Escape');await modal.waitFor({state:'detached'});assert(await trigger.evaluate(n=>document.activeElement===n));
+for(const action of ['Cancelar','Cerrar confirmación','outside']){await trigger.click();if(action==='outside')await p.mouse.click(2,2);else await modal.getByRole('button',{name:action,exact:true}).click();await modal.waitFor({state:'detached'});}
+assert.equal(logouts,before);assert(await p.evaluate(key=>!!localStorage.getItem(key),key));
+await p.evaluate(()=>{window.onbeforeunload=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='';});CartelLoad.setReadOnly(true);});
+await trigger.click();const box=await modal.boundingBox();assert(box.x>=0&&box.x+box.width<=width&&box.y>=0);if(route==='dashboard.html')await p.screenshot({path:path.join(out,`${live?'live':'local'}-modal-${width}.png`)});
+await modal.getByRole('button',{name:'Cerrar sesión',exact:true}).dblclick();await p.waitForURL('**/rrhh-login.html?**');assert.equal(logouts,before+1);assert.equal(await p.evaluate(key=>localStorage.getItem(key),key),null);assert.equal(await p.evaluate(()=>localStorage.getItem('synthetic-preference')),'preserve');assert.equal(dialogs,0);results.push({route,width,cancelAll:true,focus:true,keyboard:true,readonly:true,unloadSuppressed:true,singleLocalLogout:true});
+}
+// Server failure keeps the existing local-only outcome and login notice.
+fail=true;await p.evaluate(({key,session})=>localStorage.setItem(key,JSON.stringify(session)),{key,session});await p.goto(origin+'/dashboard.html');await p.locator('#cartel-sign-out').click();await p.locator('.logout-confirm').click();await p.waitForURL('**/rrhh-login.html?**logout=local-only');assert.equal(await p.evaluate(key=>localStorage.getItem(key),key),null);assert.equal(writes,0);assert.equal(dialogs,0);await ctx.close();
+}
+fs.writeFileSync(path.join(out,`${live?'live':'local'}-modal-results.json`),JSON.stringify(results,null,2));console.log(JSON.stringify({live,cases:results.length,passed:true,realWrites:0,nativeDialogs:0}));
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
