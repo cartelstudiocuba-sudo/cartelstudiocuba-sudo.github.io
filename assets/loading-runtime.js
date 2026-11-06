@@ -59,13 +59,13 @@
  async function checkSession(){
   if(!sessionClient||leavingSession)return;
   concealSession();
-  try{const {data,error}=await sessionClient.auth.getSession();if(error)throw error;if(!data.session)return leaveSession();revealSession();}
+  try{const {data,error}=await sessionClient.auth.getSession();if(error)throw error;if(!data.session)return leaveSession();updateAccount(data.session.user);revealSession();}
   catch(_){notice('No se pudo comprobar la sesión. Reintenta para continuar.',checkSession);}
  }
  async function closeSession(){
   if(signingOut||!sessionClient)return;
   if(!root.confirm('¿Cerrar sesión en este navegador? Los cambios que no hayas guardado se perderán.'))return;
-  signingOut=true;const button=document.getElementById('cartel-sign-out');if(button){button.disabled=true;button.textContent='Cerrando sesión…';}
+  signingOut=true;const button=document.getElementById('cartel-sign-out');if(button){button.disabled=true;button.querySelector('span').textContent='Cerrando sesión…';}
   try{
    const {error}=await sessionClient.auth.signOut({scope:'local'});
    authFlights.delete(sessionClient.auth);
@@ -73,23 +73,35 @@
    if(result.error||result.data.session)throw error||result.error||new Error('session_remaining');
    leaveSession(!!error);
   }catch(_){notice('No se pudo completar el cierre de sesión. Comprueba la conexión y vuelve a intentarlo.',closeSession);}
-  finally{signingOut=false;if(button){button.disabled=false;button.textContent='Cerrar sesión';}}
+  finally{signingOut=false;if(button){button.disabled=false;button.querySelector('span').textContent='Cerrar sesión';}}
+ }
+ function updateAccount(user){
+  const email=document.getElementById('cartel-account-email');if(email)email.textContent=user?.email||'Cuenta conectada';
+ }
+ function mountAccount(){
+  if(root.top!==root.self||document.getElementById('cartel-account'))return;
+  const account=document.createElement('section');account.id='cartel-account';account.setAttribute('aria-label','Mi cuenta');
+  account.innerHTML='<div class="cartel-account-info"><svg class="cartel-account-avatar" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><div class="cartel-account-copy"><strong>Mi cuenta</strong><span id="cartel-account-email">Cuenta conectada</span></div></div><button id="cartel-sign-out" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H4v14h5M14 8l4 4-4 4M8 12h13"/></svg><span>Cerrar sesión</span></button>';
+  account.querySelector('button').addEventListener('click',closeSession);
+  const foot=document.querySelector('.app > aside .foot');
+  if(foot){foot.replaceChildren(account);foot.classList.add('cartel-account-foot');foot.setAttribute('aria-label','Cuenta y sesión');}
+  else{
+   const nav=document.createElement('nav');nav.className='cartel-account-navigation';nav.setAttribute('aria-label','Navegación y cuenta');
+   const home=document.createElement('a');home.href='/dashboard.html';home.textContent='← Inicio';nav.append(home,account);document.body.prepend(nav);
+  }
  }
  function installSession(client){
   if(!privatePage||sessionClient)return;sessionClient=client;
   client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!signingOut)leaveSession();});
   const mount=()=>{
-   if(root.top===root.self&&!document.getElementById('cartel-sign-out')){
-    const button=document.createElement('button');button.id='cartel-sign-out';button.type='button';button.textContent='Cerrar sesión';button.addEventListener('click',closeSession);
-    document.body.append(button);
-   }
+   mountAccount();
    void checkSession();
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
  }
  if(privatePage){
   concealSession();
-  const style=document.createElement('style');style.textContent='html[data-session-pending] body{visibility:hidden!important}html[data-session-pending] #cartel-load-notice{visibility:visible!important}#cartel-sign-out{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2147482999;min-width:132px;min-height:44px;padding:11px 16px;border:1px solid #FFDA03;border-radius:12px;background:#151515;color:#FFDA03;font:700 14px system-ui;cursor:pointer;box-shadow:0 3px 14px #0004}#cartel-sign-out:focus-visible{outline:3px solid #FFDA03;outline-offset:3px}#cartel-sign-out:disabled{opacity:.7;cursor:wait}body{padding-bottom:80px!important}@media print{#cartel-sign-out{display:none!important}}';document.head.append(style);
+  const style=document.createElement('style');style.textContent="html[data-session-pending] body{visibility:hidden!important}html[data-session-pending] #cartel-load-notice{visibility:visible!important}\n.app>aside .cartel-account-foot{display:block;margin-top:auto;padding:16px 6px 0;min-width:0}\n#cartel-account{box-sizing:border-box;min-width:0;width:100%;color:#eee;font:13px/1.4 system-ui;text-align:left}\n.cartel-account-info{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:10px}\n#cartel-account svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}\n#cartel-account .cartel-account-avatar{width:34px;height:34px;padding:7px;box-sizing:border-box;border-radius:50%;background:#2b2b26;color:#FFDA03}\n.cartel-account-copy{min-width:0;flex:1}.cartel-account-copy strong{display:block;font-size:13px;color:#f5f5f5}\n#cartel-account-email{display:block;font-size:11px;color:#aaa;overflow-wrap:anywhere}\n#cartel-sign-out{position:static;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;min-height:44px;padding:10px 12px;border:1px solid #51491e;border-radius:9px;background:#20201b;color:#FFDA03;font:600 13px system-ui;cursor:pointer;box-shadow:none}\n#cartel-sign-out svg{width:18px;height:18px}#cartel-sign-out:hover{background:#302d19;border-color:#FFDA03}#cartel-sign-out:focus-visible{outline:3px solid #FFDA03;outline-offset:3px}#cartel-sign-out:disabled{opacity:.7;cursor:wait}\n.cartel-account-navigation{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:20px;background:#151515;padding:14px 20px;width:100%;border-bottom:1px solid #333}.cartel-account-navigation>a{color:#FFDA03;text-decoration:none;font:600 14px system-ui;flex-shrink:0}.cartel-account-navigation #cartel-account{max-width:280px}\n@media(max-width:900px){.app>aside .cartel-account-foot{padding:12px 6px 3px;margin-top:8px}#cartel-account{display:flex;align-items:center;gap:12px}.cartel-account-info{flex:1;margin:0;min-width:0}#cartel-sign-out{width:auto;flex-shrink:0}.cartel-account-navigation{flex-wrap:wrap;padding:12px 14px;gap:12px}.cartel-account-navigation #cartel-account{max-width:none}}\n@media(max-width:359px){#cartel-account{flex-wrap:wrap}#cartel-sign-out{width:100%}}\n@media print{#cartel-account,.cartel-account-navigation{display:none!important}}";document.head.append(style);
   root.addEventListener('pagehide',concealSession);
   root.addEventListener('pageshow',()=>{void checkSession();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void checkSession();});

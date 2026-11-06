@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.join(__dirname,'..'),out=path.join(root,'test-results','logout');fs.mkdirSync(out,{recursive:true});
-const origin='https://gestion.test',key='sb-jhumvctocphyiwhszeaz-auth-token';
+const origin=process.env.LIVE_ORIGIN||'https://gestion.test',key='sb-jhumvctocphyiwhszeaz-auth-token';
 const user={id:'10000000-0000-4000-8000-000000000001',email:'synthetic@example.invalid',aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
 const jwt=[{alg:'HS256',typ:'JWT'},{sub:user.id,exp:4102444800,role:'authenticated'},'synthetic'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
 const session={access_token:jwt,refresh_token:'synthetic-refresh',expires_at:4102444800,expires_in:3600,token_type:'bearer',user};
@@ -15,7 +15,7 @@ await ctx.route('**/*',async route=>{const req=route.request(),url=new URL(req.u
  if(url.pathname==='/auth/v1/user')return route.fulfill({json:user});
  if(url.pathname.includes('system_has_permission'))return route.fulfill({json:true});
  return route.fulfill({json:[]});
-}if(url.origin!==origin)return route.abort();
+}if(url.origin!==origin)return route.abort();if(process.env.LIVE_ORIGIN&&url.pathname!=='/dashboard.html')return route.continue();
 if(url.pathname==='/rrhh-login.html')return route.fulfill({contentType:'text/html',body:'<h1>Login sintético</h1>'});
 if(url.pathname==='/dashboard.html'&&!url.searchParams.has('actual'))return route.fulfill({contentType:'text/html',body:harness});
 const file=path.join(root,url.pathname.slice(1));if(!fs.existsSync(file))return route.fulfill({status:404,body:''});return route.fulfill({contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.svg')?'image/svg+xml':'text/html',body:fs.readFileSync(file)});
@@ -34,12 +34,26 @@ await page.evaluate(({key,session})=>localStorage.setItem(key,JSON.stringify(ses
 assert.equal(writes,0);results.push({width,account,logoutRequests:logouts,cancel:true,readonly:true,keyboard:true,bfcacheEvent:true,serverError:true,legacyExit:true,back:true,directAccess:true,preservedData:true});await ctx.close();
 }
 // Real dashboard markup, including profile-hidden mobile layout, and cross-tab sign-out.
-const ctx=await browser.newContext({viewport:{width:390,height:900}});let logoutRequests=0;
-await ctx.route('**/*',async r=>{const u=new URL(r.request().url());if(u.hostname.endsWith('supabase.co')){if(u.pathname==='/auth/v1/logout'){logoutRequests++;return r.fulfill({status:204,body:''});}if(u.pathname.includes('system_has_permission'))return r.fulfill({json:true});if(u.pathname==='/auth/v1/user')return r.fulfill({json:user});return r.fulfill({json:[]});}if(u.origin!==origin)return r.abort();if(u.pathname==='/rrhh-login.html')return r.fulfill({contentType:'text/html',body:'<h1>Login sintético</h1>'});const f=path.join(root,u.pathname.slice(1));return r.fulfill({contentType:f.endsWith('.js')?'text/javascript':f.endsWith('.svg')?'image/svg+xml':'text/html',body:fs.existsSync(f)?fs.readFileSync(f):''});});
+const ctx=await browser.newContext({viewport:{width:390,height:900}});let logoutRequests=0,permission=true;
+await ctx.route('**/*',async r=>{const u=new URL(r.request().url());if(u.hostname.endsWith('supabase.co')){if(u.pathname==='/auth/v1/logout'){logoutRequests++;return r.fulfill({status:204,body:''});}if(u.pathname.includes('system_has_permission'))return r.fulfill({json:permission});if(u.pathname==='/auth/v1/user')return r.fulfill({json:user});return r.fulfill({json:[]});}if(u.origin!==origin)return r.abort();if(process.env.LIVE_ORIGIN)return r.continue();if(u.pathname==='/rrhh-login.html')return r.fulfill({contentType:'text/html',body:'<h1>Login sintético</h1>'});const f=path.join(root,u.pathname.slice(1));return r.fulfill({contentType:f.endsWith('.js')?'text/javascript':f.endsWith('.svg')?'image/svg+xml':'text/html',body:fs.existsSync(f)?fs.readFileSync(f):''});});
 const p=await ctx.newPage();await p.goto(origin+'/rrhh-login.html');await p.evaluate(({key,session})=>localStorage.setItem(key,JSON.stringify(session)),{key,session});
 await p.goto(origin+'/dashboard.html?actual=1');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-session-pending'));await p.getByRole('button',{name:'Cerrar sesión',exact:true}).waitFor();await p.screenshot({path:path.join(out,'dashboard-mobile.png'),fullPage:true});
 await p.setViewportSize({width:1440,height:900});await p.screenshot({path:path.join(out,'dashboard-desktop.png'),fullPage:true});
-const second=await ctx.newPage();await second.goto(origin+'/dashboard.html?actual=2');await second.waitForFunction(()=>!document.documentElement.hasAttribute('data-session-pending'));
+// Account placement, narrow screens, restricted navigation and embedded modules.
+for(const width of [320,390,768,1440]){
+ await p.setViewportSize({width,height:900});
+ assert.equal(await p.locator('#cartel-account').count(),1);
+ assert.equal(await p.locator('aside .foot #cartel-sign-out').count(),1);
+ assert.equal(await p.locator('#cartel-account-email').textContent(),user.email);
+ assert.equal(await p.locator('#cartel-sign-out').evaluate(n=>getComputedStyle(n).position),'static');
+ const box=await p.locator('#cartel-account').boundingBox();assert(box&&box.x>=0&&box.x+box.width<=width);
+ assert(await p.locator('#cartel-sign-out').isVisible());
+ const iframe=await p.evaluateHandle(()=>{const f=document.createElement('iframe');f.src='/rrhh.html?embedded=1';document.body.append(f);return f;});
+ const frame=await (await iframe.asElement()).contentFrame();await frame.waitForLoadState();
+ assert.equal(await frame.locator('#cartel-account').count(),0);await iframe.evaluate(n=>n.remove());
+ results.push({accountWidth:width,insideNavigation:true,singleControl:true,embeddedNoDuplicate:true});
+}
+permission=false;await p.goto(origin+'/dashboard.html?actual=restricted');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-access-pending'));assert(await p.locator('aside .foot #cartel-sign-out').isVisible());assert.equal(await p.locator('#cartel-account').count(),1);results.push({restrictedNavigation:true});const second=await ctx.newPage();await second.goto(origin+'/dashboard.html?actual=2');await second.waitForFunction(()=>!document.documentElement.hasAttribute('data-session-pending'));
 p.once('dialog',d=>d.accept());await p.getByRole('button',{name:'Cerrar sesión',exact:true}).click();await p.waitForURL('**/rrhh-login.html?**');await second.waitForURL('**/rrhh-login.html?**');assert.equal(logoutRequests,1);results.push({actualDashboard:true,mobile:true,desktop:true,crossTab:true});
 for(const file of ['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']){console.log('Checking protected route',file);await p.goto(origin+'/'+file);await p.waitForURL('**/rrhh-login.html?**',{timeout:15000});results.push({protectedRoute:file,unauthenticatedRedirect:true});}
 await p.goto(origin+'/activar-cuenta.html');assert.equal(await p.locator('#cartel-sign-out').count(),0);assert.equal(await p.evaluate(()=>document.documentElement.hasAttribute('data-session-pending')),false);results.push({publicActivationUnchanged:true});await ctx.close();
