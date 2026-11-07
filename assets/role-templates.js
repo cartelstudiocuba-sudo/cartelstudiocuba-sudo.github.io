@@ -10,7 +10,7 @@ showRole=function(i){
    const {data:t,error}=await sb.rpc('system_role_template',{p_role:role.id});if(error)throw error;
    if(!box.isConnected)return;
    const ceiling=permissions.find(p=>p.access_role_id===role.id&&p.module_code==='inventario_insumos')||{};
-   box.innerHTML='<h3>Plantilla para nuevas cuentas</h3><p>Versión '+t.revision+'. Cambiar esta plantilla no modifica los accesos de ningún trabajador existente.</p><form><fieldset><legend>Inventario Insumos</legend><label><input type="checkbox" name="read"> Lectura</label><label><input type="checkbox" name="write"> Escritura</label><label><input type="checkbox" name="view"> Vista de Inventario Insumos como inicio</label></fieldset><p>Recursos Humanos y Usuarios y Accesos: solo propietario. La plantilla no puede superar los permisos autorizados del rol.</p><button type="submit" class="btn">Guardar plantilla</button><p role="status"></p></form>';
+   box.innerHTML='<h3>Plantilla de permisos y vistas</h3><p>Versión '+t.revision+'. Los permisos se utilizan en configuraciones nuevas. Las vistas requieren una aplicación administrativa explícita. Cambiar esta plantilla no modifica los accesos existentes.</p><form><fieldset><legend>Inventario Insumos</legend><label><input type="checkbox" name="read"> Lectura</label><label><input type="checkbox" name="write"> Escritura</label><label><input type="checkbox" name="view"> Vista de Inventario Insumos como inicio</label></fieldset><p>Recursos Humanos y Usuarios y Accesos: solo propietario. La plantilla no puede superar los permisos autorizados del rol.</p><button type="submit" class="btn">Guardar plantilla</button><p role="status"></p></form>';
    const form=box.querySelector('form'),status=box.querySelector('[role=status]');
    form.elements.read.checked=t.can_read;form.elements.write.checked=t.can_write;form.elements.view.checked=t.views.some(v=>v.code==='inventory_admin');
    form.elements.read.disabled=!ceiling.can_read;form.elements.write.disabled=!ceiling.can_write;
@@ -41,3 +41,4 @@ let accountTemplateToolsReady=false;
 function initializeAccountTemplateTools(){if(accountTemplateToolsReady)return;accountTemplateToolsReady=true;if(el('account-list').dataset.templatesReady!=='true')CartelLoad.run('account_template_tools',()=>loadAccounts());}
 document.addEventListener('cartel-access-ready',initializeAccountTemplateTools,{once:true});
 if(!el('app').classList.contains('hidden'))initializeAccountTemplateTools();
+
