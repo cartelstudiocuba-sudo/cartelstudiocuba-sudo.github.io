@@ -1,5 +1,5 @@
 window.CartelInterviewReminders={async mount(client){
- const permission=await client.rpc('system_has_permission',{module:'rrhh',operation:'write'});if(permission.error||!permission.data)return;
+ if(typeof client.rpc!=='function')return;let permission;try{permission=await client.rpc('system_has_permission',{module:'rrhh',operation:'write'});}catch{return;}if(permission.error||!permission.data)return;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const button=document.createElement('button');button.type='button';button.className='btn primary';button.id='interview-reminders-open';button.textContent='Enviar recordatorios';
  const attach=()=>{const host=document.querySelector('.agenda-view-modes')||document.querySelector('header .actions');if(host&&button.parentElement!==host)host.append(button);};attach();const observer=new MutationObserver(attach);observer.observe(document.body,{childList:true,subtree:true});

@@ -46,7 +46,7 @@
  root.addEventListener('unhandledrejection',()=>fail(failure('load_failed')));
  root.addEventListener('error',event=>{if(['ResizeObserver loop completed with undelivered notifications.','ResizeObserver loop limit exceeded'].includes(event.message)){record('layout','observer_deferred',0);return;}if(event.target&&event.target.tagName==='SCRIPT'||event instanceof ErrorEvent)fail(failure('load_failed'));},true);
  // Session controls are independent of module permissions and never write business data.
- const privatePages=new Set(['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
+ const privatePages=new Set(['medios.html','alta-trabajador.html','dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
  let sessionClient=null,signingOut=false,leavingSession=false;
  const privatePage=privatePages.has(root.location.pathname.split('/').pop());
  function concealSession(){document.documentElement.setAttribute('data-session-pending','');}

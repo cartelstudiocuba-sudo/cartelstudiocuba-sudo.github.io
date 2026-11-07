@@ -11,6 +11,16 @@ const context = {labels: {}, esc: String, trialPeriodsByCandidate: {},
   approvedField: () => '', approvedApplicationFields: () => '',
   approvedInterviewSummary: () => '', approvedInterviewRatingSummary: () => ''};
 vm.createContext(context);
+context.hiringCases={};
+context.employmentClosures={};
+context.trainingDecisionByTrial={};context.trainingNotificationByTrial={};
+context.hiringEsc=String;
+const onboardingRoute=fs.readFileSync(require('node:path').join(__dirname,'../assets/onboarding.js'),'utf8').split('\n').find(line=>line.startsWith('function onboardingRouteActions('));
+vm.runInContext(onboardingRoute,context);
+context.candidateRouteHistory={};context.interviews=[];
+vm.runInContext(extract('function candidateExitPhase(', 'function applyTrainingRouteEvents'),context);
+const hiringLabel=fs.readFileSync(require('node:path').join(__dirname,'../assets/hiring.js'),'utf8').split('\n').find(line=>line.startsWith('function hiringCandidateLabel('));
+vm.runInContext(hiringLabel,context);
 vm.runInContext(extract('function candidateGuidedFlow(x)', 'function openInitialDecision'), context);
 vm.runInContext(extract('function approvedCandidatePanel(', 'function approvedOpenVacancy'), context);
 (async () => {
@@ -40,7 +50,7 @@ vm.runInContext(extract('function approvedCandidatePanel(', 'function approvedOp
     context.candidates[0].status = status;
     const previousCount=updates.length;
     await context.postDecision('synthetic', decision);
-    if(status==='trial'){
+    if(status==='trial'&&decision==='talent_pool'){
       assert.equal(updates.length,previousCount);
       assert.equal(trialRoutes.at(-1).decision,decision);
       continue;
@@ -52,5 +62,5 @@ vm.runInContext(extract('function approvedCandidatePanel(', 'function approvedOp
   const reprofile = extract('async function openReprofile(', 'function showCandidateInterviewInline');
   assert(!reprofile.includes("['hired','trial']"));
   assert(reprofile.includes("update({vacancy_id:v.id,status:'new',decision_status:null,interview_availability_confirmed_at:null})"));
-  console.log('PASS: actions in all 9 statuses, trial destinations use transactional closure, rejection reason retained, files/history, other reprofile flow unchanged');
+  console.log('PASS: actions in all 9 statuses, trial talent-pool destination uses transactional closure, rejection reason retained, files/history, other reprofile flow unchanged');
 })().catch(error => { console.error(error); process.exitCode = 1; });

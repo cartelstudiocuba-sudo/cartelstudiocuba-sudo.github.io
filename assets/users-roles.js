@@ -193,3 +193,6 @@ function showAccessSection(section){
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles','views'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
 CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');document.dispatchEvent(new Event('cartel-access-ready'));}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
+
+// Authorized directory initialization exposes the direct labor-record workflow.
+document.addEventListener('cartel-access-ready',()=>{const tools=document.querySelector('.account-tools');if(tools&&!document.getElementById('direct-employee-link')){const link=document.createElement('a');link.id='direct-employee-link';link.className='btn';link.href='/alta-trabajador.html';link.textContent='+ Agregar nuevo usuario';tools.append(link);}});
