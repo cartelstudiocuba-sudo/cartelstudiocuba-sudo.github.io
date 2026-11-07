@@ -1,0 +1,23 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');const{PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
+const owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6';
+(async()=>{const db=new PGlite(),one=async(q,p=[])=>(await db.query(q,p)).rows[0],fail=async(q,p,re)=>assert.rejects(()=>db.query(q,p),re);let checks=0;const ok=x=>{assert(x);checks++;};
+await db.exec(`create role anon;create role authenticated;create schema auth;create schema studio_access_private;grant usage on schema auth,studio_access_private to authenticated,anon;create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.uid',true),'')::uuid$$;create function studio_access_private.is_owner() returns boolean language sql as $$select auth.uid()='${owner}'::uuid$$;create table studio_access_private.permission_audit(actor_id uuid,kind text,target text,after_data jsonb);`);
+await db.exec(fs.readFileSync(path.join(__dirname,'fixtures/trial-schema.sql'),'utf8').split('CREATE OR REPLACE FUNCTION')[0]);
+await db.exec('create table hr_interviews(id uuid primary key default gen_random_uuid(),candidate_id uuid,interview_date date,interview_time time,completed_at timestamptz,attendance_status text default \'pending\');');
+await db.exec(fs.readFileSync(path.join(__dirname,'../sql/interview-reminders.sql'),'utf8'));
+const identity=async(uid,role='authenticated')=>{await db.exec('reset role');await db.query("select set_config('request.uid',$1,false)",[uid||'']);await db.exec('set role '+role);};
+const tomorrow=(await one("select ((now() at time zone 'America/Havana')::date+1)::text d")).d;
+const vacancy=(await one("insert into hr_vacancies(title,slug) values('Plaza sintética','synthetic') returning id")).id;
+for(const [n,status,phone,attendance] of [['Programada','interview_scheduled','5355555555','pending'],['Cancelada','not_selected','5355555555','pending'],['Ausente','interview_scheduled','5355555555','no_show'],['Sin teléfono','interview_scheduled','','confirmed']]){const c=(await one('insert into hr_candidates(vacancy_id,full_name,whatsapp,status) values($1,$2,$3,$4) returning id',[vacancy,n,phone,status])).id;await db.query("insert into hr_interviews(candidate_id,interview_date,interview_time,attendance_status) values($1,$2,'10:00',$3)",[c,tomorrow,attendance]);}
+await identity(owner);let result=(await one('select hr_interview_reminders() r')).r;ok(result.rows.length===2);ok(result.date===tomorrow);ok(result.timezone==='America/Havana');ok(result.rows.every(r=>r.confirmed_at===null));
+const row=result.rows.find(r=>r.full_name==='Programada'),missing=result.rows.find(r=>r.full_name==='Sin teléfono');
+await fail("select hr_interview_reminders('confirm',$1,$2)",[row.id,row.slot],/Abre primero/);checks++;
+await fail("select hr_interview_reminders('opened',$1,'old')",[row.id],/cambió/);checks++;
+await fail("select hr_interview_reminders('opened',$1,$2)",[missing.id,missing.slot],/teléfono/);checks++;
+result=(await one("select hr_interview_reminders('opened',$1,$2) r",[row.id,row.slot])).r;ok(result.rows.find(r=>r.id===row.id).opened_at);ok(!result.rows.find(r=>r.id===row.id).confirmed_at);
+result=(await one("select hr_interview_reminders('confirm',$1,$2) r",[row.id,row.slot])).r;ok(result.rows.find(r=>r.id===row.id).confirmed_by===owner);await one("select hr_interview_reminders('confirm',$1,$2)",[row.id,row.slot]);
+await db.exec('reset role');ok(Number((await one('select count(*) n from studio_access_private.permission_audit')).n)===1);ok(Number((await one('select count(*) n from studio_access_private.interview_reminders')).n)===1);
+await identity('10000000-0000-4000-8000-000000000099');await fail('select hr_interview_reminders()',[],/Solo RRHH/);checks++;await fail('select * from studio_access_private.interview_reminders',[],/permission denied/);checks++;
+await identity(null,'anon');await fail('select hr_interview_reminders()',[],/permission denied/);checks++;
+await db.exec('reset role');ok((await one("select (('2026-11-01T03:30:00Z'::timestamptz at time zone 'America/Havana')::date+1)::text d")).d==='2026-11-01');
+console.log(JSON.stringify({passed:true,checks,productionWrites:0}));await db.close();})().catch(e=>{console.error(e);process.exit(1)});

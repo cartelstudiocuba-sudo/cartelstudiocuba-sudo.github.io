@@ -123,6 +123,8 @@
   client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!signingOut)leaveSession();});
   const mount=()=>{
    mountAccount();
+   if(/rrhh(?:-20261101)?\.html$/.test(root.location.pathname)){const style=document.createElement('style');style.textContent='#candidateDashboard .capture-public-actions .capture-public-link{display:none!important}';document.head.append(style);}
+
    if(root.location.pathname.endsWith('/plaza-ficha.html')){const employee=new URLSearchParams(root.location.search).get('return_employee');const back=document.querySelector('.back');if(employee&&back){back.href='/usuarios-permisos.html?employee='+encodeURIComponent(employee);back.textContent='← Ficha del usuario';}}
 
    void checkSession();

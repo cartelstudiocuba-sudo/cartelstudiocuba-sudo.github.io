@@ -30,3 +30,5 @@ async function confirmAgendaAbsence(){
  }catch(error){errorBox.textContent='No se pudo registrar la ausencia: '+(error.message||'Error de conexión. Puedes reintentar.');errorBox.hidden=false;}
  finally{agendaAbsenceSaving=false;dialog.removeAttribute('aria-busy');dialog.querySelectorAll('button').forEach(b=>b.disabled=false);if(saved)closeAgendaAbsence();}
 }
+
+{const script=document.createElement('script');script.src='/assets/interview-reminders.js?v=20261106-night';script.onload=()=>CartelInterviewReminders.mount(sb);document.head.append(script);}
