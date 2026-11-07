@@ -48,6 +48,7 @@
  // Session controls are independent of module permissions and never write business data.
  const privatePages=new Set(['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
  let sessionClient=null,signingOut=false,leavingSession=false;
+ privatePages.add('alta-trabajador.html');
  const privatePage=privatePages.has(root.location.pathname.split('/').pop());
  function concealSession(){document.documentElement.setAttribute('data-session-pending','');}
  function revealSession(){document.documentElement.removeAttribute('data-session-pending');}
@@ -147,3 +148,4 @@
  }
 
 })(window);
+
