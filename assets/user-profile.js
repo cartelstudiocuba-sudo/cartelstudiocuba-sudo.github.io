@@ -62,3 +62,4 @@ window.CartelUserProfile={enhance({root,u,name,initials,card,renderTab,close,sb,
  document.addEventListener('visibilitychange',refreshVisible);window.addEventListener('pageshow',refreshPage);
  const params=new URLSearchParams(location.search),initial=params.get('profile-tab')||'information',section=params.get('profile-section');show(initial);dialog.focus();load().then(()=>{if(section&&dialog.isConnected)legacy(section);});
 }};
+
