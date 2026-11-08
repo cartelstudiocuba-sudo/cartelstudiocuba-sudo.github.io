@@ -2,7 +2,7 @@
 const onboardingActivationMarker='[Enlace seguro de activación]';
 let employmentClosures={};
 async function loadEmploymentClosures(){const{data,error}=await sb.rpc('hr_offboarding',{p_employee:null,p_action:'list',p_payload:{}});if(error)throw Error('No se pudo comprobar el estado de las bajas. '+error.message);employmentClosures=Object.fromEntries((data||[]).filter(c=>c.candidate_id).map(c=>[String(c.candidate_id),c]));}
-function onboardingRouteActions(id,h){return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Configurar acceso al sistema →</button><a class="candidate-flow-action" href="/bajas.html?candidate='+encodeURIComponent(id)+'">13 · Efectuar baja →</a>';}
+function onboardingRouteActions(id,h){if(window.CartelEvolution?.onboarded(id))return '<a class="candidate-flow-action" href="/bajas.html?candidate='+encodeURIComponent(id)+'">13 · Efectuar baja →</a>';return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">Configurar acceso al sistema →</button><a class="candidate-flow-action" href="/bajas.html?candidate='+encodeURIComponent(id)+'">13 · Efectuar baja →</a>';}
 function onboardingMessage(name,username,email,activation,guide){return `Hola, ${name}. Tu cuenta de acceso a *nuestra Plataforma Automatizada* ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
 
 *DATOS DE ACCESO*
@@ -35,9 +35,9 @@ async function openSystemOnboarding(id){
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
  const content=document.createElement('div');dialog.append(content);
  let state,activation='',opened=false,editingConfiguration=false;
- const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/usuarios-permisos.html?section=users&employee='+encodeURIComponent(state.employee_id||'');a.textContent='Gestionar acceso';return a;};
+ const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/rrhh.html?employee='+encodeURIComponent(state.employee_id||'')+'&person-tab=access';a.onclick=e=>{if(window.CartelEvolution){e.preventDefault();overlay.remove();CartelEvolution.open('access');}};a.textContent='Gestionar acceso';return a;};
  const update=async()=>{
-  state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
+  state=await onboardingCall(id,'read');window.dispatchEvent(new CustomEvent('cartel-onboarding-updated',{detail:{id,state}}));if(!overlay.isConnected)return;
   const rolesResult=await sb.from('system_access_roles').select('id,title,code,is_active').eq('is_active',true).order('title');if(rolesResult.error)throw rolesResult.error;
   const roleList=rolesResult.data||[];
   content.replaceChildren();

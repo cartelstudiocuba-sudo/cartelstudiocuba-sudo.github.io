@@ -112,7 +112,7 @@ async function loadAccounts(){
        };
       });
     }
-    const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'};
+    const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'+(window.CartelEvolutionReturn?'&return_profile='+encodeURIComponent(window.CartelEvolutionReturn):'')};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
    const close=()=>{card.style.display='none';list.insertBefore(card,list.firstChild);root.innerHTML='';document.body.style.overflow=''};
@@ -187,7 +187,7 @@ if(new URLSearchParams(location.search).has('embedded'))document.body.classList.
 function showAccessSection(section){
  const selected=['users','roles','views'].includes(section)?section:'users';
  ['users','roles','views'].forEach(id=>el(id).classList.toggle('hidden',id!==selected));
- const names={users:'Usuarios',roles:'Roles',views:'Editor de vistas'};
+ const names={users:section==='workers'?'Trabajadores':'Administración de cuentas',roles:'Roles y permisos',views:'Vistas y plantillas'};
  const title=document.querySelector('main>header h1');if(title)title.textContent=names[selected];
  document.title=names[selected]+' · El Cartel Studio';
 }
@@ -196,4 +196,3 @@ CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb
 
 // Exposed only after the owner-authorized directory has loaded.
 document.addEventListener('cartel-access-ready',()=>{const tools=document.querySelector('.account-tools');if(tools&&!document.getElementById('direct-employee-link')){const link=document.createElement('a');link.id='direct-employee-link';link.className='btn';link.href='/alta-trabajador.html';link.textContent='Agregar nuevo usuario';tools.append(link);}});
-
