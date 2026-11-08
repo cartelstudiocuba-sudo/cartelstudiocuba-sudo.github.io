@@ -47,7 +47,7 @@
  root.addEventListener('error',event=>{if(['ResizeObserver loop completed with undelivered notifications.','ResizeObserver loop limit exceeded'].includes(event.message)){record('layout','observer_deferred',0);return;}if(event.target&&event.target.tagName==='SCRIPT'||event instanceof ErrorEvent)fail(failure('load_failed'));},true);
  // Session controls are independent of module permissions and never write business data.
  const privatePages=new Set(['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
- let sessionClient=null,signingOut=false,leavingSession=false;
+ let sessionClient=null,signingOut=false,leavingSession=false,documentUserId=null;
  privatePages.add('alta-trabajador.html');
  const privatePage=privatePages.has(root.location.pathname.split('/').pop());
  function concealSession(){document.documentElement.setAttribute('data-session-pending','');}
@@ -57,10 +57,16 @@
   // Discard in-memory views by replacing the document. Persistent user data stays intact.
   root.location.replace('/rrhh-login.html?next=%2Fdashboard.html'+(localOnly?'&logout=local-only':''));
  }
+ function sameDocumentUser(session){
+  const id=session?.user?.id;
+  if(documentUserId&&id!==documentUserId){leaveSession();return false;}
+  if(id)documentUserId=id;
+  return !leavingSession;
+ }
  async function checkSession(){
   if(!sessionClient||leavingSession)return;
   concealSession();
-  try{const {data,error}=await sessionClient.auth.getSession();if(error)throw error;if(!data.session)return leaveSession();updateAccount(data.session.user);revealSession();}
+  try{const {data,error}=await sessionClient.auth.getSession();if(leavingSession)return;if(error)throw error;if(!data.session)return leaveSession();if(!sameDocumentUser(data.session))return;updateAccount(data.session.user);revealSession();}
   catch(_){notice('No se pudo comprobar la sesión. Reintenta para continuar.',checkSession);}
  }
 
@@ -121,7 +127,7 @@
  }
  function installSession(client){
   if(!privatePage||sessionClient)return;sessionClient=client;
-  client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!signingOut)leaveSession();});
+  client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'&&!signingOut)leaveSession();else if(session)sameDocumentUser(session);});
   const mount=()=>{
    mountAccount();
    if(/rrhh(?:-20261101)?\.html$/.test(root.location.pathname)){const style=document.createElement('style');style.textContent='#candidateDashboard .capture-public-actions .capture-public-link{display:none!important}';document.head.append(style);}
@@ -148,4 +154,3 @@
  }
 
 })(window);
-

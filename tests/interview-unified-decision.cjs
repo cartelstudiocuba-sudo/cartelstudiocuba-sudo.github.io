@@ -27,6 +27,3 @@ for(const width of [390,1440]){
  assert.equal(realWrites,0);assert.deepEqual(errors,[]);results.push({width,actions:5,stateAliases:cases.length,mandatoryRequirements:true,errorRecovery:true,doubleClick:true,absenceHandledInAgenda:true,noOverflow:true,realWrites});await page.close();
 }
 await browser.close();console.log(JSON.stringify(results,null,2));})().catch(e=>{console.error(e);process.exit(1)});
-
-
-

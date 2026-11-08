@@ -70,4 +70,3 @@ const read=p=>fs.readFileSync(p,'utf8');
  tests.push('Legado q0–q15: cierre compatible, sin snapshot ni reasignación; no convertir entrevista histórica cerrada');
  fs.writeFileSync('tests/role-questionnaire-sql-results.json',JSON.stringify({passed:true,tests},null,2));console.log(tests.join('\n'));await db.close();
 })().catch(e=>{console.error(e);process.exitCode=1});
-

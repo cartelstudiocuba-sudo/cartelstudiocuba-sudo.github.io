@@ -51,7 +51,7 @@ for(const width of [390,1440]){
  await page.locator('.hiring-close').click();await page.evaluate(()=>resumeHiringConfirmation('synthetic'));assert(await page.getByRole('button',{name:'Reintentar avance al paso 12'}).isVisible());
  await page.evaluate(()=>failNotify=false);await page.getByRole('button',{name:'Reintentar avance al paso 12'}).click();await page.getByText('12 ·',{exact:false}).waitFor();
  assert.equal(await page.evaluate(()=>window.opens),openCount);assert.equal(await page.evaluate(()=>sessionStorage.getItem('cartel-hiring-pending:trial')),null);
- assert((await page.locator('#detailBody').innerText()).toLowerCase().includes('revisar expediente y contrato'));assert.equal(await page.evaluate(()=>candidates[0].status),'trial');assert.equal(await page.evaluate(()=>candidatePreviousStep(candidates[0],trialPeriodsByCandidate.synthetic).hiringBack),true);
+ assert((await page.locator('#detailBody').innerText()).toLowerCase().includes('inserción en sistema'));assert.equal(await page.evaluate(()=>candidates[0].status),'trial');assert.equal(await page.evaluate(()=>candidatePreviousStep(candidates[0],trialPeriodsByCandidate.synthetic).hiringBack),true);
  await page.screenshot({path:artifacts+'/automatic-step12-'+width+'.png'});
  assert.deepEqual(errors,[]);
  await page.addInitScript(()=>{if(!location.pathname.includes('rrhh'))return;
@@ -78,10 +78,7 @@ for(const width of [390,1440]){
  await page.evaluate(p=>{const h=JSON.parse(sessionStorage.getItem('fake-hiring'));delete h[0].notified_at;h[0].revoked_at='now';sessionStorage.setItem('fake-hiring',JSON.stringify(h));sessionStorage.setItem('cartel-hiring-pending:trial',p)},recovery);
  await page.reload();await page.locator('#detail .candidate-flow').waitFor({state:'visible'});assert((await page.locator('#detail .candidate-flow').innerText()).includes('Preparar contratación'));assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);
  await page.evaluate(()=>{hiringCases.synthetic={notified_at:'now'};openDetail('synthetic')});
- assert(await page.locator('#detail .candidate-route-controls>small').evaluate(el=>el.getBoundingClientRect().width>150));await page.locator('#detail .candidate-flow').screenshot({path:artifacts+'/flow-'+width+'.png'});assert.deepEqual(errors,[]);await page.close();
+ assert(await page.locator('#detail .candidate-flow').evaluate(el=>el.scrollWidth<=el.clientWidth));await page.locator('#detail .candidate-flow').screenshot({path:artifacts+'/flow-'+width+'.png'});assert.deepEqual(errors,[]);await page.close();
 }
 await browser.close();console.log('PASS: 390/1440px editable text, secure tokens, blocked popup, automatic step12, save failure/retry, single opening, double click, full app return/reload, interrupted save recovery, revoked-link guard, trial status and dashboard navigation. All requests intercepted; no messages or production writes.');
 })().catch(e=>{console.error(e);process.exit(1)});
-
-
-

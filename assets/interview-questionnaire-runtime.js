@@ -2,6 +2,7 @@
 let publishedSaveError=null;
 let questionnaireAutoLoadCandidate='';
 const questionnaireStates=new Map(),questionnaireLoads=new Map(),questionnaireLoadFailures=new Set();
+function questionnaireCall(name,args){return typeof CartelLoad!=='undefined'&&CartelLoad.deadline?CartelLoad.deadline(()=>sb.rpc(name,args),12000):sb.rpc(name,args);}
 function questionnaireState(id){id=String(id);if(!questionnaireStates.has(id))questionnaireStates.set(id,{pending:new Map(),error:null,loadError:null,message:'',flushing:null});return questionnaireStates.get(id);}
 function questionnaireRecord(id){return interviews.find(v=>String(v.candidate_id)===String(id));}
 function publishedInterviewRecord(data,candidateId){const row=Array.isArray(data)&&data.length===1?data[0]:data;if(!row||Array.isArray(row)||String(row.candidate_id)!==String(candidateId))throw Error('La respuesta del servidor no corresponde a esta entrevista.');return row;}
@@ -33,7 +34,7 @@ async function loadPublishedQuestionnaire(id,manual=false){
  id=String(id);if(questionnaireLoads.has(id))return questionnaireLoads.get(id);const iv=questionnaireRecord(id);if(!iv||iv.completed_at||iv.questionnaire_snapshot)return;
  if(!manual&&(questionnaireLoadFailures.has(id)||iv.questionnaire_required===false))return;
  const state=questionnaireState(id);state.loadError=null;state.message='Cargando cuestionario publicado de esta plaza…';questionnaireAutoLoadCandidate=id;
- const flight=(async()=>{try{const {data,error}=await sb.rpc('hr_begin_role_questionnaire',{p_candidate:id});if(error)throw error;const record=publishedInterviewRecord(data,id);interviews=interviews.filter(v=>String(v.candidate_id)!==id).concat(record);questionnaireLoadFailures.delete(id);state.message='Cuestionario publicado cargado. Las respuestas se guardan al salir del campo.';if(String(current?.id)===id){const pane=document.getElementById('interviewStepQuestionnaire');if(pane){pane.innerHTML=InterviewQuestionnaire.render(record,!record.completed_at);restorePublishedQuestionnaire();}}}catch(error){state.loadError=error;state.message='';questionnaireLoadFailures.add(id);questionnaireAutoLoadCandidate='';}finally{questionnaireLoads.delete(id);paintQuestionnaireStatus(id);}})();
+ const flight=(async()=>{try{const {data,error}=await questionnaireCall('hr_begin_role_questionnaire',{p_candidate:id});if(error)throw error;const record=publishedInterviewRecord(data,id);interviews=interviews.filter(v=>String(v.candidate_id)!==id).concat(record);questionnaireLoadFailures.delete(id);state.message='Cuestionario publicado cargado. Las respuestas se guardan al salir del campo.';if(String(current?.id)===id){const pane=document.getElementById('interviewStepQuestionnaire');if(pane){pane.innerHTML=InterviewQuestionnaire.render(record,!record.completed_at);restorePublishedQuestionnaire();}}}catch(error){state.loadError=error;state.message='';questionnaireLoadFailures.add(id);questionnaireAutoLoadCandidate='';}finally{questionnaireLoads.delete(id);paintQuestionnaireStatus(id);}})();
  questionnaireLoads.set(id,flight);paintQuestionnaireStatus(id);return flight;
 }
 async function ensurePublishedQuestionnaireForNewInterview(){const id=String(current?.id||'');if(id)return loadPublishedQuestionnaire(id);}
@@ -42,7 +43,7 @@ async function persistPublishedAnswer(candidateId,key,value,entry){
  const id=String(candidateId),iv=questionnaireRecord(id);if(!iv?.questionnaire_snapshot)throw Error('Inicia primero una versión publicada.');
  const expected=entry?entry.expected:iv.interview_notes?.[key]??null,revision=entry?.revision??iv.questionnaire_snapshot.revision;
  if(value===expected)return;
- const {data,error}=await sb.rpc('hr_save_role_interview_answer',{p_candidate:id,p_question:key,p_value:value,p_expected:expected,p_revision:revision});if(error)throw error;
+ const {data,error}=await questionnaireCall('hr_save_role_interview_answer',{p_candidate:id,p_question:key,p_value:value,p_expected:expected,p_revision:revision});if(error)throw error;
  Object.assign(iv,publishedInterviewRecord(data,id));if(window.parent!==window)window.parent.postMessage({type:'cartel-interview-progress-saved',candidateId:id},location.origin);
 }
 async function flushQuestionnaire(candidateId){
@@ -59,4 +60,3 @@ document.addEventListener('change',queuePublishedInput);document.addEventListene
 window.addEventListener('online',()=>{for(const [id,state] of questionnaireStates)if(state.pending.size&&state.error?.code!=='40001')enqueueQuestionnaireSave(id);});
 new MutationObserver(()=>restorePublishedQuestionnaire()).observe(document.getElementById('interviewBody')||document.body,{childList:true,subtree:true});
 window.addEventListener('beforeunload',event=>{capturePublishedQuestionnaire();if([...questionnaireStates.values()].some(s=>s.pending.size)){event.preventDefault();event.returnValue='';}});
-

@@ -1,8 +1,8 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),{webcrypto}=require('node:crypto');
-const source=fs.readFileSync(require('path').join(__dirname,'../supabase/functions/hr-onboarding/index.ts'),'utf8').replace(/^import .*\n/,'');
+const source=fs.readFileSync(require('path').join(__dirname,'../supabase/functions/hr-onboarding/index.ts'),'utf8').replace(/\r\n/g,'\n').replace(/^import .*\n/,'');
 const owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6',candidate='20000000-0000-4000-8000-000000000001',uid='10000000-0000-4000-8000-000000000002';
 const messageContext={};vm.createContext(messageContext);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../assets/onboarding.js'),'utf8'),messageContext);
-assert.equal(messageContext.onboardingMessage('[Nombre]','[Nombre de usuario]','[Correo registrado]','[Enlace seguro de activación]','[Enlace a la guía para Android y iPhone]').replace(/\*/g,''),fs.readFileSync(require('path').join(__dirname,'fixtures/onboarding-message.txt'),'utf8').trimEnd());
+assert.equal(messageContext.onboardingMessage('[Nombre]','[Nombre de usuario]','[Correo registrado]','[Enlace seguro de activación]','[Enlace a la guía para Android y iPhone]').replace(/\*/g,''),fs.readFileSync(require('path').join(__dirname,'fixtures/onboarding-message.txt'),'utf8').replace(/\r\n/g,'\n').trimEnd());
 function harness(){
  const state={authId:null,users:[],createCalls:0,mails:0,lease:null,cipher:null,expires:null,bindFail:false,lookupFail:false,other:false,roles:[],busy:false};let handler;
  const admin={auth:{getUser:async token=>({data:{user:token==='owner'?{id:owner}:token==='other'?{id:uid}:null},error:null}),admin:{listUsers:async()=>state.lookupFail?{error:{message:'unavailable'}}:{data:{users:state.users}},createUser:async input=>{state.createCalls++;assert.equal(input.email_confirm,false);assert.equal(input.password,undefined);const user={id:uid,email:input.email};state.users.push(user);return {data:{user}};}}},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:state.other?{id:'other'}:null,error:null})})})}),rpc:async(name,args)=>{

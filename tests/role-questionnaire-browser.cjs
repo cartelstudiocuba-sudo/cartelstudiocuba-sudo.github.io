@@ -74,5 +74,3 @@ const read=p=>fs.readFileSync(p,'utf8');
  fs.writeFileSync('tests/role-questionnaire-browser-results.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));
  }finally{await browser.close();await db.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
-
-
