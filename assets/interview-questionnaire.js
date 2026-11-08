@@ -28,6 +28,7 @@
   if(!qs.length&&!history.length)html='<p>Esta entrevista no tiene respuestas de cuestionario registradas.</p>';
   return html;
  }
- function missing(iv,notes){const qs=questions(iv);if(!qs.length)return ['Cuestionario publicado pendiente de iniciar'];return qs.filter(q=>q.required&&(!String(notes?.[q.id]||'').trim()||['Otra respuesta','No responde / no se abordó'].includes(notes[q.id])||(q.type==='select'&&!q.options.includes(notes[q.id])))).map(q=>q.text);}
+ function missing(iv,notes){const qs=questions(iv);if(!qs.length){if(iv?.questionnaire_required===false)return Array.from({length:16},(_,i)=>i).filter(i=>{const value=String(notes?.['q'+i+'_choice']||notes?.['q'+i]||'').trim();return !value||['Otra respuesta','No responde / no se abordó'].includes(value);}).map(i=>'Pregunta histórica '+(i+1));return ['Cuestionario publicado pendiente de iniciar'];}return qs.filter(q=>q.required&&(!String(notes?.[q.id]||'').trim()||['Otra respuesta','No responde / no se abordó'].includes(notes[q.id])||(q.type==='select'&&!q.options.includes(notes[q.id])))).map(q=>q.text);}
  global.InterviewQuestionnaire={questions,historical,rows,render,missing};
 })(window);
+

@@ -135,6 +135,8 @@ begin
  if iv.completed_at is not null then raise exception 'La entrevista está cerrada.' using errcode='23514';end if;
  select value into q from jsonb_array_elements(iv.questionnaire_snapshot->'questions') where value->>'id'=p_question;
  if q is null or p_value is null or length(p_value)>12000 or (q->>'type'='select' and p_value<>'' and not (q->'options' ? p_value)) then raise exception 'Respuesta inválida.' using errcode='23514';end if;
+ -- A lost response may be retried without overwriting a different concurrent value.
+ if iv.interview_notes->>p_question=p_value then return iv;end if;
  if iv.interview_notes->>p_question is distinct from p_expected then raise exception 'Otra sesión cambió esta respuesta. Recarga antes de guardar.' using errcode='40001';end if;
  update public.hr_interviews set interview_notes=coalesce(interview_notes,'{}')||jsonb_build_object(p_question,p_value),updated_at=clock_timestamp() where id=iv.id returning * into iv;
  if not found then raise exception 'No se pudo guardar.' using errcode='42501';end if;
@@ -142,3 +144,4 @@ begin
 end $$;
 revoke all on function public.hr_save_role_interview_answer(uuid,text,text,text,integer) from public,anon;
 grant execute on function public.hr_save_role_interview_answer(uuid,text,text,text,integer) to authenticated;
+

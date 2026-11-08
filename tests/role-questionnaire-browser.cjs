@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),vm=require('vm');
 const {chromium}=require('C:/Users/julio/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const {PGlite}=require('../../correcciones-cv/node_modules/@electric-sql/pglite');
+const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
 const read=p=>fs.readFileSync(p,'utf8');
 (async()=>{
  const db=new PGlite(),test=read('tests/role-questionnaire-sql.cjs');
@@ -42,14 +42,14 @@ const read=p=>fs.readFileSync(p,'utf8');
   for(let i=0;i<ids.length;i++){
    console.log('Viewport',width,'role',i);
    await page.evaluate(id=>startInterview(id),ids[i]);await page.waitForFunction(id=>interviewReadyId===id,ids[i]);await page.evaluate(()=>goInterviewStep(4));
-   if(i===2){await page.getByRole('button',{name:'Iniciar cuestionario publicado de esta plaza',exact:true}).click();assert.match(alerts.at(-1),/no tiene cuestionario/);assert.equal(await page.locator('[data-iq]').count(),0);continue}
-   await page.getByRole('button',{name:'Iniciar cuestionario publicado de esta plaza',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('[data-iq]').length>0);
+   if(i===2){assert.match(await page.locator('[data-questionnaire-status]').innerText(),/no tiene cuestionario publicado/);assert.equal(await page.locator('[data-iq]').count(),0);continue}
+   await page.waitForFunction(()=>document.querySelectorAll('[data-iq]').length>0);
    const n=all[i].questions.length;assert.equal(await page.locator('[data-iq]').count(),n);assert.ok((await page.locator('#interviewStepQuestionnaire').textContent()).includes('Histórico de origen incierto'));
    if(i===0){
     const key=all[i].questions[0].id;
     await db.query('select hr_save_role_interview_answer($1,$2,$3,$4,$5)',[ids[i],key,'Respuesta de otra sesión',null,1]);
     await page.locator('[data-iq]').first().fill('Edición sobre una copia desactualizada');await page.locator('[data-iq]').first().dispatchEvent('change');
-    await assert.rejects(()=>page.evaluate(()=>questionnaireSaveQueue));assert.ok(alerts.some(a=>a.includes('Otra sesión cambió')));
+    await page.evaluate(()=>questionnaireSaveQueue);assert.match(await page.locator('[data-questionnaire-status]').innerText(),/Otra sesión cambió/);assert.equal(await page.locator('[data-iq]').first().inputValue(),'Edición sobre una copia desactualizada');
     const saved=(await db.query('select interview_notes from hr_interviews where candidate_id=$1',[ids[i]])).rows[0];assert.equal(saved.interview_notes[key],'Respuesta de otra sesión');
     await page.reload();await page.waitForFunction(()=>candidates.length===5);await page.evaluate(id=>startInterview(id),ids[i]);await page.waitForFunction(id=>interviewReadyId===id,ids[i]);await page.evaluate(()=>goInterviewStep(4));
    }
@@ -74,3 +74,5 @@ const read=p=>fs.readFileSync(p,'utf8');
  fs.writeFileSync('tests/role-questionnaire-browser-results.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));
  }finally{await browser.close();await db.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+

@@ -1,5 +1,5 @@
 const fs=require('fs'),assert=require('assert/strict');
-const {PGlite}=require('../../correcciones-cv/node_modules/@electric-sql/pglite');
+const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
 const read=p=>fs.readFileSync(p,'utf8');
 (async()=>{
  const db=new PGlite();await db.exec(`create role anon; create role authenticated;
@@ -44,6 +44,9 @@ const read=p=>fs.readFileSync(p,'utf8');
   await reject('select hr_finalize_interview($1,$2,$3,$4)',[c.id,ratings,'pending','Prueba'],/Falta responder/);
   const save=async(id,value,expected=null)=>db.query('select hr_save_role_interview_answer($1,$2,$3,$4,$5)',[c.id,id,value,expected,1]);
   await save(questions[0].id,'Respuesta');
+  const beforeRetry=await one('select updated_at from hr_interviews where id=$1',[iv.id]);
+  await save(questions[0].id,'Respuesta');
+  assert.deepEqual((await one('select updated_at from hr_interviews where id=$1',[iv.id])).updated_at,beforeRetry.updated_at);
   await assert.rejects(()=>save(questions[0].id,'Cambio concurrente'),/Otra sesión/);
   await assert.rejects(()=>save(questions[2].id,'Fuera de opciones'),/inválida/);
   await save(questions[2].id,'Sí');
@@ -67,3 +70,4 @@ const read=p=>fs.readFileSync(p,'utf8');
  tests.push('Legado q0–q15: cierre compatible, sin snapshot ni reasignación; no convertir entrevista histórica cerrada');
  fs.writeFileSync('tests/role-questionnaire-sql-results.json',JSON.stringify({passed:true,tests},null,2));console.log(tests.join('\n'));await db.close();
 })().catch(e=>{console.error(e);process.exitCode=1});
+
