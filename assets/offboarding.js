@@ -7,7 +7,7 @@ const reasons=['Renuncia voluntaria','Decisión de la empresa','Mutuo acuerdo','
 const fields=f=>Object.fromEntries(new FormData(f));
 function error(e){notice.className='error';notice.textContent=e.message||String(e);}
 async function rpc(action,payload={}){const{data,error:e}=await ob.rpc('hr_offboarding',{p_employee:employeeId||null,p_action:action,p_payload:{revision:state?.case?.revision,...payload}});if(e)throw Error(e.message);return data;}
-async function act(action,payload={}){if(busy)return;busy=true;app.querySelectorAll('button').forEach(b=>b.disabled=true);notice.textContent='';try{state=await rpc(action,payload);render();return state;}catch(e){error(e);await load().catch(()=>{});}finally{busy=false;app.querySelectorAll('button').forEach(b=>b.disabled=false);}}
+async function act(action,payload={}){if(busy)return;window.OffboardingPreparation?.capture();busy=true;app.querySelectorAll('button').forEach(b=>b.disabled=true);notice.textContent='';try{state=await rpc(action,payload);window.OffboardingPreparation?.committed(action,payload);render();return state;}catch(e){error(e);await load().catch(()=>{});}finally{busy=false;app.querySelectorAll('button').forEach(b=>b.disabled=false);window.OffboardingPreparation?.constraints();}}
 function bind(id,fn){document.getElementById(id)?.addEventListener('click',fn);}
 function item(k,v){return '<div><small>'+esc(k)+'</small><div>'+esc(v||'Pendiente')+'</div></div>';}
 function form(id,content,label){return '<form id="'+id+'">'+content+'<button class="primary" type="submit">'+label+'</button></form>';}
