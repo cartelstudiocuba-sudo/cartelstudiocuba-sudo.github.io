@@ -30,7 +30,7 @@ Contratados y Bajas desaparecen del menú lateral como entradas independientes; 
 
 La configuración guardada o un acceso anterior protegido deja Paso 13 — Efectuar baja como siguiente acción, sin ejecutar ninguna baja. Crear la cuenta, preparar activación y notificar siguen siendo acciones explícitas recuperables mediante Gestionar acceso. Se conservan los estados distintos de configuración, cuenta creada, notificación y activación. El estado Contratado no acredita por sí solo contrato firmado ni expediente formalizado: el flujo original sigue verificando ambas condiciones.
 
-Los trabajadores sin cuenta y las altas directas no deben recorrer etapas de selección que no les corresponden. Los formularios y consultas conservan una ruta de regreso a la misma persona y pestaña. Las subinterfaces conservan su estado al cambiar de pestaña; los diálogos tienen un tamaño acotado para seguir siendo utilizables en móvil. La navegación por teclado de una sección integrada no atrapa el foco como si fuera una ventana modal independiente.
+Los trabajadores sin cuenta y las altas directas no deben recorrer etapas de selección que no les corresponden. Los enlaces heredados de los editores de expediente y plaza regresan a la ficha en lugar de abrir Contratados. Los formularios y consultas conservan una ruta de regreso a la misma persona y pestaña. Las subinterfaces conservan su estado al cambiar de pestaña; los diálogos tienen un tamaño acotado para seguir siendo utilizables en móvil. La navegación por teclado de una sección integrada no atrapa el foco como si fuera una ventana modal independiente.
 
 ## Cambios imprescindibles de base de datos
 
