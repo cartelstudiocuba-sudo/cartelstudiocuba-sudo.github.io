@@ -36,8 +36,7 @@ loadAccounts=async function(){
  el('account-list').dataset.templatesReady='true';
  const params=new URLSearchParams(location.search),employee=params.get('employee'),user=params.get('user');if(employee||user){const index=accounts.findIndex(u=>employee?u.employee_id===employee:u.id===user);if(index>=0)document.querySelectorAll('#account-list > .account-item')[index]?.click();}
 };
-const templateNotice=document.createElement('p');templateNotice.className='notice';templateNotice.textContent='Las plantillas permanentes de acceso se administran en Roles. El editor visual conserva únicamente borradores de diseño; no concede permisos.';document.getElementById('views')?.prepend(templateNotice);
 let accountTemplateToolsReady=false;
 function initializeAccountTemplateTools(){if(accountTemplateToolsReady)return;accountTemplateToolsReady=true;if(el('account-list').dataset.templatesReady!=='true')CartelLoad.run('account_template_tools',()=>loadAccounts());}
 document.addEventListener('cartel-access-ready',initializeAccountTemplateTools,{once:true});
-if(!el('app').classList.contains('hidden'))initializeAccountTemplateTools();
+if(accessSection!=='views'&&!el('app').classList.contains('hidden'))initializeAccountTemplateTools();

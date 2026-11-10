@@ -178,7 +178,7 @@ function initViewEditor(){
  select.onchange=loadViewEditor;
  ['view-title','view-description','view-layout','view-device'].forEach(id=>el(id).addEventListener('input',renderViewPreview));
  document.querySelectorAll('[data-view-block]').forEach(x=>x.addEventListener('change',renderViewPreview));
- el('view-save').onclick=()=>{try{localStorage.setItem(viewKey(),JSON.stringify(viewConfig()));el('view-message').textContent='Borrador guardado en este navegador. No publicado.'}catch(e){el('view-message').textContent='No se pudo guardar el borrador: '+e.message}};
+ el('view-save').onclick=()=>{if(!el('view-role').value)return;try{localStorage.setItem(viewKey(),JSON.stringify(viewConfig()));el('view-message').textContent='Borrador guardado en este navegador. No publicado.'}catch(e){el('view-message').textContent='No se pudo guardar el borrador: '+e.message}};
  el('view-reset').onclick=()=>{try{localStorage.removeItem(viewKey())}catch{}loadViewEditor()};
  loadViewEditor();
 }
@@ -187,12 +187,12 @@ if(new URLSearchParams(location.search).has('embedded'))document.body.classList.
 function showAccessSection(section){
  const selected=['users','roles','views'].includes(section)?section:'users';
  ['users','roles','views'].forEach(id=>el(id).classList.toggle('hidden',id!==selected));
- const names={users:section==='workers'?'Trabajadores':'Administración de cuentas',roles:'Roles y permisos',views:'Vistas y plantillas'};
+ const names={users:section==='workers'?'Trabajadores':'Administración de cuentas',roles:'Roles y permisos',views:'Centro de Vistas y Plantillas'};
  const title=document.querySelector('main>header h1');if(title)title.textContent=names[selected];
  document.title=names[selected]+' · El Cartel Studio';
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','roles','views'].forEach(x=>el(x).classList.toggle('hidden',x!==b.dataset.tab));});
-CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];await loadAccounts();await loadPermissions();renderRoles();initViewEditor();showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');document.dispatchEvent(new Event('cartel-access-ready'));}catch(e){el('gate').textContent='No se pudo abrir la gestión de usuarios: '+e.message;}});
+CartelLoad.run('initialization',async()=>{try{const {data:{user},error}=await sb.auth.getUser();if(error||!user){el('gate').textContent='Inicia sesión para consultar Usuarios y Roles.';return;}const r=await sb.from('system_access_roles').select('*').order('title');if(r.error)throw r.error;roles=r.data||[];if(accessSection==='views'){await CartelViewsCenter.mount(sb,roles);initViewEditor();}else{await loadAccounts();await loadPermissions();renderRoles();}showAccessSection(accessSection);el('gate').classList.add('hidden');el('app').classList.remove('hidden');if(accessSection!=='views')document.dispatchEvent(new Event('cartel-access-ready'));}catch(e){el('gate').textContent=accessSection==='views'?(e.code==='42501'?'Solo el propietario puede abrir el Centro de Vistas y Plantillas.':'No se pudo cargar el Centro de Vistas y Plantillas. Recarga para reintentar.'):'No se pudo abrir la gestión de usuarios: '+e.message;}});
 
 // Exposed only after the owner-authorized directory has loaded.
 document.addEventListener('cartel-access-ready',()=>{const tools=document.querySelector('.account-tools');if(tools&&!document.getElementById('direct-employee-link')){const link=document.createElement('a');link.id='direct-employee-link';link.className='btn';link.href='/alta-trabajador.html';link.textContent='Agregar nuevo usuario';tools.append(link);}});
