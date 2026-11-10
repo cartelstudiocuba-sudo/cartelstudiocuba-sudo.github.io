@@ -90,7 +90,7 @@ async function loadAccounts(){
     if(tab==='views'&&u.employee_id){
       const panel=summary.querySelector('.access-info-card');
       const editor=document.createElement('div');editor.className='profile-view-manager';panel.prepend(editor);
-      const catalog=[{code:'inventory_admin',name:'Inventario · Administrador',description:'Vista operativa de insumos'},{code:'audiovisual_lead',name:'Audiovisuales · Jefe de Área',description:'Vista reservada para configuración futura'}];
+      const catalog=[{code:'inventory_admin',name:'Inventario · Administrador',description:'Vista operativa de insumos'},{code:'inventory_graphics_read',name:'Consulta de Insumos — Gráfica',description:'Consulta individual de Gráfica, sin operaciones ni datos económicos'},{code:'audiovisual_lead',name:'Audiovisuales · Jefe de Área',description:'Vista reservada para configuración futura'}];
       sb.rpc('system_owner_employee_views',{p_employee:u.employee_id}).then(({data,error})=>{
        if(error){editor.textContent='No se pudieron consultar las vistas: '+error.message;return;}
        const assigned=data||[];

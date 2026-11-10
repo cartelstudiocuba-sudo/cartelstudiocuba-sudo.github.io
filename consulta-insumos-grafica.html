@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101216"><title>Consulta de Insumos — Gráfica · Cartel Gestión</title><script src="/assets/vendor/supabase-2.117.3.min.js"></script><script src="/assets/loading-runtime.js?v=20261108-session"></script><link rel="stylesheet" href="/assets/graphics-consultation.css"></head>
+<body><main>
+<header><div><p class="eyebrow">CARTEL GESTIÓN · DEPARTAMENTO GRÁFICA</p><h1>Consulta de Insumos — Gráfica</h1><p class="intro">Existencias del almacén · Solo consulta</p></div><a href="/dashboard.html" class="back">Volver al inicio</a></header>
+<section class="toolbar" aria-label="Buscar insumos"><label for="search">Buscar insumos<input id="search" type="search" maxlength="200" placeholder="Nombre, color, talla, material o código…" autocomplete="off" disabled></label><button id="refresh" type="button" disabled>Actualizar existencias</button></section>
+<p class="hint">Busca las características tal como aparecen en el nombre del producto.</p>
+<p id="status" role="status" aria-live="polite">Comprobando acceso…</p><p id="updated" class="hint"></p>
+<section id="products" class="products" aria-label="Insumos disponibles" aria-busy="true"></section>
+<nav class="pages" aria-label="Páginas de insumos"><button id="previous" hidden>Anterior</button><button id="next" hidden>Siguiente</button></nav>
+<dialog id="detail" aria-labelledby="detail-title"><div class="detail-head"><span class="eyebrow">FICHA · SOLO LECTURA</span><button id="close-detail" aria-label="Cerrar ficha">×</button></div><h2 id="detail-title">Ficha del insumo</h2><div id="detail-body"></div></dialog>
+</main><script src="/assets/graphics-consultation.js"></script></body></html>

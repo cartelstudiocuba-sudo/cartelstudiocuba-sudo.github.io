@@ -182,7 +182,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   const {data,error}=await CartelLoad.read('personal_navigation',()=>client.rpc('system_my_navigation'));if(error||!data)return;
   if(data.is_owner)return;
   const views=Array.isArray(data.views)?data.views:[];
-  const catalog={inventory_admin:{group:'Inventario',title:'Administrador',url:'/inventario-insumos.html',icon:'◇'},audiovisual_lead:{group:'Audiovisuales',title:'Jefe de Área',url:null,icon:'♙'}};
+  const catalog={inventory_admin:{group:'Inventario',title:'Administrador',url:'/inventario-insumos.html',icon:'◇'},inventory_graphics_read:{group:'Inventario',title:'Consulta de Insumos — Gráfica',url:'/consulta-insumos-grafica.html',icon:'◇'},audiovisual_lead:{group:'Audiovisuales',title:'Jefe de Área',url:null,icon:'♙'}};
   nav.querySelectorAll(':scope > *').forEach(node=>{if(!node.matches('[data-home]'))node.hidden=true});
   const grouped=new Map();
   views.forEach(v=>{const def=catalog[v.code];if(!def)return;if(!grouped.has(def.group))grouped.set(def.group,[]);grouped.get(def.group).push({...def,code:v.code})});
