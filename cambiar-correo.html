@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><title>Cambiar correo · Cartel Gestión</title><script src="/assets/vendor/supabase-2.117.3.min.js"></script>
+<style>*{box-sizing:border-box}body{margin:0;background:#090909;color:#fff;font:16px system-ui,sans-serif}.card{max-width:540px;margin:7vh auto;padding:28px;background:#151515;border:1px solid #353535;border-radius:22px}h1{font-size:30px}p{line-height:1.6;color:#c6c6c6}.brand,a{color:#ffda03}label{display:block;margin:20px 0 8px}input,button{width:100%;padding:14px;border-radius:12px;font:inherit}input{background:#090909;border:1px solid #555;color:#fff}button{margin-top:16px;background:#ffda03;border:0;font-weight:750;cursor:pointer}button:disabled{opacity:.5;cursor:default}#status{padding:14px;background:#090909;border:1px solid #555;border-radius:12px;white-space:pre-wrap}small{display:block;margin-top:12px;color:#bbb}[hidden]{display:none!important}</style></head>
+<body><main class="card"><div class="brand">CARTEL GESTIÓN</div><h1>Cambiar correo</h1>
+<p>Abre primero el enlace de acceso recibido en tu correo anterior. Si el enlace muestra una pantalla para crear contraseña, vuelve aquí en ese mismo navegador; este cambio no requiere guardar otra contraseña.</p>
+<p id="account">Comprobando la cuenta…</p>
+<form id="change" hidden><label for="email">Nuevo correo electrónico</label><input id="email" type="email" autocomplete="email" required maxlength="254"><button id="submit">Solicitar cambio con confirmación</button></form>
+<button id="check">Comprobar cuenta y confirmación</button><p id="status" role="status" aria-live="polite">Preparando…</p>
+<small>Confirma los mensajes que solicite el servicio, en el correo anterior y en el nuevo. Después vuelve a esta pestaña y pulsa Comprobar. La entrega del correo no se puede confirmar desde esta pantalla.</small>
+<p><a href="/rrhh-login.html">Volver al acceso</a></p></main>
+<script>
+'use strict';
+const client=supabase.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const expectedUser='ff6bcd72-963c-4ea4-9a33-1722fe44c384';
+const form=document.getElementById('change'),account=document.getElementById('account'),status=document.getElementById('status'),submit=document.getElementById('submit'),check=document.getElementById('check'),email=document.getElementById('email');
+let busy=false;
+async function readAccount(){
+ const {data,error}=await client.auth.getUser();
+ if(error||!data?.user){form.hidden=true;account.textContent='No hay una sesión verificada para este cambio.';status.textContent='Abre el enlace de acceso del correo anterior en este navegador y vuelve aquí.';return null;}
+ const user=data.user;
+ if(user.id!==expectedUser){form.hidden=true;account.textContent='Esta sesión corresponde a otra cuenta.';status.textContent='No se ha solicitado ningún cambio. Abre el enlace del correo anterior en otro perfil o navegador para conservar tu sesión de administrador.';return null;}
+ account.textContent='Cuenta verificada: '+user.email;
+ form.hidden=false;
+ if(user.new_email&&user.new_email!==user.email){status.textContent='Cambio pendiente de confirmación a '+user.new_email+'. Revisa los correos requeridos; el cambio todavía no está completado.';submit.disabled=true;}
+ else{submit.disabled=false;status.textContent='Sesión verificada. Correo actual: '+user.email+'. Si ya confirmaste el nuevo correo, avisa a administración para verificar y sincronizar el expediente antes de probar el usuario habitual.';}
+ return user;
+}
+form.addEventListener('submit',async event=>{
+ event.preventDefault();if(busy)return;busy=true;submit.disabled=true;check.disabled=true;
+ try{
+  const user=await readAccount();if(!user)return;
+  const target=email.value.trim().toLowerCase();
+  if(!target||!email.checkValidity())throw Error('Escribe un correo válido.');
+  if(user.email?.toLowerCase()===target)throw Error('Ese ya es el correo actual. No se solicitó otro cambio.');
+  if(user.new_email&&user.new_email!==user.email)throw Error('Ya hay un cambio pendiente. Confírmalo antes de solicitar otro.');
+  // Pin this request to the verified account even if another tab changes its session.
+  const sessionResult=await client.auth.getSession();
+  const session=sessionResult.data?.session;
+  if(sessionResult.error||session?.user?.id!==expectedUser)throw Error('La sesión cambió. Vuelve a comprobar la cuenta.');
+  const requestClient=supabase.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+  const pinned=await requestClient.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
+  if(pinned.error)throw Error('No se pudo verificar la sesión para el cambio.');
+  const identity=await requestClient.auth.getUser();
+  if(identity.error||identity.data?.user?.id!==expectedUser)throw Error('La sesión no corresponde a la cuenta seleccionada.');
+  const {error}=await requestClient.auth.updateUser({email:target},{emailRedirectTo:location.origin+'/reset-password.html'});
+  if(error)throw Error('El servicio no confirmó la solicitud: '+error.message);
+  const verified=await readAccount();if(!verified)return;
+  if(verified.email?.toLowerCase()!==target)status.textContent='Solicitud aceptada por Auth. Falta confirmar el cambio a '+target+'. Revisa el correo anterior y el nuevo. La entrega no está verificada.';
+  else status.textContent='Auth muestra el nuevo correo: '+verified.email+'. Administración debe comprobar la confirmación y sincronizar el expediente. Esta pantalla no confirma ese paso.';
+ }catch(error){status.textContent=error.message||'No se pudo comprobar la operación.';}
+ finally{busy=false;check.disabled=false;submit.disabled=false;}
+});
+check.addEventListener('click',async()=>{if(busy)return;busy=true;check.disabled=true;try{await readAccount();}catch{status.textContent='No se pudo comprobar la cuenta. Reintenta.';}finally{busy=false;check.disabled=false;}});
+readAccount().catch(()=>{status.textContent='No se pudo comprobar la cuenta. Reintenta.';});
+</script></body></html>
