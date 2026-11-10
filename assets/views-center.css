@@ -7,8 +7,8 @@
 .vc-nav button[aria-pressed=true]{background:var(--vc-accent);color:#17191c;border-color:var(--vc-accent)}
 .vc-nav button:hover,.vc-actions :is(button,a):hover{border-color:var(--vc-accent)}
 .vc-tools,.vc-grid{display:grid;gap:16px;align-items:start}
+.vc-grid{grid-template-columns:minmax(210px,.65fr) minmax(0,1.35fr)}
 .vc-tools{grid-template-columns:minmax(0,1fr) minmax(155px,230px)}
-.vc-grid{grid-template-columns:minmax(0,1fr) minmax(250px,.8fr)}
 #views :is(.vc-tools,#vc-access)>label{display:grid;gap:7px;font-weight:650}
 #views :is(.vc-tools,#vc-access) :is(input,select){box-sizing:border-box;width:100%;min-width:0;min-height:44px;border:1px solid var(--vc-border);border-radius:10px;background:#191d23;color:#f5f6f8;padding:9px 12px;font:inherit}
 .vc-muted{color:var(--vc-muted)}
@@ -27,5 +27,14 @@
 .vc-actions{margin-top:15px}
 .vc-people{padding:0;list-style:none}
 .vc-people li{display:grid;gap:3px;border-bottom:1px solid var(--vc-border);padding:10px 0}
-@media(max-width:720px){.vc-grid{grid-template-columns:1fr}.vc-panel{padding:15px}.vc-nav button{flex:1 1 auto;justify-content:center}}
+@media(max-width:720px){.vc-grid{grid-template-columns:minmax(0,1fr)}.vc-panel{padding:15px}.vc-nav button{flex:1 1 auto;justify-content:center}}
 @media(max-width:420px){.vc-tools{grid-template-columns:1fr}}
+.vc-preview{margin-top:16px}
+.vc-preview h3{margin:0 0 10px;font-size:1rem}
+.vc-preview-devices{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.vc-preview-devices button{min-height:44px;padding:6px 11px;border:1px solid var(--vc-border);border-radius:8px;background:#191d23;color:#f5f6f8;font:inherit;cursor:pointer}
+.vc-preview-devices button[aria-pressed=true]{background:var(--vc-accent);color:#17191c;border-color:var(--vc-accent)}
+.vc-preview-stage{box-sizing:border-box;border:1px solid var(--vc-border);border-radius:12px;background:#15181d;overflow:hidden}
+.vc-preview-viewport{position:relative;overflow:hidden;margin:auto}
+.vc-preview-frame{position:absolute;inset:0;display:block;border:0;transform-origin:top left;background:#15181d;pointer-events:none}
+.vc-actions:empty{display:none}

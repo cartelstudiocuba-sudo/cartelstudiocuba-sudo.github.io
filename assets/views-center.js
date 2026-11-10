@@ -60,6 +60,101 @@ const CartelViewsCenter = (() => {
   return views;
  }
 
+ const devices = [
+  {label: 'Escritorio', width: 1280, height: 800},
+  {label: 'Tablet', width: 768, height: 1024},
+  {label: 'Móvil', width: 390, height: 844}
+ ];
+
+ function createPreview() {
+  let device = devices[0];
+  const section = node('section', '', 'vc-preview');
+  const heading = node('h3', 'Visor preliminar');
+  heading.id = 'vc-preview-heading';
+  section.setAttribute('aria-labelledby', heading.id);
+  const controls = node('div', '', 'vc-preview-devices');
+  controls.setAttribute('role', 'group');
+  controls.setAttribute('aria-label', 'Dispositivo de previsualización');
+  const status = node('p', '', 'vc-muted');
+  status.setAttribute('role', 'status');
+  const stage = node('div', '', 'vc-preview-stage');
+  const viewport = node('div', '', 'vc-preview-viewport');
+  stage.append(viewport);
+  section.append(heading, controls, status, stage);
+
+  let frame;
+  let current;
+  function fit() {
+   if (!frame || !stage.clientWidth) return;
+   const scale = Math.min(1, stage.clientWidth / device.width);
+   frame.style.width = device.width + 'px';
+   frame.style.height = device.height + 'px';
+   frame.style.transform = 'scale(' + scale + ')';
+   viewport.style.width = device.width * scale + 'px';
+   viewport.style.height = device.height * scale + 'px';
+  }
+  new ResizeObserver(fit).observe(stage);
+
+  const buttons = devices.map(mode => {
+   const button = node('button', mode.label);
+   button.type = 'button';
+   button.onclick = () => {
+    device = mode;
+    buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    fit();
+   };
+   button.setAttribute('aria-pressed', String(mode === device));
+   controls.append(button);
+   return button;
+  });
+
+  function update(view, allowed) {
+   const url = allowed ? view.url : null;
+   // Keep the iframe during layout and filter updates for the same authorized route.
+   if (current === view && frame && url) return;
+   current = view;
+   viewport.replaceChildren();
+   frame = null;
+   controls.hidden = stage.hidden = !url;
+   status.hidden = false;
+   if (!url) {
+    status.textContent = !view ? 'Selecciona una vista para previsualizarla.' :
+     view.state === 'draft' ? 'La previsualización del borrador está en Diseño y borradores.' :
+     view.url ? 'La sesión actual no tiene acceso a esta vista.' :
+     'Esta vista todavía no tiene una ruta habilitada.';
+    return;
+   }
+   status.textContent = 'Cargando vista…';
+   const preview = node('iframe', '', 'vc-preview-frame');
+   preview.title = 'Vista preliminar de ' + view.title;
+   preview.tabIndex = -1;
+   preview.inert = true;
+   preview.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+   preview.addEventListener('load', () => {
+    if (frame !== preview) return;
+    try {
+     const expected = new URL(url, location.origin);
+     if (preview.contentWindow.location.pathname === expected.pathname) {
+      status.hidden = true;
+      return;
+     }
+    } catch {
+     // The embedded route may redirect to an authentication page.
+    }
+    frame = null;
+    viewport.replaceChildren();
+    stage.hidden = true;
+    controls.hidden = true;
+    status.textContent = 'La vista no está disponible para previsualizar. Usa Abrir vista para continuar.';
+   });
+   frame = preview;
+   preview.src = url;
+   viewport.append(preview);
+   fit();
+  }
+  return {section, update};
+ }
+
  async function mount(client, roles) {
   // Request private authorization first. The catalog is built only for an authorized session.
   const {data, error} = await client.rpc('system_view_center_access');
@@ -75,6 +170,10 @@ const CartelViewsCenter = (() => {
   const detail = byId('vc-detail');
   const accessSelect = byId('vc-access-select');
   const audience = byId('vc-audience');
+  const preview = createPreview();
+  const metadata = node('div');
+  const detailActions = node('div', '', 'vc-actions');
+  detail.append(metadata, preview.section, detailActions);
   const statuses = {published: 'Publicada', pending: 'Pendiente de configuración', draft: 'Borrador local'};
   const users = view => data.effective[view.scope] || [];
   const assignments = view => view.code ? data.assigned[view.code] || 0 : users(view).length;
@@ -97,6 +196,7 @@ const CartelViewsCenter = (() => {
     byId('vc-' + button.dataset.vcTab).hidden = !active;
    }
    if (name === 'catalog') renderList();
+   if (name !== 'catalog') preview.update(null, false);
    if (name === 'access') renderAccess();
   }
 
@@ -146,16 +246,15 @@ const CartelViewsCenter = (() => {
   }
 
   function renderDetail() {
-   detail.replaceChildren();
-   if (!selected) {
-    detail.append(node('p', 'Selecciona una vista para consultar sus detalles.', 'vc-muted'));
-    return;
-   }
+   metadata.replaceChildren();
+   detailActions.replaceChildren();
    const view = selected;
-   detail.append(node('p', view.group, 'vc-muted'), node('h2', view.title), node('p', statuses[view.state], 'vc-status'));
-   const actions = node('div', '', 'vc-actions');
+   const allowed = Boolean(view?.url && users(view).some(user => user.owner));
+   preview.update(view, allowed);
+   if (!view) return;
+   metadata.append(node('p', view.group, 'vc-muted'), node('h2', view.title), node('p', statuses[view.state], 'vc-status'));
    if (view.state === 'draft') {
-    detail.append(node('p', view.role));
+    metadata.append(node('p', view.role));
     const edit = node('button', 'Abrir borrador');
     edit.onclick = () => {
      byId('view-role').value = view.roleId;
@@ -163,17 +262,15 @@ const CartelViewsCenter = (() => {
      showTab('design');
      byId('view-role').focus();
     };
-    actions.append(edit);
+    detailActions.append(edit);
    } else {
-    if (view.url) detail.append(node('code', view.url));
-    if (view.url && users(view).some(user => user.owner)) {
+    if (view.url) metadata.append(node('code', view.url));
+    if (allowed) {
      const open = node('a', 'Abrir vista ↗');
      open.href = view.url;
      open.target = '_blank';
      open.rel = 'noopener';
-     actions.append(open);
-    } else if (view.url) {
-     detail.append(node('p', 'La vista requiere una sesión con acceso a esta ruta.', 'vc-muted'));
+     detailActions.append(open);
     }
     const access = node('button', 'Consultar accesos');
     access.onclick = () => {
@@ -181,9 +278,8 @@ const CartelViewsCenter = (() => {
      showTab('access');
      accessSelect.focus();
     };
-    actions.append(access);
+    detailActions.append(access);
    }
-   detail.append(actions);
   }
 
   function renderAccess() {
