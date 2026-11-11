@@ -66,6 +66,9 @@ const CartelViewsCenter = (() => {
   {label: 'Móvil', width: 390, height: 844}
  ];
 
+ // Only reviewed routes with read-only startup are eligible for live embedding.
+ const liveRoutes = new Set(['/dashboard.html', '/inventario-insumos.html', '/consulta-insumos-grafica.html']);
+
  function createPreview() {
   let device = devices[0];
   const section = node('section', '', 'vc-preview');
@@ -108,22 +111,43 @@ const CartelViewsCenter = (() => {
    return button;
   });
 
+  function showDemo(view) {
+   status.hidden = false;
+   status.textContent = view.state === 'pending'
+    ? 'Modo demostración · Diseño de referencia. Esta vista aún no está publicada.'
+    : 'Modo demostración · Datos ficticios y controles sin interacción.';
+   const preview = node('iframe', '', 'vc-preview-frame');
+   preview.title = 'Demostración de ' + view.title;
+   preview.tabIndex = -1;
+   preview.inert = true;
+   preview.setAttribute('sandbox', '');
+   preview.srcdoc = CartelViewsDemo.documentFor(view);
+   frame = preview;
+   viewport.replaceChildren(preview);
+   fit();
+  }
+
+  let currentUrl;
   function update(view, allowed) {
-   const url = allowed ? view.url : null;
-   // Keep the iframe during layout and filter updates for the same authorized route.
-   if (current === view && frame && url) return;
+   const url = allowed && liveRoutes.has(view.url) ? view.url : null;
+   if (current === view && currentUrl === url && frame) return;
    current = view;
+   currentUrl = url;
    viewport.replaceChildren();
    frame = null;
-   controls.hidden = stage.hidden = !url;
+   const registered = Boolean(view && view.state !== 'draft');
+   controls.hidden = stage.hidden = !registered;
    status.hidden = false;
-   if (!url) {
-    status.textContent = !view ? 'Selecciona una vista para previsualizarla.' :
-     view.state === 'draft' ? 'La previsualización del borrador está en Diseño y borradores.' :
-     view.url ? 'La sesión actual no tiene acceso a esta vista.' :
-     'Esta vista todavía no tiene una ruta habilitada.';
+   if (!registered) {
+    status.textContent = view ? 'La previsualización del borrador está en Diseño y borradores.' :
+     'Selecciona una vista para previsualizarla.';
     return;
    }
+   if (!url) {
+    showDemo(view);
+    return;
+   }
+
    status.textContent = 'Cargando vista…';
    const preview = node('iframe', '', 'vc-preview-frame');
    preview.title = 'Vista preliminar de ' + view.title;
@@ -133,19 +157,14 @@ const CartelViewsCenter = (() => {
    preview.addEventListener('load', () => {
     if (frame !== preview) return;
     try {
-     const expected = new URL(url, location.origin);
-     if (preview.contentWindow.location.pathname === expected.pathname) {
+     if (preview.contentWindow.location.href === new URL(url, location.origin).href) {
       status.hidden = true;
       return;
      }
     } catch {
-     // The embedded route may redirect to an authentication page.
+     // An authentication redirect can land outside the application's origin.
     }
-    frame = null;
-    viewport.replaceChildren();
-    stage.hidden = true;
-    controls.hidden = true;
-    status.textContent = 'La vista no está disponible para previsualizar. Usa Abrir vista para continuar.';
+    showDemo(view);
    });
    frame = preview;
    preview.src = url;

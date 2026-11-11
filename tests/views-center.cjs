@@ -29,34 +29,38 @@ async function openPage(browser, width, profile) {
     window.calls.push(name);
     if (name === 'inventory_has_access') return {data: profile === 'owner'};
     if (name !== 'system_view_center_access') throw Error('Unexpected RPC ' + name);
-    if (profile !== 'owner') return {error: {code: '42501'}};
+    if (!profile.startsWith('owner')) return {error: {code: '42501'}};
     return {data: {
      assigned: {inventory_admin: 1, inventory_graphics_read: 1},
-     effective: {owner: [owner], session: [owner, melanie, alejandro],
-      inventory_admin: [owner, alejandro], inventory_graphics_read: [melanie]}
+     effective: {owner: profile === 'owner' ? [owner] : [], session: [owner, melanie, alejandro],
+      inventory_admin: profile === 'owner' ? [owner, alejandro] : [alejandro], inventory_graphics_read: [melanie]}
     }};
    }
   };
   window.CartelLoad = {createClient: () => client, run: (_, task) => task(), clearNotice() {}, limits: {}};
  }, {profile, owner, melanie, alejandro});
  let registryRequests = 0;
- let graphicsRequests = 0;
+ const demoRequests = [];
+ let observeRequests = false;
  await page.route('**/*', request => {
   const url = new URL(request.request().url());
+  if (observeRequests) demoRequests.push(request.request().url());
   if (url.origin !== base) return request.abort();
   if (/loading-runtime|supabase-.*min/.test(url.pathname)) return request.fulfill({contentType: 'text/javascript', body: ''});
+  if (request.request().isNavigationRequest() && ['/dashboard.html', '/inventario-insumos.html'].includes(url.pathname)) {
+   return request.fulfill({contentType: 'text/html', body: '<h1>Vista autorizada</h1>'});
+  }
   if (url.pathname === '/dashboard.html') registryRequests++;
-  if (url.pathname === '/consulta-insumos-grafica.html') graphicsRequests++;
   const file = path.join(root, url.pathname.slice(1));
   if (!fs.existsSync(file)) return request.fulfill({status: 404, body: ''});
   return request.fulfill({path: file});
  });
  await page.goto(pageUrl);
- return {page, errors, registryRequests: () => registryRequests, graphicsRequests: () => graphicsRequests};
+ return {page, errors, registryRequests: () => registryRequests, demoRequests, observe: () => { observeRequests = true; }};
 }
 
 async function verifyOwner(browser, width) {
- const {page, errors, graphicsRequests} = await openPage(browser, width, 'owner');
+ const {page, errors, demoRequests, observe} = await openPage(browser, width, 'owner');
  try {
   await page.getByRole('heading', {name: 'Centro de Vistas y Plantillas'}).waitFor();
   const groups = page.locator('#vc-groups');
@@ -67,11 +71,13 @@ async function verifyOwner(browser, width) {
   await inventory.locator('summary').click();
   await page.getByRole('button', {name: /Administrador de Inventario/}).click();
   assert.equal(await page.getByRole('link', {name: 'Abrir vista ↗'}).getAttribute('href'), '/inventario-insumos.html');
+  assert.equal(await page.locator('.vc-preview-frame').getAttribute('src'), '/inventario-insumos.html');
+  await groups.getByRole('button', {name: /^Inicio/}).click();
   const frame = page.locator('.vc-preview-frame');
   await page.waitForFunction(() => document.querySelector('.vc-preview [role="status"]').hidden);
   const loaded = await frame.elementHandle();
   const embedded = await loaded.contentFrame();
-  assert.equal(new URL(embedded.url()).pathname, '/inventario-insumos.html');
+  assert.equal(new URL(embedded.url()).pathname, '/dashboard.html');
   assert.equal(await frame.getAttribute('sandbox'), 'allow-same-origin allow-scripts');
   assert.equal(await frame.evaluate(element => element.inert), true);
   for (const [name, dimensions] of [['Tablet', [768, 1024]], ['Móvil', [390, 844]], ['Escritorio', [1280, 800]]]) {
@@ -86,20 +92,33 @@ async function verifyOwner(browser, width) {
   assert.equal(await page.locator('.vc-preview').evaluate(element => element.nextElementSibling.className), 'vc-actions');
   await page.getByRole('searchbox', {name: 'Buscar vista'}).fill('vistas y plantillas');
   await groups.getByRole('button', {name: /Vistas y plantillas/}).click();
-  assert.equal(await frame.getAttribute('src'), '/usuarios-permisos.html?section=views');
+  assert.equal(await frame.getAttribute('sandbox'), '');
+  assert.equal(await frame.getAttribute('src'), null);
   await page.getByRole('searchbox', {name: 'Buscar vista'}).fill('administrador de inventario');
   await groups.getByRole('button', {name: /Administrador de Inventario/}).click();
   await page.getByRole('button', {name: 'Consultar accesos'}).click();
   assert.match(await page.locator('#vc-audience').textContent(), /Alejandro.*Gestión de insumos/);
   assert.doesNotMatch(await page.locator('#vc-audience').textContent(), /Melanie/);
   await page.getByRole('button', {name: 'Vistas del sistema'}).click();
+  observe();
   await page.getByRole('searchbox', {name: 'Buscar vista'}).fill('grafica');
   await page.getByRole('button', {name: /Consulta de Insumos — Gráfica/}).click();
   assert.equal(await page.locator('#vc-detail code').textContent(), '/consulta-insumos-grafica.html');
   assert.equal(await page.getByRole('link', {name: 'Abrir vista ↗'}).count(), 0);
-  assert.equal(await frame.count(), 0);
-  assert.equal(graphicsRequests(), 0);
-  await page.getByText('La sesión actual no tiene acceso a esta vista.').waitFor();
+  await page.getByText('Modo demostración · Datos ficticios y controles sin interacción.').waitFor();
+  assert.equal(await frame.getAttribute('src'), null);
+  assert.equal(await frame.getAttribute('sandbox'), '');
+  const demo = page.frameLocator('.vc-preview-frame');
+  await demo.getByText('3 insumos de demostración').waitFor();
+  assert.equal(await demo.locator('article').count(), 3);
+  assert.equal(await demo.locator('a, button, input, form, script, img').count(), 0);
+  for (const [name, columns] of [['Escritorio', 3], ['Tablet', 2], ['Móvil', 1]]) {
+   await page.getByRole('button', {name, exact: true}).click();
+   await demo.locator('.cards').evaluate((grid, count) => {
+    if (getComputedStyle(grid).gridTemplateColumns.split(' ').length !== count) throw Error('Unexpected card columns');
+   }, columns);
+  }
+  assert.deepEqual(demoRequests, []);
   await page.getByRole('button', {name: 'Consultar accesos'}).click();
   assert.match(await page.locator('#vc-audience').textContent(), /Melanie.*Consulta gráfica/);
   assert.doesNotMatch(await page.locator('#vc-audience').textContent(), /Alejandro/);
@@ -117,7 +136,8 @@ async function verifyOwner(browser, width) {
   assert.equal(await groups.getByRole('button').count(), 1);
   assert.match(await groups.textContent(), /Jefe de Área/);
   await groups.getByRole('button', {name: /Jefe de Área/}).click();
-  assert.equal(await frame.count(), 0);
+  await page.getByText(/Diseño de referencia/).waitFor();
+  await page.frameLocator('.vc-preview-frame').getByText('Equipo de muestra', {exact: true}).first().waitFor();
   await page.locator('#vc-filter').selectOption('draft');
   await groups.getByRole('button', {name: /Borrador <img src=x>/}).click();
   assert.equal(await frame.count(), 0);
@@ -139,6 +159,34 @@ async function verifyOwner(browser, width) {
  const browser = await chromium.launch({channel: 'msedge', headless: true});
  try {
   for (const width of [360, 768, 1440]) await verifyOwner(browser, width);
+  const restricted = await openPage(browser, 1280, 'owner-restricted');
+  try {
+   const {page, demoRequests, observe, errors} = restricted;
+   const groups = page.locator('#vc-groups');
+   await page.getByRole('heading', {name: 'Centro de Vistas y Plantillas'}).waitFor();
+   const summaries = groups.locator('summary');
+   for (const summary of await summaries.all()) {
+    if (await summary.evaluate(element => !element.parentElement.open)) await summary.click();
+   }
+   const rows = await groups.getByRole('button').all();
+   assert.equal(rows.length, 16);
+   observe();
+   for (const row of rows) {
+    const title = await row.locator('strong').textContent();
+    if (title === 'Inicio') continue;
+    await row.click();
+    const frame = page.locator('.vc-preview-frame');
+    await page.frameLocator('.vc-preview-frame').getByRole('heading', {name: title, exact: true, level: 1}).waitFor();
+    assert.equal(await frame.getAttribute('sandbox'), '');
+    assert.equal(await frame.getAttribute('src'), null);
+    assert.equal(await page.getByRole('link', {name: 'Abrir vista ↗'}).count(), 0);
+   }
+   assert.deepEqual(demoRequests, []);
+   assert.deepEqual(errors, []);
+   console.log('PASS every restricted registered view renders without network requests');
+  } finally {
+   await restricted.page.close();
+  }
   for (const profile of ['anonymous', 'melanie', 'alejandro']) {
    const {page, errors, registryRequests} = await openPage(browser, 390, profile);
    await page.getByText(profile === 'anonymous' ? 'Inicia sesión para consultar Usuarios y Roles.' :
