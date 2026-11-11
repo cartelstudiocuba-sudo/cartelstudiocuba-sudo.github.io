@@ -2,7 +2,7 @@
 (()=>{'use strict';
  if(new URLSearchParams(location.search).get('review_only')==='1')return;
  const tabs=[['selection','Selección'],['labor','Expediente laboral'],['access','Acceso'],['history','Historial']],progress=new Map();let current=null,version=0;
- const insertionComplete=state=>!!(state&&(state.protected||(state.configured_at&&state.created_at&&state.whatsapp_opened_at)));
+ const insertionComplete=state=>!!(state&&!state.route_reopened_at&&(state.protected||(state.configured_at&&state.created_at&&state.whatsapp_opened_at)));
  const urlFor=(employee,tab='labor')=>'/rrhh.html?employee='+encodeURIComponent(employee)+'&person-tab='+tab;
  function remember(tab){const url=new URL(location.href);url.searchParams.set('person-tab',tab);history.replaceState(history.state,'',url);}
  function route(){if(!current?.candidate)return;const x=candidates.find(c=>String(c.id)===current.candidate);const flow=document.querySelector('#detail .approved-flow');if(x&&flow)flow.innerHTML=candidateGuidedFlow(x);}

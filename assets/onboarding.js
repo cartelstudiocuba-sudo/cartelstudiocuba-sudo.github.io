@@ -47,6 +47,15 @@ async function openSystemOnboarding(id){
   const stageData=[['Configurar acceso',state.configured_at,'<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/><circle cx="12" cy="12" r="4"/>'],['Crear cuenta y preparar notificación',state.created_at,'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2m3-13v6m-3-3h6"/>'],['Notificar por WhatsApp',state.whatsapp_opened_at,'<path d="M20 11.5a8 8 0 0 1-12 7L3 20l1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M8 8c0 4 2 6 6 6l1-2-2-1-1 1-2-2 1-1-1-2Z"/>']];
   const currentStage=stageData.findIndex(([,done])=>!done);
   stageData.forEach(([title,done,icon],index)=>{const li=document.createElement('li');li.className=done?'is-complete':index===currentStage?'is-current':'is-pending';if(index===currentStage)li.setAttribute('aria-current','step');const symbol=document.createElement('span');symbol.className='onboarding-stage-icon';symbol.setAttribute('aria-hidden','true');symbol.innerHTML='<svg viewBox="0 0 24 24">'+(done?'<path d="m5 12 4 4L19 6"/>':icon)+'</svg>';const label=document.createElement('span');label.className='onboarding-stage-title';label.textContent=title;const status=document.createElement('span');status.className='onboarding-stage-state';status.textContent=done?'Completado':index===currentStage?'En curso':'Pendiente';li.append(symbol,label,status);stages.append(li);});content.append(stages);
+  if(state.route_reopened_at){
+   const review=document.createElement('section');review.className='onboarding-section';
+   const title=document.createElement('h4');title.textContent='Revisión del paso 12 · Inserción en sistema';
+   const note=document.createElement('p');note.textContent='Se conservan la contratación, el expediente, la cuenta, los permisos y los registros de notificación. Revisa el acceso existente; no se creará otra cuenta ni se enviarán mensajes.';
+   const status=document.createElement('p');status.textContent=state.activated_at?(state.enabled?'Cuenta activada · acceso habilitado.':'Cuenta activada · acceso deshabilitado.'):'Cuenta creada · activación del trabajador pendiente.';
+   const complete=document.createElement('button');complete.type='button';complete.textContent='Confirmar revisión y continuar al paso 13';
+   complete.onclick=async()=>{complete.disabled=true;try{await onboardingCall(id,'complete_review',{expected_reopened_at:state.route_reopened_at});overlay.remove();}catch(e){info.textContent='No se pudo confirmar la revisión: '+e.message;complete.disabled=false;}};
+   review.append(title,note,status,manage(),complete);content.append(review);return;
+  }
   if(state.protected){content.append('Este trabajador ya tiene un acceso. Sus permisos se conservan. ',manage());return;}
   if(state.configured_at){
    const summary=document.createElement('div');summary.className='onboarding-config-summary';
