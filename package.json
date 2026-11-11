@@ -2,6 +2,8 @@
   "name": "cartel-gestion-verification",
   "private": true,
   "scripts": {
+    "test:hr:model": "node --test tests/hr-dashboard-model.cjs",
+    "test:hr:browser": "node tests/hr-dashboard-browser.cjs",
     "test:onboarding:sql": "node tests/onboarding-sql.cjs",
     "test:onboarding:edge": "node tests/onboarding-edge.cjs",
     "test:onboarding:browser": "node tests/onboarding-browser.cjs",

@@ -1,7 +1,10 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 for(const name of ['dashboard.html','rrhh-inicio.html','rrhh-login.html','reset-password.html','usuarios-permisos.html','trabajador-ficha.html']){
  const s=fs.readFileSync(name,'utf8');
- for(const [,source] of s.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(source.trim())new vm.Script(source,{filename:name});
+ for(const [,attributes,source] of s.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g))if(source.trim()){
+  if(/type=["']application\/json["']/i.test(attributes||''))JSON.parse(source);
+  else new vm.Script(source,{filename:name});
+ }
  for(const [,src] of s.matchAll(/<script src="(\/assets\/[^"?]+)/g))assert(fs.existsSync('.'+src),name+' missing '+src);
 }
 for(const name of ['users-roles','module-access','login'])new vm.Script(fs.readFileSync('assets/'+name+'.js','utf8'),{filename:name});
