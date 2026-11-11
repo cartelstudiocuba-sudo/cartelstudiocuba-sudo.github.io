@@ -48,13 +48,35 @@ async function openSystemOnboarding(id){
   const currentStage=stageData.findIndex(([,done])=>!done);
   stageData.forEach(([title,done,icon],index)=>{const li=document.createElement('li');li.className=done?'is-complete':index===currentStage?'is-current':'is-pending';if(index===currentStage)li.setAttribute('aria-current','step');const symbol=document.createElement('span');symbol.className='onboarding-stage-icon';symbol.setAttribute('aria-hidden','true');symbol.innerHTML='<svg viewBox="0 0 24 24">'+(done?'<path d="m5 12 4 4L19 6"/>':icon)+'</svg>';const label=document.createElement('span');label.className='onboarding-stage-title';label.textContent=title;const status=document.createElement('span');status.className='onboarding-stage-state';status.textContent=done?'Completado':index===currentStage?'En curso':'Pendiente';li.append(symbol,label,status);stages.append(li);});content.append(stages);
   if(state.route_reopened_at){
-   const review=document.createElement('section');review.className='onboarding-section';
-   const title=document.createElement('h4');title.textContent='Revisión del paso 12 · Inserción en sistema';
-   const note=document.createElement('p');note.textContent='Se conservan la contratación, el expediente, la cuenta, los permisos y los registros de notificación. Revisa el acceso existente; no se creará otra cuenta ni se enviarán mensajes.';
-   const status=document.createElement('p');status.textContent=state.activated_at?(state.enabled?'Cuenta activada · acceso habilitado.':'Cuenta activada · acceso deshabilitado.'):'Cuenta creada · activación del trabajador pendiente.';
-   const complete=document.createElement('button');complete.type='button';complete.textContent='Confirmar revisión y continuar al paso 13';
-   complete.onclick=async()=>{complete.disabled=true;try{await onboardingCall(id,'complete_review',{expected_reopened_at:state.route_reopened_at});overlay.remove();}catch(e){info.textContent='No se pudo confirmar la revisión: '+e.message;complete.disabled=false;}};
-   review.append(title,note,status,manage(),complete);content.append(review);return;
+   const section=document.createElement('section');section.className='onboarding-section';
+   const note=document.createElement('p');note.textContent='Los subpasos se han reiniciado. La cuenta existente se conserva para evitar duplicados.';section.append(note);
+   const expected={expected_reopened_at:state.route_reopened_at};
+   const action=(label,run)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=async()=>{button.disabled=true;try{await run();await update();}catch(e){info.textContent=e.message;button.disabled=false;}};section.append(button);};
+   if(!state.configured_at){
+    const title=document.createElement('h4');title.textContent='1 · Configurar acceso';
+    const details=document.createElement('p');details.textContent=[state.username,state.email,roleList.find(r=>String(r.id)===String(state.role_id))?.title].filter(Boolean).join(' · ');
+    section.append(title,details,manage());
+    action('Guardar configuración',()=>onboardingCall(id,'review_configure',expected));
+   }else if(!state.created_at){
+    const title=document.createElement('h4');title.textContent='2 · Crear cuenta y preparar notificación';
+    const hint=document.createElement('p');hint.textContent='Se comprobará y reutilizará la cuenta existente. No se creará otra cuenta.';
+    section.append(title,hint);
+    action('Preparar cuenta y notificación',async()=>{
+     if(!state.activated_at){const result=await onboardingEdge(id,Date.parse(state.expires_at)<=Date.now()?'renew':'preview');activation=result.activation_url;if(!activation||!activation.startsWith('https://gestion.elcartelstudio.com/activar-cuenta.html#activation='))throw Error('No se pudo preparar el enlace oficial');}
+     await onboardingCall(id,'review_prepare',expected);
+    });
+   }else{
+    const title=document.createElement('h4');title.textContent='3 · Notificar por WhatsApp';section.append(title);
+    if(!state.activated_at&&!activation){try{activation=(await onboardingEdge(id,'preview')).activation_url;}catch(e){info.textContent=e.message;action('Renovar enlace de activación',async()=>{activation=(await onboardingEdge(id,'renew')).activation_url;});content.append(section);return;}}
+    const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje de acceso para WhatsApp (editable)');
+    editor.value=state.activated_at?'Hola, '+hiringGreetingName(candidate)+'. Tu acceso a Cartel Gestión está disponible. Usuario: '+state.username+'. Correo: '+state.email+'. Accede desde https://gestion.elcartelstudio.com. Tu cuenta y contraseña son personales y confidenciales.':onboardingMessage(hiringGreetingName(candidate),state.username,state.email,activation,'https://gestion.elcartelstudio.com/guia-acceso-movil.html');section.append(editor);
+    let notified=false;
+    action('Notificar vía WhatsApp',async()=>{
+     if(!notified){const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta un WhatsApp válido.');if(!editor.value.trim())throw Error('Escribe un mensaje.');if(!state.activated_at&&Date.parse(state.expires_at)<=Date.now())throw Error('El enlace venció. Cierra y vuelve a abrir para renovarlo.');const tab=window.open('about:blank','_blank');if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');try{tab.opener=null;tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}notified=true;editor.readOnly=true;}
+     await onboardingCall(id,'review_notified',expected);overlay.remove();
+    });
+   }
+   content.append(section);return;
   }
   if(state.protected){content.append('Este trabajador ya tiene un acceso. Sus permisos se conservan. ',manage());return;}
   if(state.configured_at){
