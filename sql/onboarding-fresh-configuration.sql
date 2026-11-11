@@ -88,7 +88,7 @@ begin
  elsif p_action<>'read' then raise exception 'Acción no permitida'; end if;
  select * into o from studio_access_private.onboarding where candidate_id=c.id;
  select * into e from public.hr_employees where candidate_id=c.id;
- base=left(trim(both '.' from regexp_replace(lower(translate(c.full_name,'áéíóúüñÁÉÍÓÚÜÑ','aeiouunAEIOUUN')),'[^a-z0-9]+','.','g')),65);
+ base=left(trim(both '.' from regexp_replace(lower(translate(regexp_replace(trim(c.full_name),'^CANDIDATO DE PRUEBA[[:space:]]*[—–-][[:space:]]*(?=[^[:space:]])','','i'),'áéíóúüñÁÉÍÓÚÜÑ','aeiouunAEIOUUN')),'[^a-z0-9]+','.','g')),65);
  if length(base)<3 then base='trabajador'; end if;
  uname=base;
  while exists(select 1 from public.hr_employees where lower(system_username)=uname and id is distinct from e.id) loop suffix=suffix+1;uname=base||'.'||suffix;end loop;

@@ -78,7 +78,7 @@ const owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6';
  await fail('select hr_finalize_hiring($1)',[trial],/Falta validar/);
  await db.exec('set role authenticated');
  const config={username:'persona.simulada',email:'persona@example.invalid',role_id:role,template_revision:2};
- await identity(owner);await db.query("update hr_candidates set full_name='Dániel Hérrera' where id=$1",[candidate]);
+ await identity(owner);await db.query("update hr_candidates set full_name='CANDIDATO DE PRUEBA — Dániel Hérrera' where id=$1",[candidate]);
  await db.query("update hr_employees set system_username='daniel.herrera' where id=$1",[legacy]);
  const fresh=(await one("select system_onboarding($1) d",[candidate])).d;
  assert.equal(fresh.suggested_username,'daniel.herrera.2');assert.equal(fresh.existing_account,false);
