@@ -1,0 +1,20 @@
+#candidatePersonalEditor{box-sizing:border-box;width:min(700px,calc(100% - 24px));max-height:90dvh;padding:24px;border:1px solid #FFDA03;border-radius:20px;background:#101e2b;color:#f1f6fb;box-shadow:0 20px 70px #000a}
+#candidatePersonalEditor::backdrop{background:#000b}
+#candidatePersonalEditor h2{color:#FFDA03;margin:0 0 8px}
+#candidatePersonalEditor p{line-height:1.5;color:#c9d5e1}
+#candidatePersonalEditor .personal-editor-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#candidatePersonalEditor label{display:grid;gap:7px;min-width:0;font-size:14px}
+#candidatePersonalEditor input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;background:#091521;color:#fff;border:1px solid #526778;border-radius:9px;padding:10px;font:inherit}
+#candidatePersonalEditor input:focus-visible,#candidatePersonalEditor button:focus-visible{outline:2px solid #FFDA03;outline-offset:3px}
+#candidatePersonalEditor footer{display:flex;justify-content:flex-end;gap:12px;position:sticky;bottom:-24px;padding:16px 0;background:#101e2b}
+#candidatePersonalEditor button{min-height:44px}
+#candidatePersonalEditor [data-cancel]{background:#1a2c3d;color:#f1f6fb;border:1px solid #526778}
+#candidatePersonalEditor input::file-selector-button{background:#1a2c3d;color:#f1f6fb;border:1px solid #526778;border-radius:5px;padding:5px}
+#candidatePersonalEditor .personal-editor-status{overflow-wrap:anywhere;min-height:24px}
+#candidatePersonalEditor .personal-editor-photo{width:90px;height:90px;object-fit:cover;border-radius:12px}
+.personal-editor-saved{padding:12px;border:1px solid #FFDA03;border-radius:10px;color:#FFDA03}
+#detail .approved-quick-actions .approved-actions{grid-template-columns:repeat(9,minmax(0,1fr))!important}
+#detail .approved-quick-actions .approved-actions .personal-editor-action::before{content:'✎'!important}
+@media(max-width:900px){#detail .approved-quick-actions .approved-actions{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:530px){#candidatePersonalEditor{padding:18px}#candidatePersonalEditor .personal-editor-fields{grid-template-columns:1fr}#candidatePersonalEditor footer{bottom:-18px;flex-wrap:wrap}#detail .approved-quick-actions .approved-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+
