@@ -45,3 +45,15 @@
 .onboarding-dialog .onboarding-step-hint{font-size:13px;line-height:1.6;color:#c2c9cd;margin:0 0 14px}
 .onboarding-dialog .onboarding-config-summary+.onboarding-section{border-color:#bda529;box-shadow:0 0 0 1px #ffda0320,0 8px 24px #0003}
 @media(max-width:600px){.onboarding-dialog .onboarding-config-heading{flex-wrap:wrap}.onboarding-dialog .onboarding-config-summary{padding:14px}}
+
+.onboarding-dialog .onboarding-configuration-form>p{color:#bfc7cb;line-height:1.6}
+.onboarding-dialog .onboarding-field small{display:block;color:#aeb9c0;font-size:12px;line-height:1.5;margin-top:8px}
+.onboarding-dialog .onboarding-permission-preview{margin-top:24px;padding:20px;border:1px solid #485044;border-radius:14px;background:#141a18}
+.onboarding-dialog .onboarding-permission-preview dl{display:grid;grid-template-columns:1fr auto;gap:12px;margin:18px 0}.onboarding-dialog .onboarding-permission-preview dt{color:#c4cbd0}.onboarding-dialog .onboarding-permission-preview dd{margin:0;font-weight:650;color:#ffda03}
+.onboarding-dialog .onboarding-permission-preview p{color:#aeb9c0;font-size:12px;line-height:1.6}
+.onboarding-dialog .onboarding-config-error{color:#ffb4a8;white-space:pre-wrap}.onboarding-dialog .onboarding-config-error:empty{display:none}
+.onboarding-dialog .onboarding-config-actions{display:flex;gap:12px;justify-content:space-between;margin-top:26px}.onboarding-dialog .onboarding-save{background:#ffda03;color:#171900;border-color:#ffdf37;font-weight:750}.onboarding-dialog .onboarding-config-back{background:transparent}
+.onboarding-dialog .onboarding-pending-email{border-left:3px solid #ffda03;padding:12px 16px;background:#292819;margin-top:18px;line-height:1.6}.onboarding-dialog .onboarding-pending-email a{display:block;color:#ffda03;margin-bottom:12px}
+@media(max-width:600px){.onboarding-dialog .onboarding-permission-preview dl{grid-template-columns:1fr;gap:5px}.onboarding-dialog .onboarding-permission-preview dd{margin-bottom:12px}.onboarding-dialog .onboarding-config-actions{flex-direction:column-reverse}.onboarding-dialog .onboarding-config-actions button{width:100%}}
+.onboarding-dialog .onboarding-field small{font-weight:400;letter-spacing:normal;text-transform:none;margin-bottom:0}.onboarding-dialog .onboarding-person{font-size:16px;font-weight:650;color:#fff;margin:18px 0 0}
+
