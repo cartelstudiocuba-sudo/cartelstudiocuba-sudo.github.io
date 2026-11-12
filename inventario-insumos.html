@@ -336,7 +336,7 @@ function inventoryReportWatermarkHTML(){return "<div class=\"watermark\" aria-hi
 function inventoryReportWatermarkStyles(){return ".watermark{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:.42;z-index:0;pointer-events:none}.watermark svg{display:block;width:72%;max-width:145mm;height:auto;transform:rotate(-33deg)}.page{position:relative;z-index:1}@media print{.watermark{-webkit-print-color-adjust:exact;print-color-adjust:exact}}"}
 function normalizeInventoryMovementCurrency(movement,products){
  const product=products.find(p=>p.id===movement.product_id);
- const originalCurrency=movement.currency||product?.currency||null;const reference=originalCurrency==='CUP'&&movement.usd_unit_cost!=null;return {...movement,original_currency:originalCurrency,original_unit_cost:movement.unit_cost,unit_cost:reference?movement.usd_unit_cost:movement.unit_cost,usd_unit_cost,currency:reference?'USD':originalCurrency,product_name:movement.product_name||product?.name||'Producto sin nombre'};
+ const originalCurrency=movement.currency||product?.currency||null;const reference=originalCurrency==='CUP'&&movement.usd_unit_cost!=null;return {...movement,original_currency:originalCurrency,original_unit_cost:movement.unit_cost,unit_cost:reference?movement.usd_unit_cost:movement.unit_cost,currency:reference?'USD':originalCurrency,product_name:movement.product_name||product?.name||'Producto sin nombre'};
 }
 function inventoryTodayInCuba(){
  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
