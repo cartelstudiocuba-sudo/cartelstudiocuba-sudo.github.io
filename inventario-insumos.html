@@ -159,6 +159,8 @@ function syncMovementFormFields(){
  byId('move-product-location').required=false;
  syncLocationControls(entry);
  syncAllocation();
+ byId('inventory-conversion-field').classList.toggle('form-hide',!entry);
+ window.inventoryUsdPrice?.syncControls(entry);
 }
 form.addEventListener('invalid',event=>{
  const control=event.target;
