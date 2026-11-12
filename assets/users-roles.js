@@ -5,7 +5,7 @@ let roles=[],accounts=[],permissions=[];
 async function loadAccounts(){
  const {data,error}=await sb.rpc('system_list_users');if(error)throw error;accounts=data||[];
  el('account-count').textContent=accounts.filter(u=>u.id).length+' cuentas · '+accounts.filter(u=>u.employee_id&&!u.id).length+' pendientes';
- el('account-list').innerHTML=accounts.map((u,i)=>'<article class="card"><h3>'+esc(u.full_name)+'</h3><p>'+esc(u.username||u.email)+'</p>'+(u.employee_id?'<p>'+esc(u.position||'Sin plaza')+(u.position_linked?'':' · vínculo de plaza pendiente')+'</p>':'')+'<p>'+esc(u.is_owner?'Propietario · acceso protegido':!u.id?'Cuenta Auth pendiente':u.blocked?'Cuenta bloqueada':u.confirmed?(u.enabled?'Cuenta habilitada':'Acceso deshabilitado'):'Confirmación de correo pendiente')+'</p>'+((u.roles||[]).map(r=>'<p><span class="badge">'+esc(r.title)+'</span> '+(!u.is_owner?'<button class="btn" data-revoke="'+i+'" data-code="'+esc(r.code)+'">Retirar rol</button>':'')+'</p>').join('')||'<p class="muted">'+(u.is_owner?'Acceso del propietario':'Sin roles asignados')+'</p>')+(!u.is_owner?'<label for="grant-'+i+'">Añadir rol</label><select id="grant-'+i+'" style="width:100%;padding:12px;margin:10px 0;background:#222;color:#fff;border:1px solid #555;border-radius:10px"><option value="">Seleccionar rol</option>'+roles.filter(r=>r.is_active&&!(u.roles||[]).some(g=>g.code===r.code)).map(r=>'<option value="'+esc(r.code)+'">'+esc(r.title)+'</option>').join('')+'</select><button class="btn" data-grant="'+i+'">Asignar rol</button>'+(!u.id&&u.position_linked?'<form data-invite="'+i+'"><label for="email-'+i+'" style="display:block;margin-top:18px">Correo individual para invitar</label><input id="email-'+i+'" type="email" required autocomplete="off" value="'+esc(u.email||'')+'" style="width:100%;padding:12px;background:#222;color:#fff;border:1px solid #555;border-radius:10px"><button class="btn" type="submit">Verificar Auth e invitar</button></form>':!u.id?'<p class="notice">Vínculo de plaza pendiente. Completa la ficha laboral en <a class="link" href="/plazas.html">Plazas</a> antes de invitar.</p>':''):'')+'</article>').join('');
+ el('account-list').innerHTML=accounts.map((u,i)=>'<article class="card"><h3>'+esc(u.full_name)+'</h3><p>'+esc(u.username||u.email)+'</p>'+(u.employee_id?'<p>'+esc(u.position||'Sin plaza')+(u.position_linked?'':' · vínculo de plaza pendiente')+'</p>':'')+'<p>'+esc(u.is_owner?'Propietario · acceso protegido':!u.id?'Cuenta Auth pendiente':u.blocked?'Cuenta bloqueada':u.confirmed?(u.enabled?'Cuenta habilitada':'Acceso deshabilitado'):'Confirmación de correo pendiente')+'</p>'+((u.roles||[]).map(r=>'<p><span class="badge">'+esc(r.title)+'</span> '+(!u.is_owner?'<button class="btn" data-revoke="'+i+'" data-code="'+esc(r.code)+'">Retirar rol</button>':'')+'</p>').join('')||'<p class="muted">'+(u.is_owner?'Acceso del propietario':'Sin roles asignados')+'</p>')+(!u.is_owner?'<label for="grant-'+i+'">Añadir rol</label><select id="grant-'+i+'" style="width:100%;padding:12px;margin:10px 0;background:#222;color:#fff;border:1px solid #555;border-radius:10px"><option value="">Seleccionar rol</option>'+roles.filter(r=>r.is_active&&r.is_catalog_role!==false&&!(u.roles||[]).some(g=>g.code===r.code)).map(r=>'<option value="'+esc(r.code)+'">'+esc(r.title)+'</option>').join('')+'</select><button class="btn" data-grant="'+i+'">Asignar rol</button>'+(!u.id&&u.position_linked?'<form data-invite="'+i+'"><label for="email-'+i+'" style="display:block;margin-top:18px">Correo individual para invitar</label><input id="email-'+i+'" type="email" required autocomplete="off" value="'+esc(u.email||'')+'" style="width:100%;padding:12px;background:#222;color:#fff;border:1px solid #555;border-radius:10px"><button class="btn" type="submit">Verificar Auth e invitar</button></form>':!u.id?'<p class="notice">Vínculo de plaza pendiente. Completa la ficha laboral en <a class="link" href="/plazas.html">Plazas</a> antes de invitar.</p>':''):'')+'</article>').join('');
  el('account-list').querySelectorAll('[data-grant]').forEach(b=>b.onclick=()=>changeRole(Number(b.dataset.grant),el('grant-'+b.dataset.grant).value,true,b));
  el('account-list').querySelectorAll('[data-revoke]').forEach(b=>b.onclick=()=>changeRole(Number(b.dataset.revoke),b.dataset.code,false,b));
  el('account-list').querySelectorAll('[data-invite]').forEach(f=>f.onsubmit=async event=>{
@@ -87,31 +87,7 @@ async function loadAccounts(){
        section.querySelector('.profile-embedded-preview').innerHTML=v?'<h4>'+esc(v.title||'Sin título')+'</h4><p>'+esc(v.description||'')+'</p><p>Diseño: '+esc(v.layout||'list')+'</p><p>Componentes: '+Object.entries(v.blocks||{}).filter(([k,enabled])=>enabled).map(([k])=>esc(k)).join(', ')+'</p>':'<p>Este rol no tiene un borrador de vista en este navegador.</p>';
       });
     }
-    if(tab==='views'&&u.employee_id){
-      const panel=summary.querySelector('.access-info-card');
-      const editor=document.createElement('div');editor.className='profile-view-manager';panel.prepend(editor);
-      const catalog=[{code:'inventory_admin',name:'Inventario · Administrador',description:'Vista operativa de insumos'},{code:'inventory_graphics_read',name:'Consulta de Insumos — Gráfica',description:'Consulta individual de Gráfica, sin operaciones ni datos económicos'},{code:'audiovisual_lead',name:'Audiovisuales · Jefe de Área',description:'Vista reservada para configuración futura'}];
-      sb.rpc('system_owner_employee_views',{p_employee:u.employee_id}).then(({data,error})=>{
-       if(error){editor.textContent='No se pudieron consultar las vistas: '+error.message;return;}
-       const assigned=data||[];
-       const snapshot=assigned.find(v=>v.code==='__template__');
-       if(snapshot){editor.innerHTML='<h4>Vistas heredadas de la plantilla</h4><p>Versión '+esc(snapshot.template_revision)+' · Inventario: '+(snapshot.can_write?'lectura y escritura':snapshot.can_read?'solo lectura':'sin acceso')+'</p><p>'+esc(assigned.filter(v=>v.enabled).map(v=>v.code==='inventory_admin'?'Inventario Insumos':v.code).join(', ')||'Sin vistas autorizadas')+'</p><p>Esta copia no cambia al editar la plantilla. Para actualizarla utiliza la acción administrativa explícita en Permisos.</p>';return;}
-
-       editor.innerHTML='<h4>Asignación de vistas</h4><p>Estas asignaciones son independientes de la plaza laboral.</p>'+catalog.map(v=>{
-        const current=assigned.find(a=>a.code===v.code);
-        return '<div class="profile-view-option"><div><strong>'+esc(v.name)+'</strong><small>'+esc(v.description)+'</small></div><label><input type="checkbox" data-view-enabled="'+v.code+'" '+(current?.enabled?'checked':'')+'> Acceso</label><label><input type="radio" name="view-default" data-view-default="'+v.code+'" '+(current?.is_default?'checked':'')+'> Inicio</label></div>';
-       }).join('')+'<button class="btn" id="save-profile-views" type="button">Guardar vistas</button><p id="profile-view-result" role="status"></p>';
-       editor.querySelector('#save-profile-views').onclick=async()=>{
-        const btn=editor.querySelector('#save-profile-views'),status=editor.querySelector('#profile-view-result');btn.disabled=true;status.textContent='Guardando…';
-        try{
-         const enabled=catalog.filter(v=>editor.querySelector('[data-view-enabled="'+v.code+'"]').checked);
-         const preferred=editor.querySelector('[data-view-default]:checked')?.dataset.viewDefault;
-         for(const v of catalog){const active=enabled.some(x=>x.code===v.code);const {error:saveError}=await sb.rpc('system_manage_user_view',{p_employee:u.employee_id,p_code:v.code,p_enabled:active,p_default:active&&v.code===preferred});if(saveError)throw saveError;}
-         status.textContent='Vistas guardadas en Supabase.';
-        }catch(e){status.textContent='Error al guardar: '+e.message}finally{btn.disabled=false}
-       };
-      });
-    }
+    if(tab==='views'&&u.employee_id){summary.replaceChildren();window.CartelIndividualViews?.mount(summary,u,sb);}
     const viewBtn=summary.querySelector('#open-profile-views');if(viewBtn)viewBtn.onclick=()=>{close();location.href='/usuarios-permisos.html?section=views'+(window.CartelEvolutionReturn?'&return_profile='+encodeURIComponent(window.CartelEvolutionReturn):'')};
    };
    tabButtons.forEach(b=>b.onclick=()=>renderTab(b.dataset.profileTab));showHome();
@@ -132,8 +108,8 @@ async function changeRole(index,code,enabled,button){
  catch(e){el('account-message').textContent='No se pudo guardar: '+e.message;button.disabled=false;}
 }
 function renderRoles(){
- el('role-count').textContent=roles.length+' registrados';
- el('role-list').innerHTML=roles.map((r,i)=>'<button class="role-item" type="button" data-role="'+i+'"><span class="role-avatar" aria-hidden="true">♙</span><span class="role-copy"><strong>'+esc(r.title)+'</strong><small>'+esc(r.description||'Sin descripción')+'</small></span><span class="role-arrow" aria-hidden="true">›</span></button>').join('');
+ el('role-count').textContent=roles.filter(r=>r.is_catalog_role!==false).length+' registrados';
+ el('role-list').innerHTML=roles.map((r,i)=>r.is_catalog_role===false?'':'<button class="role-item" type="button" data-role="'+i+'"><span class="role-avatar" aria-hidden="true">♙</span><span class="role-copy"><strong>'+esc(r.title)+'</strong><small>'+esc(r.description||'Sin descripción')+'</small></span><span class="role-arrow" aria-hidden="true">›</span></button>').join('');
  el('role-list').querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>openRoleModal(Number(b.dataset.role)));
 }
 function closeRoleModal(){

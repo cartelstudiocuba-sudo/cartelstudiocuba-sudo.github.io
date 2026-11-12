@@ -6,3 +6,5 @@
 
 #direct-employee-link{background:linear-gradient(#ffe967,#FFDA03);color:#151500;border-color:#ffe56b;box-shadow:0 3px #806b00;text-shadow:none}
 
+
+.individual-view-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:18px 0;border-bottom:1px solid #444}.individual-view-row strong{flex-basis:100%}.individual-view-row label{display:flex;gap:8px;align-items:center}.individual-view-row select{max-width:100%;padding:10px;background:#222;color:#fff;border:1px solid #666;border-radius:8px}.individual-views{margin-top:20px}.individual-views h4{margin-top:22px}@media(max-width:520px){.individual-view-row{align-items:stretch;flex-direction:column}.individual-view-row label{flex-wrap:wrap}.individual-view-row button{width:100%}}
