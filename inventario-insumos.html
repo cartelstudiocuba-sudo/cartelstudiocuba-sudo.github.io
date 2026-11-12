@@ -166,7 +166,7 @@ form.addEventListener('invalid',event=>{
  byId('form-message').textContent='Revisa «'+label+'»: '+control.validationMessage;
 },true);
 function closeModal(){modal.classList.remove('open')}byId('quick-new-entry').onclick=()=>showModal('entry');byId('quick-new-exit').onclick=()=>showModal('out');byId('close-modal').onclick=closeModal;byId('cancel-modal').onclick=closeModal;modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});document.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>setKind(b.dataset.kind));byId('move-purpose').onchange=()=>{};let processingPhoto=false,photoRun=0;
-function inventoryPhotoStatus(previewId,message,state='busy'){
+function inventoryPhotoStatus(previewId,message,state='busy',fraction=null){
  const preview=document.getElementById(previewId);if(!preview)return;
  let panel=document.getElementById(previewId+'-status');
  if(!panel){panel=document.createElement('div');panel.id=previewId+'-status';panel.className='inventory-photo-status';panel.setAttribute('role','status');panel.setAttribute('aria-live','polite');const host=preview.closest('.inventory-photo-row')?.querySelector('.inventory-photo-controls')||preview.parentElement;host.append(panel);}
@@ -176,7 +176,7 @@ function inventoryPhotoStatus(previewId,message,state='busy'){
  const line=document.createElement('div');line.className='inventory-photo-status-line';
  const icon=document.createElement('span');icon.className=state==='busy'?'inventory-photo-spinner':'inventory-photo-state';icon.setAttribute('aria-hidden','true');icon.textContent=state==='error'||state==='warning'?'!':state==='busy'?'':'✓';
  const label=document.createElement('span');label.textContent=message;line.append(icon,label);panel.append(line);
- if(state!=='error'&&state!=='warning'){const progress=document.createElement('progress');progress.max=1;if(state!=='busy')progress.value=1;progress.setAttribute('aria-label',message);panel.append(progress);}
+ if(state!=='error'&&state!=='warning'){const progress=document.createElement('progress');progress.max=1;if(state!=='busy')progress.value=1;else if(Number.isFinite(fraction))progress.value=Math.max(0,Math.min(1,fraction));progress.setAttribute('aria-label',message);panel.append(progress);}
 }
 const inventoryPhotoAiEndpoint='https://jhumvctocphyiwhszeaz.supabase.co/functions/v1/inventory-photo-clean';
 let inventoryPhotoAiAvailability=null;
@@ -192,28 +192,55 @@ async function inventoryPhotoAiInput(file){
   throw Error('La foto no pudo prepararse para limpiar el fondo.');
  }finally{URL.revokeObjectURL(url)}
 }
+async function inventoryPhotoAuthHeaders(){
+ const client=window.inventorySupabaseClient;if(!client)throw Error('Sesión no disponible');
+ const {data,error}=await client.auth.getSession();if(error||!data?.session?.access_token)throw Error('Sesión caducada');
+ return {Authorization:'Bearer '+data.session.access_token};
+}
+async function inventoryPhotoUpload(input,requestId,onStage,isCurrent){
+ const headers=await inventoryPhotoAuthHeaders();
+ return new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open('POST',inventoryPhotoAiEndpoint);xhr.timeout=40000;
+  Object.entries({...headers,'Content-Type':'image/jpeg','x-photo-request-id':requestId}).forEach(([k,v])=>xhr.setRequestHeader(k,v));
+  xhr.upload.onprogress=e=>{if(!isCurrent()){xhr.abort();return}onStage(e.lengthComputable?'Subiendo foto… '+Math.round(e.loaded/e.total*100)+'%':'Subiendo foto…',e.lengthComputable?e.loaded/e.total:null)};
+  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(Error('No se pudo enviar la foto'));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(Error('Respuesta no válida'))}};
+  xhr.onerror=xhr.ontimeout=()=>reject(Error('No se pudo confirmar la carga'));xhr.onabort=()=>reject(new DOMException('Selección sustituida','AbortError'));xhr.send(input);
+ });
+}
 async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
  let source=file,cleaned=false,notice='';
  try{
   onStage('Comprobando limpieza automática del fondo…');
-  if(!inventoryPhotoAiAvailability||Date.now()-inventoryPhotoAiAvailability.at>30000){
-   const status=await fetch(inventoryPhotoAiEndpoint,{cache:'no-store',signal:AbortSignal.timeout(8000)});
+  const headers=await inventoryPhotoAuthHeaders();
+  if(!inventoryPhotoAiAvailability||Date.now()-inventoryPhotoAiAvailability.at>20000){
+   const status=await fetch(inventoryPhotoAiEndpoint,{headers,cache:'no-store',signal:AbortSignal.timeout(15000)});
    if(!status.ok)throw Error('Servicio no disponible');
    const result=await status.json();inventoryPhotoAiAvailability={at:Date.now(),available:result.available===true};
   }
-  if(!inventoryPhotoAiAvailability.available){notice='Limpieza de fondo pendiente de activación. Foto original optimizada.';}
-  else{
-   onStage('Preparando foto para limpiar el fondo…');
-   const input=await inventoryPhotoAiInput(file);
+  if(!inventoryPhotoAiAvailability.available)throw Error('Limpieza no disponible');
+  onStage('Preparando foto para limpiar el fondo…');
+  const input=await inventoryPhotoAiInput(file),requestId=crypto.randomUUID();
+  if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
+  const job=await inventoryPhotoUpload(input,requestId,onStage,isCurrent);
+  if(job.job_id!==requestId)throw Error('Solicitud no válida');
+  const deadline=Date.now()+180000;
+  while(Date.now()<deadline){
    if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-   const client=window.inventorySupabaseClient;if(!client)throw Error('Sesión no disponible');
-   const {data,error}=await client.auth.getSession();if(error||!data?.session?.access_token)throw Error('Sesión caducada');
-   onStage('Limpiando fondo con IA… Puedes continuar con los demás campos.');
-   const response=await fetch(inventoryPhotoAiEndpoint,{method:'POST',headers:{Authorization:'Bearer '+data.session.access_token,'Content-Type':'image/jpeg'},body:input,signal:AbortSignal.timeout(130000)});
-   if(!response.ok)throw Error('No se pudo limpiar el fondo');
-   if(!response.headers.get('content-type')?.startsWith('image/jpeg'))throw Error('Respuesta no válida');
-   source=await response.blob();if(!source.size||source.size>15*1024*1024)throw Error('Imagen no válida');cleaned=true;
+   const headers=await inventoryPhotoAuthHeaders();
+   const response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});
+   if(!response.ok)throw Error('No se pudo consultar la foto');
+   const state=await response.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
+   if(state.state==='failed')throw Error('No se pudo limpiar el fondo');
+   if(state.state==='complete'){
+    onStage('Descargando fotografía con el fondo limpio…');
+    const result=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId)+'&result=1',{headers,cache:'no-store',signal:AbortSignal.timeout(25000)});
+    if(!result.ok||!result.headers.get('content-type')?.startsWith('image/jpeg'))throw Error('Resultado no válido');
+    source=await result.blob();if(!source.size||source.size>200*1024)throw Error('Imagen no válida');cleaned=true;break;
+   }
+   onStage(state.state==='processing'?'Limpiando fondo con ChatGPT… Puedes completar los demás campos.':'Foto enviada · esperando a ChatGPT… Puedes completar los demás campos.');
+   await new Promise(resolve=>setTimeout(resolve,3000));
   }
+  if(!cleaned)throw Error('La limpieza tardó demasiado');
  }catch(error){if(!isCurrent())throw error;notice='No se pudo limpiar el fondo. Se conserva la foto original optimizada.';source=file;cleaned=false;}
  if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
  const blob=await shrinkPhoto(source,onStage);
@@ -257,7 +284,8 @@ async function preparePhoto(file){
  try{
   if(!file.type.startsWith('image/'))throw Error('Selecciona una imagen válida.');
   if(file.size>30*1024*1024)throw Error('La imagen supera 30 MB. Selecciona una más pequeña.');
-  const catalog=await prepareInventoryCatalogPhoto(file,message=>{if(run===photoRun)inventoryPhotoStatus('photo-preview',message)},()=>run===photoRun);
+  const originalUrl=URL.createObjectURL(file),originalImage=document.createElement('img');originalImage.alt='Fotografía seleccionada · procesando';originalImage.onload=originalImage.onerror=()=>URL.revokeObjectURL(originalUrl);originalImage.src=originalUrl;byId('photo-preview').replaceChildren(originalImage);
+  const catalog=await prepareInventoryCatalogPhoto(file,(message,fraction)=>{if(run===photoRun)inventoryPhotoStatus('photo-preview',message,'busy',fraction)},()=>run===photoRun);
   const prepared=catalog.blob;if(run!==photoRun)return;
   if(prepared.size>200*1024)throw Error('No se pudo reducir la imagen a 200 KB.');
   photoBlob=prepared;
@@ -883,7 +911,7 @@ function open(id){
 async function selectPhoto(file){
  if(window.inventoryCanEditProducts!==true||saving||!file)return;const run=++photoRun;preparedPhoto=null;preparingPhoto=true;syncProductEditorAccess();inventoryPhotoStatus('edit-product-photo-preview','Preparando fotografía…');field('product-editor-message').textContent='Optimizando fotografía…';
  try{if(!file.type.startsWith('image/'))throw Error('Selecciona una imagen válida');if(file.size>30*1024*1024)throw Error('La foto supera 30 MB');
- const catalog=await prepareInventoryCatalogPhoto(file,message=>{if(run===photoRun)inventoryPhotoStatus('edit-product-photo-preview',message)},()=>run===photoRun);
+ const catalog=await prepareInventoryCatalogPhoto(file,(message,fraction)=>{if(run===photoRun)inventoryPhotoStatus('edit-product-photo-preview',message,'busy',fraction)},()=>run===photoRun);
  const blob=catalog.blob;if(blob.size>200*1024)throw Error('No se pudo optimizar la foto a menos de 200 KB');
  if(run!==photoRun)return;preparedPhoto=blob;inventoryPhotoStatus('edit-product-photo-preview',(catalog.cleaned?'Fondo limpio · ':catalog.notice+' · ')+Math.ceil(blob.size/1024)+' KB · se subirá al guardar',catalog.cleaned?'ready':'warning');clearPreviewUrl();previewUrl=URL.createObjectURL(blob);const img=document.createElement('img');img.alt='Nueva fotografía del insumo';img.src=previewUrl;photoPreview.replaceChildren(img);field('product-editor-message').textContent=(catalog.cleaned?'Fondo limpio con IA. ':catalog.notice+' ')+'Foto cuadrada optimizada · '+Math.ceil(blob.size/1024)+' KB · lista para guardar.'}
  catch(e){if(run===photoRun){preparedPhoto=null;inventoryPhotoStatus('edit-product-photo-preview','No se pudo preparar la fotografía.','error');field('product-editor-message').textContent='No se pudo preparar la foto: '+e.message}}
@@ -1067,3 +1095,4 @@ const photo=document.getElementById('photo-preview');if(photo){photo.title='Foto
 const newFields=document.getElementById('new-fields');if(newFields){const obs=new MutationObserver(()=>{if(!newFields.classList.contains('form-hide')&&syncNew){const dept=document.getElementById('product-department');const cat=document.getElementById('product-category');if(dept&&cat&&!cat.value)dept.dispatchEvent(new Event('change'));}});obs.observe(newFields,{attributes:true,attributeFilter:['class']});}
 })();
 </script></body></html>
+
