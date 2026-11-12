@@ -2,7 +2,7 @@ const fs=require('fs'),assert=require('node:assert/strict'),vm=require('vm');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/julio/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const repo=process.argv[2]||require('path').join(__dirname,'..'),read=p=>fs.readFileSync(repo+'/'+p,'utf8');
 for(const p of ['assets/hiring.js','assets/hiring-contract.js','assets/hiring-worker.js'])new vm.Script(read(p));
-for(const p of ['dashboard.html','rrhh.html','rrhh-20261101.html','expediente-contratacion.html','contrato-laboral.html','trabajador-ficha.html'])for(const m of read(p).matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))if(m[1].trim())new vm.Script(m[1]);
+for(const p of ['dashboard.html','rrhh.html','rrhh-20261101.html','expediente-contratacion.html','contrato-laboral.html','trabajador-ficha.html'])for(const m of read(p).matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))if(m[1].trim()&&!m[0].includes("application/json"))new vm.Script(m[1]);
 const artifacts=process.env.HIRING_OUTPUT_DIR||require('path').join(require('os').tmpdir(),'cartel-hiring-tests');fs.mkdirSync(artifacts,{recursive:true});
 const fields={full_name:'Persona de prueba',identity_number:'99010112345',birth_date:'1999-01-01',nationality:'Cubana',province:'La Habana',municipality:'Plaza',address:'Calle de prueba 123',mobile:'5355555555',fixed_phone:'',email:'prueba@example.com',alternative_address:'',emergency_name:'Contacto prueba',emergency_relation:'Hermana',emergency_phone:'5355555556',education_level:'Universitaria'};
 const result={trial_id:'synthetic',data:fields,revision:0,front:true,back:true,portrait:false,locked:false,submitted:false,role_title:'Gestor de prueba'};
