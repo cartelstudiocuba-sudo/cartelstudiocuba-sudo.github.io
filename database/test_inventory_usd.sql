@@ -1,0 +1,33 @@
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',(select created_by from public.inventory_movements order by created_at limit 1),'role','authenticated')::text,true);
+SET LOCAL ROLE authenticated;
+DO $test$
+DECLARE rid uuid=gen_random_uuid(); bad uuid=gen_random_uuid(); outgoing uuid=gen_random_uuid(); pid uuid; p jsonb; rejected boolean=false; result uuid; changes integer;
+BEGIN
+ ASSERT public.inventory_has_access('write'),'Test actor needs inventory write access';
+ p=jsonb_build_object('kind','entry','name','__USD_ROLLBACK_CHECK__','category','Otros insumos','department','Generales','unit','Unidad','minimum_stock',0,'currency','USD','quantity',3,'unit_cost',0.27,'occurred_on',(now() at time zone 'America/Havana')::date,'location','Almacén central de insumos','purchase_conversion',jsonb_build_object('original_currency','CUP','original_unit_cost',250,'cup_per_usd',910,'rate_source','manual'));
+ result=public.inventory_record_movement(rid,p);
+ ASSERT result=rid;
+ SELECT product_id INTO pid FROM public.inventory_movements WHERE id=rid;
+ ASSERT (SELECT currency='USD' AND unit_cost=0.27 AND stock=3 FROM public.inventory_products WHERE id=pid);
+ ASSERT (SELECT request_payload->'purchase_conversion'=p->'purchase_conversion' AND currency='USD' FROM public.inventory_movements WHERE id=rid);
+ ASSERT NOT EXISTS (SELECT 1 FROM public.inventory_fund_ledger WHERE movement_id=rid),'Inventory-only phase must not affect legacy CUP cash';
+ ASSERT public.inventory_record_movement(rid,p)=rid;
+ ASSERT (SELECT stock=3 FROM public.inventory_products WHERE id=pid),'Duplicate request altered stock';
+ BEGIN PERFORM public.inventory_record_movement(bad,p||jsonb_build_object('unit_cost',1)); EXCEPTION WHEN raise_exception THEN rejected=true; END;
+ ASSERT rejected,'Forged conversion accepted';rejected=false;
+ BEGIN PERFORM public.inventory_record_movement(bad,p||jsonb_build_object('currency','CUP')); EXCEPTION WHEN raise_exception THEN rejected=true; END;
+ ASSERT rejected,'CUP posting accepted';rejected=false;
+ BEGIN PERFORM public.inventory_record_movement(bad,p||jsonb_build_object('unit_cost',0.2747)); EXCEPTION WHEN raise_exception THEN rejected=true; END;
+ ASSERT rejected,'More than two USD decimals accepted';
+ PERFORM public.inventory_record_movement(outgoing,jsonb_build_object('kind','out','product_id',pid,'currency','USD','quantity',1,'unit_cost',0,'occurred_on',(now() at time zone 'America/Havana')::date,'allocation_type','administrative','receiving_area','Test','received_by','Test','notes','Rollback verification'));
+ ASSERT (SELECT stock=2 FROM public.inventory_products WHERE id=pid);
+ ASSERT (SELECT unit_cost=0.27 AND currency='USD' FROM public.inventory_economic_movements WHERE source_movement_id=outgoing);
+ rejected=false;
+ BEGIN PERFORM public.inventory_record_movement(gen_random_uuid(),jsonb_build_object('kind','out','product_id',pid,'currency','USD','quantity',100,'occurred_on',(now() at time zone 'America/Havana')::date)); EXCEPTION WHEN raise_exception THEN rejected=true; END;
+ ASSERT rejected,'Insufficient stock accepted';
+ UPDATE public.inventory_products SET cost_conversion='{}'::jsonb WHERE id=pid; GET DIAGNOSTICS changes=ROW_COUNT; ASSERT changes=0,'Direct cost metadata update escaped trigger-only RLS';
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+ rejected=false;
+ BEGIN PERFORM public.inventory_record_movement(gen_random_uuid(),p); EXCEPTION WHEN insufficient_privilege THEN rejected=true; END;
+ ASSERT rejected,'Unauthorized actor accepted';
+END $test$;
