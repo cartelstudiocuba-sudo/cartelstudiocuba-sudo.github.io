@@ -37,10 +37,10 @@ function hiringMessagePreview(text){const preview=document.createElement('div');
 
 let hiringCases={};
 function hiringPreparationActions(id,h){
- const button=(label,fn)=>'<button type="button" class="candidate-flow-action" onclick="'+fn+'(\''+hiringEsc(id)+'\')">'+label+'</button>';
- return '<div class="hiring-route-actions" style="display:grid;gap:10px;min-width:0;flex:1">'+(!h?.employee_id?button(h?.notified_at?'Preparar nueva notificación por WhatsApp':'Notificar al candidato →','openHiringPreparationNotification'):'')+
- (h?button('Revisar expediente y contrato','openHiringReview')+'<small style="grid-column:1/-1">Expediente: '+(h.submitted_at?'recibido':'pendiente')+' · Validación: '+(h.verified_at?'completada':'pendiente')+' · Contrato firmado: '+(h.signed_at?'validado':'pendiente')+'</small>':'')+
- (h?.notified_at?button('Continuar a inserción en sistema →','continueHiringRoute'):'')+'</div>';
+ return '<button type="button" class="candidate-flow-action" onclick="openHiringPreparationNotification(\''+hiringEsc(id)+'\')">Notificar al candidato →</button>';
+}
+function hiringReturnToSheet(dialog,overlay){
+ const back=document.createElement('button');back.textContent='Volver a la ficha';back.onclick=()=>overlay.remove();dialog.append(back);
 }
 function hiringTrainingReviewActions(id){return '<div style="display:grid;gap:10px;min-width:0"><button type="button" class="candidate-flow-action" onclick="openHiringTrainingReview(\''+hiringEsc(id)+'\')">Consultar datos de adiestramiento</button><button type="button" class="candidate-flow-action" onclick="continueHiringTrainingRoute(\''+hiringEsc(id)+'\')">Continuar a preparar contratación →</button></div>';}
 async function openHiringTrainingReview(id){
@@ -61,7 +61,9 @@ async function openHiringContractReview(h){
 function hiringCandidateLabel(x,fallback){return x.status==='trial'&&hiringCases[String(x.id)]?.notified_at?'Contratación en trámite':fallback;}
 async function loadHiringCases(){const {data,error}=await sb.from('hr_hiring_cases').select('trial_id,candidate_id,notified_at,verified_at,signed_at,employee_id,revision,submitted_at,revoked_at,expires_at');if(error)throw Error('No se pudo comprobar la contratación. '+error.message);hiringCases=Object.fromEntries((data||[]).map(h=>[String(h.candidate_id),h]));}
 function hiringToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
-async function openHiringPreparationNotification(candidateId){
+async function openHiringPreparationNotification(candidateId,renew=false){
+ // Reopening is read-only. Only an explicit renewal may rotate existing links.
+ if(!renew&&hiringCases[String(candidateId)])return openHiringReview(candidateId);
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
  if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue')return alert('Actualiza la ficha para comprobar la etapa.');
  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
@@ -69,9 +71,13 @@ async function openHiringPreparationNotification(candidateId){
 
  try{
   const token=hiringToken(),prepared=await hiringRpc('hr_prepare_hiring',{p_trial:trial.id,p_token:token});
+  await loadHiringCases();
   const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
   status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Abrir WhatsApp no confirma su envío.';
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;dialog.append(editor);
+  const links=hiringMessagePreview(form+'\n'+contract);links.setAttribute('aria-label','Enlaces personalizados');dialog.append(links);
+  const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;
+  confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
   const send=document.createElement('button');send.className='hiring-whatsapp';send.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg><span>Abrir WhatsApp</span>';let opened=false;
   send.onclick=async()=>{
    if(send.disabled)return;
@@ -87,16 +93,16 @@ async function openHiringPreparationNotification(candidateId){
      if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
      try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
      opened=true;
-     const pending={version:2,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened'};
+     const pending={version:3,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened'};
      try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify(pending));}catch(_){}
     }
-    editor.readOnly=true;preserveCandidateSheet(candidateId);
-    status.textContent='WhatsApp abierto · notificación iniciada. Guardando avance al paso 12…';
-    await persistHiringNotification(candidateId,trial);
-    overlay.remove();
-   }catch(e){status.textContent=(opened?'WhatsApp abierto; el avance sigue pendiente. ':'')+e.message;send.textContent=opened?'Reintentar avance al paso 12':'Abrir WhatsApp';send.disabled=false;}
+    preserveCandidateSheet(candidateId);confirmSend.hidden=false;
+    status.textContent='WhatsApp abierto. Si enviaste el mensaje, confirma la notificación para avanzar al paso 12.';send.disabled=false;
+   }catch(e){status.textContent=e.message;send.textContent='Abrir WhatsApp';send.disabled=false;}
   };
-  dialog.append(send);
+  dialog.append(send,confirmSend);
+  const review=document.createElement('button');review.textContent='Revisar expediente y contrato';review.onclick=()=>openHiringReview(candidateId);dialog.append(review);
+  hiringReturnToSheet(dialog,overlay);
  }catch(e){status.textContent=e.message;}
 }
 // Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
@@ -121,21 +127,22 @@ async function resumeHiringConfirmation(id){
  const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||!['trial','hired'].includes(candidate?.status))return;
  let p;try{p=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+t.id)||'null');}catch(_){return;}
  // Old explicit-send confirmations are not evidence of a new automatic action.
- if(p?.version!==2||p.action!=='whatsapp_opened')return;
+ if(![2,3].includes(p?.version)||p.action!=='whatsapp_opened')return;
+ if(document.getElementById('hiringNotificationOverlay'))return;
  const h=hiringCases[String(id)];
  if(p.stage!==t.stage||!h||h.revoked_at||Date.parse(h.expires_at)!==Date.parse(p.expires_at)||!Number.isFinite(Date.parse(p.expires_at))||Date.parse(p.expires_at)<=Date.now()||!Number.isFinite(p.at)||Date.now()-p.at>=86400000||p.at>Date.now()){
   try{sessionStorage.removeItem('cartel-hiring-pending:'+t.id);}catch(_){}return;
  }
- try{await persistHiringNotification(id,t);}catch(e){
-  const {overlay,dialog}=hiringNotificationDialog('Avance pendiente al paso 12');
-  const info=document.createElement('p');info.setAttribute('role','status');info.textContent='WhatsApp abierto · notificación iniciada. No se pudo guardar el avance: '+e.message;
-  const retry=document.createElement('button');retry.textContent='Reintentar avance al paso 12';retry.onclick=async()=>{retry.disabled=true;try{await persistHiringNotification(id,t);overlay.remove();}catch(e){info.textContent=e.message;retry.disabled=false;}};dialog.append(info,retry);
- }
+ const {overlay,dialog}=hiringNotificationDialog('Confirmar notificación de contratación');
+ const info=document.createElement('p');info.setAttribute('role','status');info.textContent='Si enviaste el mensaje preparado, confirma el envío para avanzar al paso 12. Si no lo enviaste, vuelve a la ficha.';
+ const confirmSend=document.createElement('button');confirmSend.className='hiring-confirm';confirmSend.textContent='Confirmar notificación enviada';confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(id,t);overlay.remove();}catch(e){info.textContent=e.message;confirmSend.disabled=false;}};
+ dialog.append(info,confirmSend);hiringReturnToSheet(dialog,overlay);
 }
+
 async function openHiringReview(id){
- const {overlay,dialog}=hiringNotificationDialog('Expediente laboral y contrato');const t=trialPeriodsByCandidate[String(id)];
+ const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');const t=trialPeriodsByCandidate[String(id)];
  const status=document.createElement('p');dialog.append(status);
- const close=document.createElement('button');close.textContent='Cerrar';close.onclick=()=>overlay.remove();dialog.append(close);
+ hiringReturnToSheet(dialog,overlay);
  try{
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
  status.textContent='Expediente: '+(h.submitted_at?'Recibido':'Pendiente')+' · Validación: '+(h.verified_at?'Completada':'Pendiente')+' · Contrato firmado: '+(h.signed_at?'Validado':'Pendiente');
@@ -145,7 +152,8 @@ async function openHiringReview(id){
  const act=(label,action,disabled=false)=>{const b=document.createElement('button');b.textContent=label;b.disabled=disabled||!!h.employee_id;b.onclick=async()=>{if(!confirm(label+' para la versión '+h.revision+' del expediente?'))return;b.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:action,p_revision:h.revision});overlay.remove();await loadHiringCases();window.CartelEvolution?.refresh();openHiringReview(id);}catch(e){status.textContent=e.message;b.disabled=false;}};dialog.append(b);};
  act('Validar expediente revisado','verify',!h.submitted_at||!!h.verified_at);act('Confirmar contrato firmado recibido y validado','signed',!h.verified_at||!!h.signed_at);act('Permitir correcciones del expediente','reopen',!h.verified_at);act('Revocar enlaces','revoke');
  const hire=document.createElement('button');hire.textContent='Formalizar contratación';hire.disabled=!!h.employee_id||!h.verified_at||!h.signed_at||!h.notified_at;if(h.employee_id)hire.textContent='Contratación formalizada';hire.onclick=async()=>{if(!confirm('¿Formalizar la contratación con el expediente y el contrato firmado validados?'))return;hire.disabled=true;try{await hiringRpc('hr_finalize_hiring',{p_trial:t.id});overlay.remove();await loadHiringCases();await refreshCandidateAfterStatusChange(id);}catch(e){status.textContent=e.message;hire.disabled=false;}};dialog.append(hire);
- const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>{overlay.remove();openHiringPreparationNotification(id)};if(!h.employee_id)dialog.append(renew);
+ const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>{overlay.remove();openHiringPreparationNotification(id,true)};if(!h.employee_id)dialog.append(renew);
+ if(h.notified_at){const next=document.createElement('button');next.textContent='Continuar a inserción en sistema →';next.onclick=async()=>{if(next.disabled)return;next.disabled=true;try{await onboardingCall(id,'hiring_continue');preserveCandidateSheet(id);window.CartelEvolution?.refresh();overlay.remove();}catch(e){status.textContent=e.message;next.disabled=false;}};dialog.append(next);}
  }catch(e){status.textContent=e.message;}
 }
 const hiringFields=[
