@@ -64,6 +64,9 @@ async function openSystemOnboarding(id){
  const candidate=candidates.find(c=>String(c.id)===String(id));if(!candidate)return;
  const {overlay,dialog}=hiringNotificationDialog('12 · Inserción en sistema');
  dialog.classList.add('onboarding-dialog');
+ const stageBack=document.createElement('button');stageBack.type='button';stageBack.className='candidate-route-back';stageBack.textContent='←';stageBack.title='Regresar a la etapa anterior · 11 · Preparar contratación';stageBack.setAttribute('aria-label','Regresar a la etapa anterior');stageBack.hidden=true;
+ dialog.querySelector('header').prepend(stageBack);
+ stageBack.onclick=async()=>{stageBack.disabled=true;try{await openCandidateStageBack(id,{sourceOverlay:overlay,onReturned:()=>overlay.remove()});}catch(error){info.textContent='No se pudo regresar: '+error.message;}finally{stageBack.disabled=false;}};
  if(!document.getElementById('onboardingVisualStyles')){const style=document.createElement('link');style.id='onboardingVisualStyles';style.rel='stylesheet';style.href='/assets/onboarding.css?v=20261111-access-flow';document.head.append(style);}
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
  const person=document.createElement('p');person.className='onboarding-person';person.textContent=candidate.full_name||'Trabajador';dialog.insertBefore(person,info);
@@ -72,6 +75,8 @@ async function openSystemOnboarding(id){
  const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/rrhh.html?employee='+encodeURIComponent(state.employee_id||'')+'&person-tab=access';a.onclick=e=>{if(window.CartelEvolution){e.preventDefault();overlay.remove();CartelEvolution.open('access');}};a.textContent='Gestionar acceso';return a;};
  const update=async()=>{
   state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
+  const previous=typeof candidatePreviousStep==='function'?candidatePreviousStep(candidate,trialPeriodsByCandidate[String(id)]):null;
+  stageBack.hidden=!(previous?.hiringRouteBack||previous?.hiringBack);
   const rolesResult=await sb.from('system_access_roles').select('id,title,code,is_active').eq('is_active',true).order('title');if(rolesResult.error)throw rolesResult.error;
   const roleList=rolesResult.data||[];
   content.replaceChildren();
