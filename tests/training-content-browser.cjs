@@ -2,21 +2,22 @@ const fs=require('fs'),path=require('path'),assert=require('node:assert/strict')
 const {chromium}=require('C:/Users/julio/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const published=process.argv.includes('--published');
 const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'rrhh.html'),'utf8');
+fs.mkdirSync(path.join(root,'test-results/training-content'),{recursive:true});
 for(const name of ['rrhh.html','plaza-ficha.html'])for(const m of fs.readFileSync(path.join(root,name),'utf8').matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))if(m[1].trim())new vm.Script(m[1]);
 const functions=html.slice(html.indexOf('async function openTrainingDocumentation('),html.indexOf('function candidateGuidedFlow('));
 const mock=`const candidates=[{id:'c',vacancy_id:'v',status:'trial',full_name:'Daniel Ficticio'}],vacancies=[{id:'v'}],roles=[];
 const role={id:'r',title:'Plaza ficticia',work_days:'De lunes a sábado',schedule:'De 9:00 a. m. a 6:00 p. m.',compensation:'15000',payment_frequency:'Semanal'};
 const trialPeriodsByCandidate={c:{id:'t'}},trainingDecisionByTrial={t:'continue'},roleForVacancy=()=>role,candidatePhone=()=> '5350000000',preserveCandidateSheet=()=>{};
-window.scenario='ok';window.calls=[];window.open=(...args)=>window.opened=args;
+window.rememberTrainingNotification=()=>{};window.preserveCandidateSheet=()=>{};window.confirmTrainingCandidateNotification=async()=>{throw Error('Confirmación sintética pendiente')};window.scenario='ok';window.calls=[];window.open=(...args)=>window.opened=args;
 const sb={async rpc(name,args){calls.push({name,args});if(scenario==='slow')await new Promise(r=>setTimeout(r,300));return scenario==='fail'?{error:{message:'denied'}}:{data:{url:(scenario==='foreign'?'https://attacker.invalid':'https://gestion.elcartelstudio.com')+'/plaza-ficha.html?documento=contenido#token='+'a'.repeat(64),role_id:scenario==='wrongrole'?'other':'r'}};}};`;
 const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripción vigente',direct_manager:'Tutor',work_content:{custom:[{title:'Función vigente',text:'CONTENIDO VIGENTE DEL GENERADOR '+('Texto extenso de regresión con acentos áéíóú y pasos verificables. '.repeat(180))+'FIN DEL BLOQUE LARGO'}],protocol_blocks:[{title:'Protocolo vigente',objective:'Objetivo vigente',steps:['Paso uno']}],evaluation_master:{criteria:[{name:'Puntualidad',desc:'Llegar a tiempo',weight:100}]}}},nomenclators:[{id:'n',category:'informacion_institucional',key:'mision',label:'Misión',value:'MISIÓN VIGENTE',applies_to_all_roles:true}],roles:[],expires_at:'2099-01-01T00:00:00Z'};
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
- for(const width of [390,1440]){
+ for(const width of [320,390,1440]){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
  await page.route('http://isolated.test/**',r=>r.fulfill({body:'<meta name="viewport" content="width=device-width,initial-scale=1">',contentType:'text/html'}));await page.goto('http://isolated.test/');await page.addScriptTag({content:mock+functions});await page.evaluate(()=>openTrainingDocumentation('c'));
  const dialog=page.getByRole('dialog');assert.equal(await dialog.locator('[name=days]').inputValue(),'7');assert.equal(await dialog.locator('[name=salary]').inputValue(),'15000');assert.equal(await dialog.locator('[name=tutor]').inputValue(),'');
  assert.equal(await dialog.locator('[name=start]').inputValue(),'');assert.equal(await dialog.locator('[name=phone]').inputValue(),'');
- await dialog.getByRole('button',{name:'WhatsApp candidato'}).click();assert.equal(await page.evaluate(()=>calls.length),0);
+ await dialog.getByRole('button',{name:'Notificar vía WhatsApp al candidato'}).click();assert.equal(await page.evaluate(()=>calls.length),0);
  for(const key of ['start','tutor','phone'])assert(await dialog.locator('[data-error="'+key+'"]').innerText());
  await dialog.locator('[name=start]').fill('2026-11-01');
  await dialog.locator('[name=start]').press('Enter');assert.equal(await page.evaluate(()=>calls.length),0);assert.equal(await dialog.locator('[name=start]').inputValue(),'2026-11-01');
@@ -24,8 +25,8 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  await dialog.locator('[name=tutor]').fill('   ');await dialog.locator('[name=phone]').fill('   ');
  await page.evaluate(()=>document.querySelector('form').onsubmit({preventDefault(){}}));assert.equal(await page.evaluate(()=>calls.length),0);
  await dialog.locator('[name=tutor]').fill('Tutor de prueba');await dialog.locator('[name=phone]').fill('5350000001');
- const prepare=dialog.getByRole('button',{name:'WhatsApp candidato'});await prepare.click();await page.locator('[data-preview]').waitFor();let message=await page.locator('[data-preview] textarea').inputValue();assert(message.startsWith('Perfecto, Daniel.'));assert(message.includes('\n\n📅'));assert(!message.includes('\\n'));assert(message.includes('Ademas en el siguiente enlace te agrupamos'));assert(message.includes('?documento=contenido#token='));assert(!/contrato|actualizar-expediente/i.test(message));assert.deepEqual(await page.evaluate(()=>calls),[{name:'hr_issue_training_content',args:{p_trial:'t'}}]);
- await dialog.getByRole('button',{name:'Abrir WhatsApp'}).click();assert.equal(await page.evaluate(()=>new URL(opened[0]).searchParams.get('text')),message);
+ const prepare=dialog.getByRole('button',{name:'Notificar vía WhatsApp al candidato'});await prepare.click();await page.locator('[data-preview]').waitFor();let message=await page.locator('[data-preview] textarea').inputValue();assert(message.startsWith('Perfecto, Daniel.'));assert(message.includes('\n\n📅'));assert(!message.includes('\\n'));assert(message.includes('Ademas en el siguiente enlace te agrupamos'));assert(message.includes('?documento=contenido#token='));assert(!/contrato|actualizar-expediente/i.test(message));assert.deepEqual(await page.evaluate(()=>calls),[{name:'hr_issue_training_content',args:{p_trial:'t'}}]);
+ await dialog.getByRole('button',{name:'Abrir WhatsApp con este mensaje →'}).click();assert.equal(await page.evaluate(()=>new URL(opened[0]).searchParams.get('text')),message);
  // Programmatic edits without events must not reuse a stale preview.
  await page.evaluate(()=>{document.querySelector('[name=phone]').value='';document.querySelector('[data-preview] button').click();});
  assert.equal(await page.evaluate(()=>calls.length),1);assert.equal(await page.locator('[data-preview]').count(),0);
@@ -35,16 +36,16 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  await page.evaluate(()=>window.scenario='slow');await prepare.click();await dialog.locator('[name=tutor]').fill('Cambio concurrente');await page.waitForFunction(()=>!document.querySelector('form button').disabled);assert.equal(await page.locator('[data-preview]').count(),0);
  // Custom options must pass the concurrency check after normalization.
  await page.evaluate(()=>window.scenario='ok');await dialog.locator('[name=workdays]').selectOption('__other__');await dialog.locator('[name=workdaysOther]').fill('Martes y jueves');await prepare.click();await page.locator('[data-preview]').waitFor();assert((await page.locator('[data-preview] textarea').inputValue()).includes('Martes y jueves'));assert(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
- await page.screenshot({path:path.join(root,'tests','documentation-'+width+'.png')});
+ await page.screenshot({path:path.join(root,'test-results/training-content','documentation-'+width+'.png')});
  await dialog.locator('[data-close]').click();await page.evaluate(()=>openTrainingDocumentation('c'));
  for(const key of ['start','tutor','phone'])assert.equal(await page.locator('[name='+key+']').inputValue(),'');
- await page.screenshot({path:path.join(root,'tests','documentation-empty-'+width+'.png')});
+ await page.screenshot({path:path.join(root,'test-results/training-content','documentation-empty-'+width+'.png')});
  await context.close();console.log('PASS training form and WhatsApp, no attachments/contracts, errors, custom options, concurrent edits, '+width+'px');
  }
  const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true}),page=await context.newPage();let response=fixture,reads=0;const requests=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://gestion.elcartelstudio.com/**',async route=>{if(published)return route.continue();const p=new URL(route.request().url()).pathname;const file=path.join(root,decodeURIComponent(p));if(fs.existsSync(file)&&fs.statSync(file).isFile())await route.fulfill({path:file,contentType:p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.html')?'text/html':undefined});else await route.fulfill({status:404,body:''});});
  await page.route('https://jhumvctocphyiwhszeaz.supabase.co/**',route=>{requests.push(route.request().url());if(route.request().url().endsWith('/rpc/hr_read_training_content')){reads++;return route.fulfill({json:response,headers:{'Cache-Control':'no-store'}});}return route.fulfill({status:403,json:{message:'unexpected request'}});});
- await page.goto('https://gestion.elcartelstudio.com/plaza-ficha.html?documento=contenido#token='+'a'.repeat(64));await page.getByRole('button',{name:'Descargar PDF',exact:true}).waitFor();await page.waitForFunction(()=>!document.getElementById('trainingContentDownload').disabled);
+ await page.goto('https://gestion.elcartelstudio.com/plaza-ficha.html?documento=contenido#token='+'a'.repeat(64));await page.getByRole('button',{name:'Descargar PDF',exact:true}).waitFor({timeout:10000}).catch(async e=>{console.error(JSON.stringify({errors,body:(await page.locator('body').innerText()).slice(0,1500),requests}));throw e;});await page.waitForFunction(()=>!document.getElementById('trainingContentDownload').disabled);
  assert((await page.locator('#trainingPublicContent').innerText()).includes('CONTENIDO VIGENTE DEL GENERADOR'));assert((await page.locator('#trainingPublicContent').innerText()).includes('MISIÓN VIGENTE'));assert.equal(await page.locator('.wrap').isVisible(),false);assert(!requests.some(x=>/auth\/|hr_roles|hr_candidates/.test(x)));assert.equal(await page.evaluate(()=>Object.keys(localStorage).length),0);
  // Renderer parity with the editor, not an independently implemented summary.
  const parity=await page.evaluate(()=>{const box=document.createElement('div');box.style.width='1000px';document.body.append(box);buildDocumentationInformativePages('role_content',box);const text=box.innerText;box.remove();return text;});assert(parity.includes('CONTENIDO VIGENTE DEL GENERADOR'));
@@ -78,9 +79,9 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  }
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>!!window.jspdf?.jsPDF&&!!window.html2canvas,{},{timeout:45000});
- const download=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();const file=await download;const dest=path.join(root,'tests','training-content-proof.pdf');await file.saveAs(dest);assert(fs.statSync(dest).size>15000);assert(fs.readFileSync(dest).subarray(0,5).toString()==='%PDF-');assert(reads>=2);assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.equal(await page.locator('.contract-preview-toolbar').isVisible(),false);assert.deepEqual(errors,[]);
- await page.screenshot({path:path.join(root,'tests','training-content-mobile.png'),fullPage:false});
- await page.setViewportSize({width:1440,height:900});await page.screenshot({path:path.join(root,'tests','role-content-desktop.png')});const desktopDownload=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();assert((await desktopDownload).suggestedFilename().endsWith('.pdf'));assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);
+ const download=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();const file=await download;const dest=path.join(root,'test-results/training-content','training-content-proof.pdf');await file.saveAs(dest);assert(fs.statSync(dest).size>15000);assert(fs.readFileSync(dest).subarray(0,5).toString()==='%PDF-');assert(reads>=2);assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.equal(await page.locator('.contract-preview-toolbar').isVisible(),false);assert.deepEqual(errors,[]);
+ await page.screenshot({path:path.join(root,'test-results/training-content','training-content-mobile.png'),fullPage:false});
+ await page.setViewportSize({width:1440,height:900});await page.screenshot({path:path.join(root,'test-results/training-content','role-content-desktop.png')});const desktopDownload=page.waitForEvent('download',{timeout:120000});await page.getByRole('button',{name:'Descargar PDF',exact:true}).click();assert((await desktopDownload).suggestedFilename().endsWith('.pdf'));assert.deepEqual(context.pages().filter(p=>p!==page).map(p=>p.url()).filter(url=>url!=='edge://downloads-hub/'),[]);
  // A layout/export failure and a failed read must preserve the verified preview.
  const before=await page.locator('.role-content-pages').textContent();
  await page.evaluate(()=>{window.savedBuild=buildDocumentationInformativePages;buildDocumentationInformativePages=()=>{throw Error('Fallo simulado de paginación');};});

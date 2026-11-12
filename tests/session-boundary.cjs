@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
-const {chromium}=require('C:/Users/julio/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const runtime=fs.readFileSync(path.join(__dirname,'../assets/loading-runtime.js'),'utf8');
-(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const browser=await chromium.launch({headless:true,...(process.platform==='win32'?{channel:'msedge'}:{})});try{
  for(const mode of ['event','restore','late']){
   const ctx=await browser.newContext();const page=await ctx.newPage();let logouts=0;
   await ctx.route('**/*',r=>{const p=new URL(r.request().url()).pathname;if(r.request().method()!=='GET'){logouts++;return r.abort();}return r.fulfill({contentType:'text/html',body:p==='/rrhh-login.html'?'<p>Acceso</p>':'<main id="private">Synthetic private view</main>'});});

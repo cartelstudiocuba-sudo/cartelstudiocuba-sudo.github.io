@@ -7,7 +7,8 @@
     "test:onboarding:sql": "node tests/onboarding-sql.cjs",
     "test:onboarding:edge": "node tests/onboarding-edge.cjs",
     "test:onboarding:browser": "node tests/onboarding-browser.cjs",
-    "test:onboarding": "npm run test:onboarding:sql && npm run test:onboarding:edge && npm run test:onboarding:browser"
+    "test:onboarding": "npm run test:onboarding:sql && npm run test:onboarding:edge && npm run test:onboarding:browser",
+    "test:onboarding:integral": "node scripts/test-onboarding-integral.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

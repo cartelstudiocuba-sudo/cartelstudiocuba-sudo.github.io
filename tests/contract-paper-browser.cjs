@@ -7,7 +7,7 @@ const contract=process.env.CONTRACT_REAL_FIXTURE?JSON.parse(fs.readFileSync(proc
 if(process.env.CONTRACT_REAL_FIXTURE){contract.logos={};for(const key of ['logo_path','watermark_path'])if(contract.template.presentation?.[key])contract.logos[contract.template.presentation[key]]='data:image/svg+xml;base64,'+Buffer.from(read('assets/cartel-studio-lettering-black.svg')).toString('base64');}
 (async()=>{const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
 try{let count;
-for(const width of [390,1440]){
+for(const width of [320,390,1440]){
  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{const url=new URL(r.request().url()),file=url.pathname.slice(1);if(url.hostname!=='test.local')return r.abort();if(!fs.existsSync(path.join(root,file)))return r.fulfill({status:404,body:''});r.fulfill({contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.svg')?'image/svg+xml':'text/html',body:fs.readFileSync(path.join(root,file))});});
  await page.route('**/assets/loading-runtime.js*',r=>r.fulfill({contentType:'text/javascript',body:''}));

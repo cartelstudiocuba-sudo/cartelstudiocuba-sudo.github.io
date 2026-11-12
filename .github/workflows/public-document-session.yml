@@ -1,0 +1,32 @@
+name: Public document session boundary
+on:
+  push:
+    paths:
+      - assets/loading-runtime.js
+      - plaza-ficha.html
+      - tests/public-capability-session.cjs
+      - tests/session-boundary.cjs
+      - .github/workflows/public-document-session.yml
+  pull_request:
+    paths:
+      - assets/loading-runtime.js
+      - plaza-ficha.html
+      - tests/public-capability-session.cjs
+      - tests/session-boundary.cjs
+      - .github/workflows/public-document-session.yml
+permissions:
+  contents: read
+jobs:
+  session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/public-capability-session.cjs
+      - run: node tests/session-boundary.cjs

@@ -49,7 +49,11 @@
  const privatePages=new Set(['dashboard.html','rrhh.html','rrhh-20261101.html','recursos-humanos.html','usuarios-permisos.html','inventario-insumos.html','contratacion.html','contratados.html','cv-admin.html','entrevistas.html','nomencladores.html','plazas.html','plaza-ficha.html','trabajador-ficha.html','bajas.html','gestionar-cierre-prueba.html']);
  let sessionClient=null,signingOut=false,leavingSession=false,documentUserId=null;
  privatePages.add('alta-trabajador.html');
- const privatePage=privatePages.has(root.location.pathname.split('/').pop());
+ // The role editor also hosts two capability views; their RPCs validate bearer tokens.
+ // Match the same pathname and document modes as plaza-ficha.html's boot dispatch.
+ const pageName=root.location.pathname.split('/').pop();
+ const publicRoleDocument=pageName==='plaza-ficha.html'&&['contenido','presentacion'].includes(new URLSearchParams(root.location.search).get('documento'));
+ const privatePage=privatePages.has(pageName)&&!publicRoleDocument;
  function concealSession(){document.documentElement.setAttribute('data-session-pending','');}
  function revealSession(){document.documentElement.removeAttribute('data-session-pending');}
  function leaveSession(localOnly=false){
