@@ -28,19 +28,7 @@ Este mensaje contiene información de acceso personal y confidencial. No compart
 async function onboardingCall(id,action,payload={}){const state=await hiringRpc('system_onboarding',{p_candidate:id,p_action:action,p_payload:payload});window.dispatchEvent(new CustomEvent('cartel-onboarding-updated',{detail:{id,state}}));return state;}
 async function onboardingEdge(id,action){const {data,error}=await sb.functions.invoke('hr-onboarding',{body:{candidate_id:id,action}});if(error||data?.error)throw Error(data?.error||'No se pudo preparar la activación. Reintenta para comprobar el estado.');return data;}
 function onboardingHasAccount(state){return !!(state.existing_account||state.auth_user_id||state.protected||state.created_at);}
-function onboardingExistingAccess(state,manage,back,continueReview){
- const section=document.createElement('section');section.className='onboarding-section onboarding-existing-access';section.dataset.mode='existing_account';
- const title=document.createElement('h4');title.textContent='1 · Revisar acceso existente';
- const note=document.createElement('p');note.textContent='Este trabajador ya tiene una cuenta vinculada. Puedes revisar o modificar su acceso desde su ficha, o continuar con la cuenta actual.';
- const safety=document.createElement('p');safety.className='onboarding-account-safety';safety.textContent='Continuar conserva el usuario, el correo y los permisos actuales. No crea otra cuenta ni cambia sus datos.';
- const actions=document.createElement('div');actions.className='onboarding-account-actions';const link=manage();link.textContent='Revisar o modificar acceso';link.classList.add('onboarding-manage');actions.append(link);
- const error=document.createElement('p');error.className='onboarding-config-error';error.setAttribute('role','alert');
- if(continueReview){const button=document.createElement('button');button.type='button';button.className='onboarding-continue';button.textContent='Continuar con la cuenta actual';button.onclick=async()=>{button.disabled=true;error.textContent='';try{await continueReview();}catch(e){error.textContent='No se pudo continuar: '+e.message;button.disabled=false;}};actions.append(button);}
- const backButton=document.createElement('button');backButton.type='button';backButton.className='onboarding-config-back';backButton.textContent='Volver a la ficha';backButton.onclick=back;
- section.append(title,note,safety,actions,error,backButton);return section;
-}
 async function onboardingConfigurationForm(state,roleList,save,back,options={}){
- if(onboardingHasAccount(state))throw Error('La cuenta existente debe gestionarse desde su ficha.');
  const form=document.createElement('form');form.className='onboarding-configuration-form';
  form.innerHTML='<h4>1 · Configurar acceso</h4><p>Define cómo accederá el trabajador y comprueba los permisos antes de guardar.</p><div class="onboarding-fields"><div class="onboarding-field"><label for="onboardingUsername">Usuario</label><input id="onboardingUsername" name="username" autocomplete="off" required minlength="3" maxlength="80" pattern="[a-z0-9._-]{3,80}" aria-describedby="onboardingUsernameHelp"><small id="onboardingUsernameHelp">Entre 3 y 80 caracteres: letras minúsculas, números, punto, guion o guion bajo.</small></div><div class="onboarding-field"><label for="onboardingEmail">Correo electrónico individual</label><input id="onboardingEmail" name="email" type="email" autocomplete="off" required maxlength="254" aria-describedby="onboardingEmailHelp"><small id="onboardingEmailHelp"></small></div><div class="onboarding-field onboarding-field-role"><label for="onboardingRole">Perfil de acceso</label><select id="onboardingRole" name="role_id" required><option value="">Selecciona un perfil…</option></select></div></div><section class="onboarding-permission-preview" aria-label="Resumen de permisos"><strong>Permisos del perfil seleccionado</strong><div id="onboardingPermissionSummary" aria-live="polite"></div></section><p class="onboarding-config-error" role="alert"></p><div class="onboarding-config-actions"><button type="button" class="onboarding-config-back">Volver a la ficha</button><button type="submit" class="onboarding-save" disabled>Guardar y continuar</button></div>';
  const draft=options.editing===true;
@@ -56,7 +44,7 @@ async function onboardingConfigurationForm(state,roleList,save,back,options={}){
  select.onchange=async()=>{const request=++version;revision=null;submit.disabled=true;error.textContent='';preview.hidden=!select.value;summary.textContent='Consultando permisos…';try{if(!select.value){summary.textContent='Selecciona un perfil para consultar sus permisos.';return;}const template=await hiringRpc('system_role_template',{p_role:select.value});if(request!==version||!select.value)return;revision=template.revision;summary.replaceChildren();const list=document.createElement('dl');for(const [label,value] of [['Inventario de insumos',template.can_write?'Lectura y operaciones':template.can_read?'Solo lectura':'Sin acceso'],['Recursos Humanos','Sin acceso'],['Administración de usuarios','Sin acceso']]){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;list.append(dt,dd);}const note=document.createElement('p');note.textContent='Las vistas asignadas se conservan. Las cuentas nuevas no reciben vistas automáticamente.';summary.append(list,note);validate();}catch(e){if(request!==version)return;summary.textContent='No se pudieron consultar los permisos. Vuelve a seleccionar el perfil para reintentar.';error.textContent=e.message;}};
  form.querySelector('.onboarding-config-back').onclick=()=>{if(!busy)back();};
 
- form.onsubmit=async event=>{event.preventDefault();if(busy||revision===null)return;error.textContent='';if(!form.reportValidity())return;busy=true;for(const input of form.querySelectorAll('input,select,button'))input.disabled=true;const payload={username:form.elements.username.value.trim().toLowerCase(),email:form.elements.email.value.trim().toLowerCase(),role_id:select.value,template_revision:revision,expected_config:state.config_revision};try{await save('save',payload);}catch(e){error.textContent='No se guardaron los cambios: '+e.message;busy=false;for(const input of form.querySelectorAll('input,select,button'))input.disabled=false;validate();}};
+ form.onsubmit=async event=>{event.preventDefault();if(busy||revision===null)return;error.textContent='';if(!form.reportValidity())return;busy=true;for(const input of form.querySelectorAll('input,select,button'))input.disabled=true;const payload={username:form.elements.username.value.trim().toLowerCase(),email:form.elements.email.value.trim().toLowerCase(),role_id:select.value,template_revision:revision,expected_config:state.config_revision};try{if(onboardingHasAccount(state))throw Error('Este trabajador ya tiene una cuenta vinculada. No se puede crear otra cuenta ni modificar su usuario, correo o permisos desde este formulario.');await save('save',payload);}catch(e){error.textContent='No se guardaron los cambios: '+e.message;busy=false;for(const input of form.querySelectorAll('input,select,button'))input.disabled=false;validate();}};
  select.onchange();return form;
 }
 
@@ -64,59 +52,25 @@ async function openSystemOnboarding(id){
  const candidate=candidates.find(c=>String(c.id)===String(id));if(!candidate)return;
  const {overlay,dialog}=hiringNotificationDialog('12 · Inserción en sistema');
  dialog.classList.add('onboarding-dialog');
- const stageBack=document.createElement('button');stageBack.type='button';stageBack.className='candidate-route-back';stageBack.textContent='←';stageBack.title='Regresar a la etapa anterior · 11 · Preparar contratación';stageBack.setAttribute('aria-label','Regresar a la etapa anterior');stageBack.hidden=true;
- dialog.querySelector('header').prepend(stageBack);
- stageBack.onclick=async()=>{stageBack.disabled=true;try{await openCandidateStageBack(id,{sourceOverlay:overlay,onReturned:()=>overlay.remove()});}catch(error){info.textContent='No se pudo regresar: '+error.message;}finally{stageBack.disabled=false;}};
  if(!document.getElementById('onboardingVisualStyles')){const style=document.createElement('link');style.id='onboardingVisualStyles';style.rel='stylesheet';style.href='/assets/onboarding.css?v=20261111-access-flow';document.head.append(style);}
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
  const person=document.createElement('p');person.className='onboarding-person';person.textContent=candidate.full_name||'Trabajador';dialog.insertBefore(person,info);
  const content=document.createElement('div');dialog.append(content);
- let state,activation='',opened=false,editingConfiguration=false;
+ let state,activation='',opened=false,editingConfiguration=false,configuredHere=false;
  const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/rrhh.html?employee='+encodeURIComponent(state.employee_id||'')+'&person-tab=access';a.onclick=e=>{if(window.CartelEvolution){e.preventDefault();overlay.remove();CartelEvolution.open('access');}};a.textContent='Gestionar acceso';return a;};
  const update=async()=>{
   state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
-  const previous=typeof candidatePreviousStep==='function'?candidatePreviousStep(candidate,trialPeriodsByCandidate[String(id)]):null;
-  stageBack.hidden=!(previous?.hiringRouteBack||previous?.hiringBack);
   const rolesResult=await sb.from('system_access_roles').select('id,title,code,is_active').eq('is_active',true).order('title');if(rolesResult.error)throw rolesResult.error;
   const roleList=rolesResult.data||[];
   content.replaceChildren();
   info.textContent='Estado laboral: '+(state.labor_status==='hired'?'Contratados':'Contratación en trámite')+' · Expediente: '+(state.document_verified?'Validado':'Pendiente')+' · Contrato firmado: '+(state.contract_signed?'Validado':'Pendiente')+' · Formalización documental: '+(state.formalized?'Completada':'Pendiente')+'.';
   if(state.labor_status&&state.labor_status!=='hired'){const resume=document.createElement('button');resume.textContent='Abrir WhatsApp del paso 11 para continuar';resume.onclick=()=>{overlay.remove();openHiringPreparationNotification(id);};content.append(resume);return;}
   const stages=document.createElement('ol');stages.className='onboarding-stages';stages.setAttribute('aria-label','Tres subpasos del acceso');
-  const existing=onboardingHasAccount(state);
-  const stageData=[[(existing?'Revisar acceso existente':'Configurar acceso'),state.configured_at,'<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/><circle cx="12" cy="12" r="4"/>'],[(existing?'Preparar notificación':'Crear cuenta y preparar notificación'),state.created_at,'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2m3-13v6m-3-3h6"/>'],['Notificar por WhatsApp',state.whatsapp_opened_at,'<path d="M20 11.5a8 8 0 0 1-12 7L3 20l1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M8 8c0 4 2 6 6 6l1-2-2-1-1 1-2-2 1-1-1-2Z"/>']];
+  // Entry always starts a clean local form; persisted account data stays untouched.
+  const stageData=[['Configurar acceso',configuredHere&&state.configured_at,'<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/><circle cx="12" cy="12" r="4"/>'],['Crear cuenta y preparar notificación',configuredHere&&state.created_at,'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2m3-13v6m-3-3h6"/>'],['Notificar por WhatsApp',configuredHere&&state.whatsapp_opened_at,'<path d="M20 11.5a8 8 0 0 1-12 7L3 20l1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M8 8c0 4 2 6 6 6l1-2-2-1-1 1-2-2 1-1-1-2Z"/>']];
   const currentStage=stageData.findIndex(([,done])=>!done);
   stageData.forEach(([title,done,icon],index)=>{const li=document.createElement('li');li.className=done?'is-complete':index===currentStage?'is-current':'is-pending';if(index===currentStage)li.setAttribute('aria-current','step');const symbol=document.createElement('span');symbol.className='onboarding-stage-icon';symbol.setAttribute('aria-hidden','true');symbol.innerHTML='<svg viewBox="0 0 24 24">'+(done?'<path d="m5 12 4 4L19 6"/>':icon)+'</svg>';const label=document.createElement('span');label.className='onboarding-stage-title';label.textContent=title;const status=document.createElement('span');status.className='onboarding-stage-state';status.textContent=done?'Completado':index===currentStage?'En curso':'Pendiente';li.append(symbol,label,status);stages.append(li);});content.append(stages);
-  if(state.route_reopened_at){
-   const section=document.createElement('section');section.className='onboarding-section';
-   const note=document.createElement('p');note.textContent=existing?'Has vuelto al paso 12 para revisar el acceso. La cuenta y sus permisos se mantienen.':'Has vuelto al paso 12. Completa la nueva configuración de acceso.';section.append(note);
-   const expected={expected_reopened_at:state.route_reopened_at};
-   const action=(label,run)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=async()=>{button.disabled=true;try{await run();await update();}catch(e){info.textContent=e.message;button.disabled=false;}};section.append(button);};
-   if(!state.configured_at){
-    if(existing){section.classList.add('onboarding-review-container');section.append(onboardingExistingAccess(state,manage,()=>overlay.remove(),async()=>{await onboardingCall(id,'review_existing',{...expected,expected_config:state.config_revision});await update();}));}
-    else section.append(await onboardingConfigurationForm(state,roleList,async(_mode,payload)=>{await onboardingCall(id,'configure',payload);await update();},()=>overlay.remove()));
-   }else if(!state.created_at){
-    const title=document.createElement('h4');title.textContent='2 · Preparar notificación';
-    const hint=document.createElement('p');hint.textContent='Se comprobará y reutilizará la cuenta existente. No se creará otra cuenta.';
-    section.append(title,hint);
-    action('Preparar notificación',async()=>{
-     if(!state.activated_at){const result=await onboardingEdge(id,Date.parse(state.expires_at)<=Date.now()?'renew':'preview');activation=result.activation_url;if(!activation||!activation.startsWith('https://gestion.elcartelstudio.com/activar-cuenta.html#activation='))throw Error('No se pudo preparar el enlace oficial');}
-     await onboardingCall(id,'review_prepare',expected);
-    });
-   }else{
-    const title=document.createElement('h4');title.textContent='3 · Notificar por WhatsApp';section.append(title);
-    if(!state.activated_at&&!activation){try{activation=(await onboardingEdge(id,'preview')).activation_url;}catch(e){info.textContent=e.message;action('Renovar enlace de activación',async()=>{activation=(await onboardingEdge(id,'renew')).activation_url;});content.append(section);return;}}
-    const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje de acceso para WhatsApp (editable)');
-    editor.value=state.activated_at?'Hola, '+hiringGreetingName(candidate)+'. Tu acceso a Cartel Gestión está disponible. Usuario: '+state.username+'. Correo: '+state.email+'. Accede desde https://gestion.elcartelstudio.com. Tu cuenta y contraseña son personales y confidenciales.':onboardingMessage(hiringGreetingName(candidate),state.username,state.email,activation,'https://gestion.elcartelstudio.com/guia-acceso-movil.html');section.append(editor);
-    let notified=false;
-    action('Notificar vía WhatsApp',async()=>{
-     if(!notified){const phone=candidatePhone(candidate);if(phone.length<8)throw Error('Falta un WhatsApp válido.');if(!editor.value.trim())throw Error('Escribe un mensaje.');if(!state.activated_at&&Date.parse(state.expires_at)<=Date.now())throw Error('El enlace venció. Cierra y vuelve a abrir para renovarlo.');const tab=window.open('about:blank','_blank');if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');try{tab.opener=null;tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}notified=true;editor.readOnly=true;}
-     await onboardingCall(id,'review_notified',expected);overlay.remove();
-    });
-   }
-   content.append(section);return;
-  }
-  if(state.protected||(existing&&!state.created_at)){content.append(onboardingExistingAccess(state,manage,()=>overlay.remove()));return;}
+  if(!configuredHere){content.append(await onboardingConfigurationForm(state,roleList,async(_mode,payload)=>{const latest=await onboardingCall(id,'read');if(onboardingHasAccount(latest))throw Error('Este trabajador ya tiene una cuenta vinculada. No se puede crear otra ni modificar la cuenta actual.');await onboardingCall(id,'configure',payload);configuredHere=true;await update();},()=>overlay.remove()));return;}
   if(state.configured_at){
    const summary=document.createElement('div');summary.className='onboarding-config-summary';
    const heading=document.createElement('div');heading.className='onboarding-config-heading';
