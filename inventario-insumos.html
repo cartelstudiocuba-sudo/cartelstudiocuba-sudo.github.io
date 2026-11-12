@@ -861,7 +861,7 @@ function setup(deptId,catId,nameId,helpId){
  const help=document.createElement('p');help.id=helpId;help.className='form-help';help.style.marginTop='5px';cat.insertAdjacentElement('afterend',help);
  function update(selected,auto){const groups=TAX[dept.value]||{};const current=selected===undefined?cat.value:selected;cat.replaceChildren(new Option('Seleccionar categoría',''));Object.keys(groups).forEach(c=>cat.add(new Option(c,c)));if(current&&!groups[current])cat.add(new Option(current+' (categoría anterior)',current));cat.value=current||'';if(auto&&!manual){const suggestion=suggest(dept.value,name.value);if(suggestion)cat.value=suggestion;}const ex=groups[cat.value];help.textContent=ex?'Ejemplos: '+ex.slice(0,6).join(' · ')+(auto&&!manual&&cat.value===suggest(dept.value,name.value)?' · Categoría sugerida automáticamente':''):'Escribe el nombre del insumo para obtener una sugerencia o selecciona una categoría.';}
  dept.addEventListener('change',()=>{manual=false;update('',true)});
- name.addEventListener('input',()=>{manual=false;update(undefined,true)});
+ name.addEventListener('input',()=>{manual=false;update('',true)});
  cat.addEventListener('change',()=>{manual=true;update(cat.value,false)});
  update('',false);
  return function(saved){manual=!!saved;update(saved||'',false)};
@@ -869,6 +869,8 @@ function setup(deptId,catId,nameId,helpId){
 const syncNew=setup('product-department','product-category','product-name','inventory-new-category-examples');
 const syncEdit=setup('edit-product-department','edit-product-category','edit-product-name','inventory-edit-category-examples');
 window.inventorySyncEditorCategory=syncEdit;
+// Reinicializar categorías cuando el formulario se restablezca sin conservar valores anteriores.
+const movementForm=document.getElementById('movement-form');if(movementForm)movementForm.addEventListener('reset',()=>setTimeout(()=>{const d=document.getElementById('product-department');if(d)d.dispatchEvent(new Event('change'));},0));
 const photo=document.getElementById('photo-preview');if(photo){photo.title='Fotografía obligatoria. Se recomienda fotografiar el insumo sobre fondo blanco, bien iluminado y centrado, para mantener uniforme el catálogo.';photo.setAttribute('aria-label',photo.title);}
 const newFields=document.getElementById('new-fields');if(newFields){const obs=new MutationObserver(()=>{if(!newFields.classList.contains('form-hide')&&syncNew){const dept=document.getElementById('product-department');const cat=document.getElementById('product-category');if(dept&&cat&&!cat.value)dept.dispatchEvent(new Event('change'));}});obs.observe(newFields,{attributes:true,attributeFilter:['class']});}
 })();
