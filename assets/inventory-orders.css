@@ -42,6 +42,15 @@ html,body{margin:0;background:#090e14;color:#f5f7fa}#orders-root{padding:18px 12
 @media(max-width:600px){#orders-root .ecs-ribbon{padding:2px 0 18px;margin-bottom:18px}#orders-root .ecs-ribbon button{flex-direction:column;gap:5px;min-height:80px;padding:12px 12px 12px 21px;font-size:12px;margin-left:-10px;clip-path:polygon(0 0,calc(100% - 13px) 0,100% 50%,calc(100% - 13px) 100%,0 100%,13px 50%)}#orders-root .ecs-ribbon button:first-child{padding-left:9px;clip-path:polygon(0 0,calc(100% - 13px) 0,100% 50%,calc(100% - 13px) 100%,0 100%)}#orders-root .ecs-step-icon svg{width:23px;height:23px}#orders-root .ecs-step-check{position:absolute;right:17px;top:9px;width:16px;height:16px;min-width:16px}#orders-root .ecs-step-check svg{width:11px;height:11px}#orders-root .ecs-form-block{padding:17px 14px}#orders-root .ecs-form-block .ecs-field-grid{grid-template-columns:1fr;gap:14px}#orders-root .ecs-form-block h3{font-size:17px}#orders-root #order-destination>.ecs-actions{align-items:stretch}#orders-root #order-destination>.ecs-actions button{flex:1}}
 @media(prefers-reduced-motion:reduce){#orders-root *{scroll-behavior:auto}}
 
+#orders-root .ecs-discard-dialog{width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:27px;border:1px solid #526274;border-radius:21px;background:linear-gradient(145deg,#243241,#111a24);color:#f3f6fa;box-shadow:0 24px 75px #0009;font:inherit}
+#orders-root .ecs-discard-dialog::backdrop{background:#050a11cc;backdrop-filter:blur(5px)}
+#orders-root .ecs-discard-dialog h3{font-size:21px;line-height:1.3;margin:16px 0 10px;max-width:100%}
+#orders-root .ecs-discard-dialog p{color:#bdc9d7;font-size:14px;line-height:1.55;margin:0}
+#orders-root .ecs-discard-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#ffda031a;color:var(--ecs-yellow)}#orders-root .ecs-discard-icon svg{width:27px;height:27px}
+#orders-root .ecs-discard-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;align-items:stretch}#orders-root .ecs-discard-actions button{flex:1 1 150px;min-height:46px;padding:11px 12px;white-space:normal}
+#orders-root .ecs-danger{border:1px solid #d2676e;border-radius:12px;background:linear-gradient(#ad3e47,#812832);color:#fff;font-weight:700;box-shadow:inset 0 1px #ffffff20,0 3px 0 #49141c}#orders-root .ecs-danger:hover{background:linear-gradient(#bd4650,#95303b)}
+@media(max-width:400px){#orders-root .ecs-discard-dialog{padding:22px 18px}#orders-root .ecs-discard-dialog h3{font-size:20px}#orders-root .ecs-discard-actions{flex-direction:column}#orders-root .ecs-discard-actions button{flex-basis:auto}}
+
 /* Compact request review, with delivery context above the product list. */
 #orders-root .ecs-head{position:relative;padding-right:112px;min-height:142px}
 #orders-root .ecs-close{position:absolute;right:9px;top:9px;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:0;border-radius:12px;background:transparent;color:#dce4ec;box-shadow:none}
