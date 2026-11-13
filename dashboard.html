@@ -213,7 +213,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   });
   const email=document.getElementById('cartel-account-email');if(email)email.textContent=user.email||'Cuenta conectada';
   const profile=document.querySelector('.topbar .profile');if(profile)profile.style.display='none';
-  if(views.length){const first=views.find(v=>v.is_default)||views[0];const item=catalog[first.code];if(item?.url){const link=[...nav.querySelectorAll('.personal-view-link')].find(a=>a.getAttribute('href')===item.url);showModule(item.url,link)}}
+  // Assigned views populate the menu; opening the platform always keeps Inicio visible.
  window.cartelPersonalNavigationReady=true;window.dispatchEvent(new Event('cartel-navigation-ready'));
  }catch(e){console.warn('Navegación personal no disponible',e)}
 }
