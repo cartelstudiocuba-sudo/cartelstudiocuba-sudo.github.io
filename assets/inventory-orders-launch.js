@@ -1,0 +1,9 @@
+(()=>{
+ let overlay=null,frame=null,previousFocus=null;
+ function close(){if(!overlay)return;overlay.remove();overlay=frame=null;document.body.style.overflow='';previousFocus?.focus();}
+ function openNew(){if(window.inventoryCanEditProducts!==true)return;previousFocus=document.activeElement;if(overlay){frame.focus();return;}overlay=document.createElement('div');overlay.className='inventory-order-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Nueva salida de almacén');frame=document.createElement('iframe');frame.title='Nueva salida de almacén';frame.src='/inventario-pedidos.html?new=1&embedded=1&v=orders-1';overlay.append(frame);document.body.append(overlay);document.body.style.overflow='hidden';frame.focus();}
+ const original=window.showModal;if(typeof original==='function')window.showModal=function(type){if(type==='out')return openNew();return original(type);};
+ const button=document.getElementById('quick-new-exit');if(button)button.onclick=openNew;
+ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;if(e.data?.type==='inventory-orders-close')close();if(e.data?.type==='inventory-orders-changed')window.refreshInventorySafely?.();});
+ const style=document.createElement('style');style.textContent='.inventory-order-overlay{position:fixed;inset:0;z-index:100100;background:#05090deb;display:flex;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(6px)}.inventory-order-overlay iframe{display:block;width:min(1100px,100%);height:min(96dvh,1000px);border:1px solid #566476;border-radius:24px;background:#101720}@media(max-width:600px){.inventory-order-overlay{padding:0}.inventory-order-overlay iframe{height:100dvh;width:100%;border:0;border-radius:0}}';document.head.append(style);
+})();
