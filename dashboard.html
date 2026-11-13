@@ -194,7 +194,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
    if(!result.error&&caps&&(caps.create||caps.approve||caps.fulfil)){
     if(!grouped.has('Inventario'))grouped.set('Inventario',[]);
     const list=grouped.get('Inventario');
-    if(caps.create||caps.fulfil)list.push({group:'Inventario',title:caps.fulfil?'Pedidos y entregas':'Mis pedidos de insumos',url:'/inventario-pedidos.html',icon:'◇'});
+    if((caps.create||caps.fulfil)&&caps.area!=='Gráfica')list.push({group:'Inventario',title:caps.fulfil?'Pedidos y entregas':'Mis pedidos de insumos',url:'/inventario-pedidos.html',icon:'◇'});
     if(caps.create)list.push({group:'Inventario',title:'Solicitud',url:'/inventario-solicitud.html',icon:'◇'});
     if(caps.approve)list.push({group:'Inventario',title:'Aprobar solicitudes',url:'/inventario-aprobaciones.html',icon:'◇'});
    }
