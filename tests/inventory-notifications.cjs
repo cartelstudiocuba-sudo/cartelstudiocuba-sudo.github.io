@@ -1,0 +1,15 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+test('Badges separate unseen and pending, preserve names, validate frame messages and never mark read by opening menu',async()=>{
+ class Node{constructor(tag='BUTTON',text=''){this.tagName=tag;this.textContent=text;this.dataset={};this.attrs={};this.children=[];}querySelector(){return this.children.find(n=>n.className==='inventory-notice-badge')||null;}append(n){n.parent=this;this.children.push(n);}remove(){this.parent.children=this.parent.children.filter(n=>n!==this);}setAttribute(k,v){this.attrs[k]=v;}getAttribute(k){return this.attrs[k]??null;}}
+ const module=new Node(),approval=new Node(),desktopLink=new Node('A','Aprobar solicitudes'),heading=new Node(),group={querySelector:()=>heading},nav={querySelectorAll:()=>[desktopLink]};desktopLink.parentElement=group;group.parentElement=nav;
+ const events={},docEvents={},frame={contentWindow:{}},calls=[];let counts={unseen:3,pending:5};
+ const document={hidden:false,querySelector:()=>nav,querySelectorAll:s=>s.includes('unseen')?[module]:[approval],createElement:tag=>new Node(tag),getElementById:id=>id==='frame'?frame:null,addEventListener:(n,f)=>docEvents[n]=f};
+ const window={cartelPersonalNavigationReady:true,addEventListener:(n,f)=>events[n]=f};
+ vm.runInNewContext(fs.readFileSync('assets/inventory-notifications.js','utf8'),{window,document,location:{origin:'https://example.test'},sb:{rpc:async(name,args)=>{calls.push({name,args});return{data:counts}}},setInterval(){},console});
+ const settle=()=>new Promise(r=>setImmediate(r));await settle();
+ assert.equal(module.children[0].textContent,'3');assert.equal(approval.children[0].textContent,'5');assert.equal(desktopLink.dataset.navigationLabel,'Aprobar solicitudes');assert.equal(heading.children[0].textContent,'3');
+ counts={unseen:0,pending:5};await window.CartelInventoryNotices.refresh();assert.equal(module.children.length,0);assert.equal(approval.children[0].textContent,'5');
+ const before=calls.length;events.message({origin:'https://foreign.test',source:frame.contentWindow,data:{type:'inventory-orders-changed'}});events.message({origin:'https://example.test',source:{},data:{type:'inventory-orders-changed'}});await settle();assert.equal(calls.length,before);
+ counts={unseen:0,pending:0};events.message({origin:'https://example.test',source:frame.contentWindow,data:{type:'inventory-orders-changed'}});await settle();assert.equal(approval.children.length,0);assert(calls.every(c=>c.name==='inventory_order_notifications'&&c.args===undefined));
+ document.hidden=true;const n=calls.length;await window.CartelInventoryNotices.refresh();assert.equal(calls.length,n);
+});
