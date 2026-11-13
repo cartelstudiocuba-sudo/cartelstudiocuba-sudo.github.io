@@ -1215,6 +1215,6 @@ const movementForm=document.getElementById('movement-form');if(movementForm)move
 const photo=document.getElementById('photo-preview');if(photo){photo.title='Fotografía obligatoria. Se recomienda fotografiar el insumo sobre fondo blanco, bien iluminado y centrado, para mantener uniforme el catálogo.';photo.setAttribute('aria-label',photo.title);}
 const newFields=document.getElementById('new-fields');if(newFields){const obs=new MutationObserver(()=>{if(!newFields.classList.contains('form-hide')&&syncNew){const dept=document.getElementById('product-department');const cat=document.getElementById('product-category');if(dept&&cat&&!cat.value)dept.dispatchEvent(new Event('change'));}});obs.observe(newFields,{attributes:true,attributeFilter:['class']});}
 })();
-</script><script src="/assets/inventory-orders-launch.js?v=orders-3-cinta"></script></body></html>
+</script><script src="/assets/inventory-orders-launch.js?v=orders-4-compact"></script></body></html>
 
 
