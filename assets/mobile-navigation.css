@@ -9,3 +9,5 @@
 #worker-mobile-nav .inventory-notice-badge{position:absolute;right:6px;top:2px;min-width:20px;height:20px;margin:0;z-index:1}
 #worker-mobile-sheet-content>button[data-inventory-notice] .inventory-notice-badge{margin-left:auto}
 #worker-mobile-sheet-content>button[data-inventory-notice][aria-current]:after{margin-left:4px}
+
+@media(min-width:901px){.nav a[href="/inventario-aprobaciones.html"]{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-right:12px}.nav a[href="/inventario-aprobaciones.html"]>.inventory-notice-badge{margin-left:auto;flex-shrink:0}}
