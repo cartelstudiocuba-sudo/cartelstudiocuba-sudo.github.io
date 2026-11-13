@@ -13,3 +13,6 @@
 @media(min-width:901px){.nav a[href="/inventario-aprobaciones.html"]{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-right:12px}.nav a[href="/inventario-aprobaciones.html"]>.inventory-notice-badge{margin-left:auto;flex-shrink:0}}
 
 @media(min-width:901px){.nav a[href="/inventario-pedidos.html"]{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-right:12px}.nav a[href="/inventario-pedidos.html"]>.inventory-notice-badge{margin-left:auto;flex-shrink:0}}
+
+/* Long owner menus remain scrollable above the fixed bar. */
+#worker-mobile-sheet{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}#worker-mobile-sheet-content>button:disabled{opacity:.55;cursor:default}#worker-mobile-sheet-content>button>small{font-size:10px;color:#bbc4d0;margin-left:auto}#worker-mobile-sheet-content>button>span{flex:1}
