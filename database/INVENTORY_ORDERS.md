@@ -31,3 +31,5 @@ Validation: node --test tests/inventory-orders-ui.cjs; execute tests/inventory-o
 only as a transaction ending in ROLLBACK. Test fixtures and inventory changes roll back.
 
 New requests use the server date in America/Havana; client-supplied needed_on is ignored. Existing requests retain their date and idempotent payload. Delivery locations offer Oficina comercial, Taller de producciones gráficas, Estudio audiovisual, and a custom place. Empty selector prompts are disabled and hidden.
+
+Cinta UI (orders-3-cinta): grouped Responsable/Entrega fields and icon-based connected stages. Project selection reuses distinct project_reference names from requests already readable by the current account, scoped to the selected area plus Generales. There is no standalone project catalogue yet; a new project name may be entered and is stored as the existing text snapshot. No project records or permissions are created.
