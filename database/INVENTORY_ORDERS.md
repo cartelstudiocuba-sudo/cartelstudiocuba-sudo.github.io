@@ -2,7 +2,7 @@
 
 Apply the SQL files in order: inventory_orders.sql, inventory_order_preparation.sql,
 inventory_order_security.sql, inventory_order_sequences.sql. Deploy the HTML and assets,
-then apply inventory_order_activation.sql. Approval enforcement is disabled during setup.
+then apply inventory_order_activation.sql and inventory_order_system_date.sql. Approval enforcement is disabled during setup.
 
 The Administrator's Nueva salida opens the shared request form. Submission and approval
 do not post stock movements. Approval reserves quantities. Preparation is persisted per
@@ -29,3 +29,5 @@ limits under the same transaction advisory lock as the existing inventory system
 
 Validation: node --test tests/inventory-orders-ui.cjs; execute tests/inventory-orders.sql
 only as a transaction ending in ROLLBACK. Test fixtures and inventory changes roll back.
+
+New requests use the server date in America/Havana; client-supplied needed_on is ignored. Existing requests retain their date and idempotent payload. Delivery locations offer Oficina comercial, Taller de producciones gráficas, Estudio audiovisual, and a custom place. Empty selector prompts are disabled and hidden.
