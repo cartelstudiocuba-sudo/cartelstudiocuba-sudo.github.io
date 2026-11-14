@@ -10,7 +10,7 @@ const tick=()=>new Promise(r=>setTimeout(r,15));
  w.URL.createObjectURL=()=> 'blob:photo-preview';w.URL.revokeObjectURL=()=>{};
  w.CartelCatalogPhoto={create:()=>({prepare:async(file,onStage)=>{onStage('Subiendo foto… 50%',.5);return new Promise(resolve=>{photoResolve=resolve;});}})};
  w.CartelLoad={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'test-token'}}}),getUser:async()=>({data:{user:{id:'test-user'}}}),onAuthStateChange:()=>{}},storage:{from:()=>({upload:async()=>({data:{}}),download:async()=>({data:new w.Blob(['photo'],{type:'image/jpeg'})})})},rpc:async(name,args)=>{calls.push([name,args]);if(name==='fridge_command')return commandError?{error:commandError}:{data:{}};return {data:name==='fridge_access'?true:name==='fridge_pricing_state'?{manager:false,config:{revision:1,total:55,rows:[{key:'profit',label:'Utilidad',percent:55}]},products:[p],requests:[],recipes:[],history:[],audit:[]}:name==='fridge_state'?state:{rows:[],more:false}};}})};
- w.fetch=async()=>({ok:false});w.eval(fs.readFileSync('assets/fridge-inventory.js','utf8'));w.eval(fs.readFileSync('assets/fridge-pricing.js','utf8'));w.eval(code);await tick();
+ w.fetch=async()=>({ok:false});w.eval(fs.readFileSync('assets/fridge-inventory.js','utf8'));w.eval(fs.readFileSync('assets/fridge-pricing.js','utf8'));w.eval(fs.readFileSync('assets/fridge-composition.js','utf8'));w.eval(code);await tick();
  assert.match(d.querySelector('#fr-content').textContent,/Ventas hoy/);assert.equal(d.querySelectorAll('.fr-stat').length,4);
  const click=sel=>{const el=d.querySelector(sel);assert(el,'Missing '+sel);el.click();};
  click('[data-action="sale"]');click('[data-add="p1"]');click('[data-qty="p1"][data-delta="1"]');

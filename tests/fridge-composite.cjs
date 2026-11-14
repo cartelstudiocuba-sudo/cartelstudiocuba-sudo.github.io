@@ -1,0 +1,47 @@
+const {PGlite}=require('@electric-sql/pglite'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{
+const db=new PGlite(),owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6',chief='aedb58e6-56ca-4308-9796-bb77070f649a',manager='a0ee4b57-1f73-480b-bc68-0aa034d19bda',worker='12345678-1234-4234-8234-123456789012';let passed=0;
+await db.exec(`create role anon;create role authenticated;create schema auth;create schema storage;create schema studio_access_private;grant usage on schema auth,studio_access_private to authenticated,anon;
+create function auth.uid() returns uuid language sql stable as $$select (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid$$;
+create table public.hr_employees(id uuid primary key,full_name text,status text);
+insert into public.hr_employees values('${worker}','Trabajador de prueba','active');
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit integer,allowed_mime_types text[]);create table storage.objects(bucket_id text,name text);
+create function studio_access_private.is_owner() returns boolean language sql stable as $$select auth.uid()='${owner}'::uuid$$;
+create function studio_access_private.inventory_order_role(text) returns boolean language sql stable as $$select ($1='jefe_audiovisuales' and auth.uid()='${chief}'::uuid) or ($1='manager_general' and auth.uid()='${manager}'::uuid)$$;
+create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select case when auth.uid()='${manager}' then 'Manager' else 'Jefe' end$$;
+create function public.system_my_views() returns jsonb language sql as $$select '[]'::jsonb$$;`);
+for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd','fridge_product_quantity','fridge_latest_purchase_cost','fridge_cost_floor'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
+const who=async uid=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,role:'authenticated'})]);
+const call=async(fn,args=[])=> (await db.query('select public.'+fn+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value;
+const cmd=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,{...payload,currency:'USD',...(kind==='product'?{purchase:{currency:'USD',amount:payload.cost||0,rate:1}}:{}),...(kind==='replenish'?{items:payload.items.map(i=>({...i,unit_cost:i.unit_cost??100,purchase:{currency:'USD',amount:i.unit_cost??100,rate:1}}))}:{})}]),rec=(kind,payload,id=crypto.randomUUID())=>call('fridge_reconciliation_command',[id,kind,payload]);
+const state=()=>call('fridge_reconciliation_state'),detail=id=>call('fridge_reconciliation_detail',[id]);
+const ok=(value,msg)=>{assert(value,msg);passed++;},fail=async(fn,regex)=>{await assert.rejects(fn,regex);passed++;};
+
+
+await db.exec(fs.readFileSync('database/fridge_standard_costs.sql','utf8'));await db.exec(fs.readFileSync('database/finance_cost_sheets.sql','utf8'));await db.exec(fs.readFileSync('database/fridge_composite_products.sql','utf8'));
+const c=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,payload]);
+const components=[{name:'Café',unit:'g',quantity:8,unit_cost:.03},{name:'Azúcar',unit:'minidosis',quantity:1,unit_cost:.03},{name:'Coffee Mate',unit:'minidosis',quantity:1,unit_cost:.08},{name:'Removedor',unit:'unidad',quantity:1,unit_cost:.01},{name:'Servilleta',unit:'unidad',quantity:1,unit_cost:.01}];
+const payload={name:'Espresso de prueba',category:'Café',price:.83,cost:.37,currency:'USD',minimum:5,stock_quantity:3,cost_confirmed:true,product_type:'composite',components,recipe_revision:0,pricing_revision:1,purchase:{currency:'USD',amount:.37,rate:1}};
+await who(chief);await db.exec('set role authenticated');const id=crypto.randomUUID(),created=await c('product',payload,id);ok(created.product_type==='composite'&&created.pricing.cost===.37&&created.pricing.minimum===.83,'server computes espresso composition and minimum');
+const again=await c('product',payload,id);ok(JSON.stringify(again)===JSON.stringify(created),'retry returns original result');
+let st=await call('fridge_state'),prod=st.products.find(p=>p.id===created.product_id),ps=await call('fridge_pricing_state');ok(prod.product_type==='composite'&&prod.stock===3,'product classification and initial units');ok(ps.recipes.find(r=>r.product_id===prod.id).components.length===5,'recipe stored atomically');
+await fail(()=>c('product',{...payload,name:'Fraude',cost:.01}),/no coincide/);await fail(()=>c('product',{...payload,name:'Barato',price:.82}),/por debajo/);await fail(()=>c('product',{...payload,name:'Sin insumos',components:[]}),/insumos/);await fail(()=>c('product',{...payload,name:'Cantidad inválida',components:[{name:'Café',unit:'g',quantity:-1,unit_cost:1}]}),/cantidades/);await fail(()=>c('product',{...payload,name:'Muchos decimales',components:[{name:'Café',unit:'g',quantity:1,unit_cost:.0000001}]}),/decimales/);
+await fail(()=>c('product',{...payload,id:prod.id,version:prod.version}),/composición cambió/);
+const updated=await c('product',{...payload,id:prod.id,version:prod.version,cost:.38,components:[...components,{name:'Vaso',unit:'unidad',quantity:1,unit_cost:.01}],recipe_revision:1,price:.85});ok(updated.recipe_revision===2&&updated.pricing.cost===.38,'edit updates recipe and unit cost atomically');
+await fail(()=>c('replenish',{currency:'USD',items:[{id:prod.id,quantity:1,unit_cost:.01,purchase:{currency:'USD',amount:.01,rate:1}}]}),/composición/);
+await c('replenish',{currency:'USD',items:[{id:prod.id,quantity:2,unit_cost:.38,purchase:{currency:'USD',amount:.38,rate:1}}]});
+const saleOp=crypto.randomUUID(),sale=await c('sale',{currency:'USD',items:[{id:prod.id,quantity:1,price:.85}],paid:.85,method:'cash'},saleOp);ok(sale.items[0].product_type==='composite'&&sale.items[0].components.length===6,'sale freezes composition and cost');
+st=await call('fridge_state');prod=st.products.find(p=>p.id===prod.id);ok(prod.stock===4,'only finished product stock decreases on sale');
+await c('product',{...payload,id:prod.id,version:prod.version,stock_quantity:prod.stock,cost:.40,price:.85,recipe_revision:2,components:[...components,{name:'Vaso',unit:'unidad',quantity:1,unit_cost:.01},{name:'Otro',unit:'unidad',quantity:1,unit_cost:.02}]});ps=await call('fridge_pricing_state');ok(ps.products.find(p=>p.id===prod.id).review===true,'higher recipe cost preserves sale price and flags review');
+await db.exec('reset role');const frozen=(await db.query('select items from studio_access_private.fridge_sales where id=$1',[saleOp])).rows[0].items;ok(frozen[0].cost===.38&&frozen[0].components.length===6,'editing recipe never rewrites earlier sale');await db.exec('set role authenticated');
+const resale=await c('product',{...payload,name:'Refresco',product_type:'resale',cost:.5,price:1.12,purchase:{currency:'CUP',amount:250,rate:500},components:undefined});ok(resale.product_type==='resale','resale and CUP conversion preserved');
+await fail(()=>c('product',{...payload,name:'Tipo inválido',product_type:'other'}),/tipo de producto/);
+const tiny=await c('product',{...payload,name:'Redondeo pequeño',cost:.01,price:.03,components:[{name:'Mínimo',unit:'g',quantity:.000001,unit_cost:.000001}]});ok(tiny.pricing.cost===.01&&tiny.pricing.minimum===.03,'fractional costs round upward consistently');
+await who(manager);await db.exec('reset role');const recipeCount=(await db.query('select count(*)::int n from studio_access_private.fridge_recipes')).rows[0].n;ok(recipeCount===2,'invalid product attempts left no recipes');
+ok(sale.items[0].cost===.38,'sale keeps its original cost');
+await who(manager);await db.exec('set role authenticated');st=await call('fridge_pricing_state');let legacy=st.products.find(p=>p.id===resale.product_id);const legacyId=crypto.randomUUID(),legacyPayload={product_id:legacy.id,version:legacy.version,recipe_revision:0,components:[{name:'Componente de prueba',unit:'unidad',quantity:1,unit_cost:.50}]};await call('fridge_pricing_command',[legacyId,'recipe',legacyPayload]);
+await who(chief);st=await call('fridge_state');legacy=st.products.find(p=>p.id===legacy.id);ok(legacy.product_type==='composite','previous Manager recipe editor marks composed products');await c('product',{...payload,id:legacy.id,version:legacy.version,stock_quantity:legacy.stock,product_type:'resale',cost:.5,price:1.12,purchase:{currency:'USD',amount:.5,rate:1}});await who(manager);await call('fridge_pricing_command',[legacyId,'recipe',legacyPayload]);await who(chief);st=await call('fridge_state');ok(st.products.find(p=>p.id===legacy.id).product_type==='resale','legacy recipe retry cannot reapply an old classification');
+await who(worker);await db.exec('set role authenticated');await fail(()=>c('product',payload),/acceso/);await db.exec('reset role');await db.exec('set role anon');await fail(()=>call('fridge_state'),/permission denied/);await db.exec('reset role');
+await db.exec(fs.readFileSync('database/fridge_composite_products_rollback.sql','utf8'));await who(chief);await db.exec('set role authenticated');st=await call('fridge_state');ok(st.products.some(p=>p.product_type==='composite'),'rollback retains compositions and metadata');await db.exec('reset role');
+await db.close();console.log('PASS '+passed+' composite product, rounding, atomicity, replay, stock, CUP and access scenarios');
+})().catch(e=>{console.error(e);process.exitCode=1;});
