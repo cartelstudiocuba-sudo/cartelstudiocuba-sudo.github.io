@@ -9,7 +9,8 @@
     "test:onboarding:browser": "node tests/onboarding-browser.cjs",
     "test:onboarding": "npm run test:onboarding:sql && npm run test:onboarding:edge && npm run test:onboarding:browser",
     "test:onboarding:integral": "node scripts/test-onboarding-integral.cjs",
-    "test:fridge": "node tests/fridge-ledger.cjs && node tests/fridge-ui.cjs && node tests/fridge-navigation.cjs && node --test tests/catalog-photo.test.cjs && node tests/fridge-reconciliation.cjs && node tests/fridge-reconciliation-ui.cjs && node tests/fridge-usd.cjs && node tests/fridge-inventory.cjs && node tests/fridge-pricing.cjs && node tests/fridge-pricing-ui.cjs"
+    "test:fridge": "node tests/fridge-ledger.cjs && node tests/fridge-ui.cjs && node tests/fridge-navigation.cjs && node --test tests/catalog-photo.test.cjs && node tests/fridge-reconciliation.cjs && node tests/fridge-reconciliation-ui.cjs && node tests/fridge-usd.cjs && node tests/fridge-inventory.cjs && node tests/fridge-pricing.cjs && node tests/fridge-pricing-ui.cjs && npm run test:finance-cost-sheets",
+    "test:finance-cost-sheets": "node tests/finance-cost-sheets.cjs && node tests/finance-cost-sheets-ui.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

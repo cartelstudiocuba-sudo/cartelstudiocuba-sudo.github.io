@@ -1,0 +1,3 @@
+-- Restore prior RPC definitions; keep sheets, draft/version history and all product/sale data.
+do $$declare r record;begin perform pg_advisory_xact_lock(hashtextextended('cartel.fridge.operations',0));if coalesce((select fixed_total>0 from studio_access_private.fridge_cost_configs order by revision desc limit 1),false) then raise exception 'Primero activa una ficha sin gastos fijos por unidad antes de restaurar el motor anterior';end if;for r in select definition from studio_access_private.finance_cost_backups loop execute r.definition;end loop;end $$;
+revoke all on function public.finance_cost_state(),public.finance_cost_command(uuid,text,jsonb),studio_access_private.finance_cost_state(),studio_access_private.finance_cost_command(uuid,text,jsonb) from authenticated;

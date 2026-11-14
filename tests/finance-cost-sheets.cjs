@@ -1,0 +1,48 @@
+const {PGlite}=require('@electric-sql/pglite'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{
+const db=new PGlite(),owner='6418ad20-d0e8-49c0-8d9a-e1da3daf71b6',chief='aedb58e6-56ca-4308-9796-bb77070f649a',manager='a0ee4b57-1f73-480b-bc68-0aa034d19bda',worker='12345678-1234-4234-8234-123456789012';let passed=0;
+await db.exec(`create role anon;create role authenticated;create schema auth;create schema storage;create schema studio_access_private;grant usage on schema auth,studio_access_private to authenticated,anon;
+create function auth.uid() returns uuid language sql stable as $$select (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid$$;
+create table public.hr_employees(id uuid primary key,full_name text,status text);
+insert into public.hr_employees values('${worker}','Trabajador de prueba','active');
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit integer,allowed_mime_types text[]);create table storage.objects(bucket_id text,name text);
+create function studio_access_private.is_owner() returns boolean language sql stable as $$select auth.uid()='${owner}'::uuid$$;
+create function studio_access_private.inventory_order_role(text) returns boolean language sql stable as $$select ($1='jefe_audiovisuales' and auth.uid()='${chief}'::uuid) or ($1='manager_general' and auth.uid()='${manager}'::uuid)$$;
+create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select case when auth.uid()='${manager}' then 'Manager' else 'Jefe' end$$;
+create function public.system_my_views() returns jsonb language sql as $$select '[]'::jsonb$$;`);
+for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd','fridge_product_quantity','fridge_latest_purchase_cost','fridge_cost_floor'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
+const who=async uid=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,role:'authenticated'})]);
+const call=async(fn,args=[])=> (await db.query('select public.'+fn+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value;
+const cmd=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,{...payload,currency:'USD',...(kind==='product'?{purchase:{currency:'USD',amount:payload.cost||0,rate:1}}:{}),...(kind==='replenish'?{items:payload.items.map(i=>({...i,unit_cost:i.unit_cost??100,purchase:{currency:'USD',amount:i.unit_cost??100,rate:1}}))}:{})}]),rec=(kind,payload,id=crypto.randomUUID())=>call('fridge_reconciliation_command',[id,kind,payload]);
+const state=()=>call('fridge_reconciliation_state'),detail=id=>call('fridge_reconciliation_detail',[id]);
+const ok=(value,msg)=>{assert(value,msg);passed++;},fail=async(fn,regex)=>{await assert.rejects(fn,regex);passed++;};
+
+
+await db.exec(fs.readFileSync('database/fridge_standard_costs.sql','utf8'));
+await who(chief);await db.exec('set role authenticated');
+const productPayload={name:'Producto bar',category:'Otros',cost:0.58,price:1.29,minimum:1,stock_quantity:4,cost_confirmed:true,currency:'USD',purchase:{currency:'USD',amount:0.58,rate:1},pricing_revision:1};
+const saved=await call('fridge_command',[crypto.randomUUID(),'product',productPayload]);
+await db.exec('reset role');await db.exec(fs.readFileSync('database/finance_cost_sheets.sql','utf8'));
+const central=()=>call('finance_cost_state'),change=(kind,payload,id=crypto.randomUUID())=>call('finance_cost_command',[id,kind,payload]);
+await who(chief);await db.exec('set role authenticated');await fail(central,/Solo el Manager/);await fail(()=>change('create',{name:'No',module_name:'No'}),/Solo el Manager/);
+await who(manager);let cs=await central();let bar=cs.sheets.find(s=>s.code==='fridge_bar');ok(cs.sheets.length===1&&Number(bar.active.total_percent)===55,'one existing bar standard imported');ok(cs.versions.length===1&&bar.active.bar_config_revision===1,'existing history linked without resetting configuration');
+await fail(()=>call('fridge_pricing_command',[crypto.randomUUID(),'config',{rows:[],reason:'Ya no se edita aquí'}]),/Finanzas/);
+const draftRows=bar.draft_rows.concat([{key:'cup','label':'Vaso por servicio','type':'fixed','value':0.1}]);
+const requestId=crypto.randomUUID(),draft={sheet_id:bar.id,draft_revision:bar.draft_revision,name:bar.name,module_name:bar.module_name,rows:draftRows};await change('draft',draft,requestId);await change('draft',draft,requestId);cs=await central();bar=cs.sheets[0];ok(bar.draft_revision===2&&bar.draft_dirty,'draft saved once across retry');
+let costState=await call('fridge_pricing_state');ok(costState.config.revision===1&&Number(costState.products[0].minimum_price)===1.29,'saving draft does not affect operational minimum');
+await fail(()=>change('draft',draft),/cambió/);
+await fail(()=>change('activate',{sheet_id:bar.id,draft_revision:2,reason:'Sin confirmación'}),/Confirma/);
+await change('activate',{sheet_id:bar.id,draft_revision:2,reason:'Activar gasto por vaso',confirm_activation:true});costState=await call('fridge_pricing_state');ok(costState.config.revision===2&&Number(costState.config.fixed_total)===0.1,'activation publishes fixed expenses to fridge');ok(Number(costState.products[0].minimum_price)===1.52&&Number(costState.products[0].price)===1.29,'fixed expense recalculates minimum but preserves sale price');
+await who(chief);await fail(()=>call('fridge_command',[crypto.randomUUID(),'product',{...productPayload,name:'Fijo sin cubrir',price:1.29,pricing_revision:2}]),/por debajo/);const allowed=await call('fridge_command',[crypto.randomUUID(),'product',{...productPayload,name:'Fijo cubierto',price:1.52,pricing_revision:2}]);ok(Number(allowed.pricing.fixed_total)===0.1&&Number(allowed.pricing.minimum)===1.52,'server and audit use fixed expenses');
+await who(manager);cs=await central();bar=cs.sheets[0];await fail(()=>change('activate',{sheet_id:bar.id,draft_revision:bar.draft_revision,reason:'Repetir sin cambios',confirm_activation:true}),/No hay/);
+await fail(()=>change('draft',{...draft,draft_revision:bar.draft_revision,rows:[{key:'bad',label:'Inválido','type':'percent',value:100}]}),/inferior/);
+await fail(()=>change('draft',{...draft,draft_revision:bar.draft_revision,rows:[{key:'bad',label:'Inválido','type':'fixed',value:-1}]}),/inválido/);
+const other=await change('create',{name:'Ficha de prueba',module_name:'Otro servicio',code:'fridge_bar'});ok(other.code===null&&other.active_version===null,'new sheet is unlinked draft, cannot steal bar code');
+await change('draft',{sheet_id:other.id,draft_revision:1,name:other.name,module_name:other.module_name,rows:[{key:'margin','label':'Margen','type':'percent',value:30},{key:'cost','label':'Gasto','type':'fixed',value:1}]});await change('activate',{sheet_id:other.id,draft_revision:2,reason:'Activar ficha independiente',confirm_activation:true});ok((await call('fridge_pricing_state')).config.revision===2,'another sheet cannot change bar config');
+cs=await central();ok(cs.versions.filter(v=>v.sheet_id===bar.id).length===2&&Number(cs.versions.find(v=>v.sheet_id===bar.id&&v.version===1).total_percent)===55,'old versions stay immutable');
+await db.exec('reset role');const prod=(await db.query('select cost,price,stock from studio_access_private.fridge_products where id=$1',[saved.product_id])).rows[0];ok(Number(prod.cost)===0.58&&Number(prod.price)===1.29&&prod.stock===4,'central setup and activation never rewrite product costs, prices or units');
+await db.exec('set role anon');await fail(central,/permission denied/);await db.exec('reset role');
+await who(manager);await db.exec('set role authenticated');const nav=await call('system_my_navigation');ok(nav.finance_cost_sheets===true&&nav.fridge_manager===true,'manager receives finance cost-sheet navigation capability');await who(chief);ok((await call('system_my_navigation')).finance_cost_sheets===false,'operator receives no finance capability');
+await db.exec('reset role');await fail(()=>db.exec(fs.readFileSync('database/finance_cost_sheets_rollback.sql','utf8')),/Primero activa/);
+await db.close();console.log('PASS '+passed+' central sheets, draft isolation, activation, fixed costs, permissions, history and navigation scenarios');
+})().catch(e=>{console.error(e);process.exitCode=1;});
