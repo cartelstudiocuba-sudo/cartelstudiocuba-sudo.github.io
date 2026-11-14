@@ -18,8 +18,8 @@ export function createHandler(env,fetcher=fetch){
  let config=null;const recent=new Map();
  return async function handler(req){
   const origin=req.headers.get('origin')||'';
-  const cors={'Access-Control-Allow-Origin':origins.has(origin)?origin:'https://gestion.elcartelstudio.com','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-photo-request-id','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Cache-Control':'no-store','Vary':'Origin'};
-  const json=(data,status=200)=>Response.json(data,{status,headers:cors});
+  const cors={'Access-Control-Allow-Origin':origins.has(origin)?origin:'https://gestion.elcartelstudio.com','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-photo-request-id','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'Retry-After','Cache-Control':'no-store','Vary':'Origin'};
+  const json=(data,status=200,extra={})=>Response.json(data,{status,headers:{...cors,...extra}});
   if(origin&&!origins.has(origin))return json({error:'Origen no permitido.'},403);
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
   if(!['GET','POST'].includes(req.method))return json({error:'Método no permitido.'},405);
@@ -42,7 +42,7 @@ export function createHandler(env,fetcher=fetch){
    }
    const site=async(path,options={})=>{
     const response=await fetcher(siteOrigin+'/api/pilot/'+path,{...options,headers:{...(options.headers||{}),'OAI-Sites-Authorization':'Bearer '+config.token},redirect:'manual',signal:AbortSignal.timeout(25000)});
-    if(!response.ok){await response.body?.cancel();throw Error('BRIDGE')}return response;
+    if(!response.ok){let message;try{message=(await response.json()).error;}catch{}throw Object.assign(Error('BRIDGE'),{upstreamStatus:response.status,publicMessage:typeof message==='string'?message.slice(0,250):null});}return response;
    };
    const requestUrl=new URL(req.url),requestId=req.method==='POST'?req.headers.get('x-photo-request-id'):requestUrl.searchParams.get('job_id');
    if(req.method==='GET'&&!requestId){
@@ -60,13 +60,12 @@ export function createHandler(env,fetcher=fetch){
     if(Number(req.headers.get('content-length'))>1536*1024)return json({error:'Fotografía demasiado grande.'},413);
     const bytes=await boundedBytes(req.body,1536*1024);if(bytes[0]!==255||bytes[1]!==216||bytes[2]!==255)return json({error:'Fotografía no válida.'},400);
     const now=Date.now();for(const [id,row] of recent)if(now-row.at>60000)recent.delete(id);
-    const last=recent.get(user.id);if(last&&last.id!==requestId&&now-last.at<15000)return json({error:'Espera unos segundos antes de enviar otra fotografía.'},429);
+    const last=recent.get(user.id);if(last&&last.id!==requestId&&now-last.at<15000){const seconds=Math.ceil((15000-(now-last.at))/1000);return json({code:'RATE_LIMITED',retry_after_seconds:seconds,error:'Espera '+seconds+' segundos antes de enviar otra fotografía.'},429,{'Retry-After':String(seconds)});}
     const status=await(await site('status')).json();if(status.active_subscriptions<1)return json({error:'La limpieza automática no está disponible.'},503);
-    recent.set(user.id,{id:requestId,at:now});
-    const response=await site('upload',{method:'POST',headers:{'Content-Type':'image/jpeg','x-photo-job-id':jobId},body:bytes});const job=await response.json();
+    const response=await site('upload',{method:'POST',headers:{'Content-Type':'image/jpeg','x-photo-job-id':jobId},body:bytes});const job=await response.json();recent.set(user.id,{id:requestId,at:Date.now()});
     return json({job_id:requestId,state:job.state,accepted:!!job.delivery?.accepted},202);
    }
-   const jobs=await(await site('jobs')).json(),row=jobs.jobs?.find(r=>r.id===jobId);
+   const jobs=await(await site('jobs?id='+encodeURIComponent(jobId))).json(),row=jobs.jobs?.find(r=>r.id===jobId);
    if(!row)return json({error:'No se encontró esta fotografía.'},404);
    if(requestUrl.searchParams.get('result')==='1'){
     if(row.state!=='complete')return json({error:'La fotografía todavía se está procesando.'},409);
@@ -77,6 +76,6 @@ export function createHandler(env,fetcher=fetch){
    }
    const messages={queued:'Foto enviada · esperando a ChatGPT…',processing:'ChatGPT está limpiando el fondo…',complete:'Fondo limpio · preparando vista previa…',failed:'No se pudo limpiar el fondo. Se conserva la foto original optimizada.'};
    return json({job_id:requestId,state:row.state,message:messages[row.state]||messages.queued});
-  }catch(error){return json({code:'MCP_UNAVAILABLE',error:error?.message==='SIZE'?'La fotografía supera el tamaño permitido.':'No se pudo completar la limpieza. Se conserva la foto original optimizada.'},error?.message==='SIZE'?413:502);}
+  }catch(error){if([400,409,413,429].includes(error?.upstreamStatus)&&error.publicMessage)return json({code:error.upstreamStatus===429?'QUEUE_FULL':'PHOTO_REJECTED',error:error.publicMessage},error.upstreamStatus);return json({code:'MCP_UNAVAILABLE',error:error?.message==='SIZE'?'La fotografía supera el tamaño permitido.':'No se pudo completar la limpieza. Se conserva la foto original optimizada.'},error?.message==='SIZE'?413:502);}
  };
 }

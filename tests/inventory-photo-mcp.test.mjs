@@ -7,7 +7,7 @@ const nonce='12345678-1234-4234-8234-123456789012',uid='12345678-1234-4234-8234-
 const token='private-site-credential-abcdefghijklmnopqrstuvwxyz';
 const jpeg=Uint8Array.from([255,216,255,192,0,17,8,0,32,0,32,3,1,17,0,2,17,0,3,17,0,255,217]);
 test('bridge authenticates, isolates jobs, preserves idempotency and returns bounded private results',async()=>{
- let permission=true,subscriptions=1,state='queued',redirect=false,tooLarge=false,statusJobs=[];const jobs=new Map(),uploads=[];let configCalls=0;
+ let permission=true,subscriptions=1,state='queued',redirect=false,tooLarge=false,statusJobs=[],rejectUpload=false;const jobs=new Map(),uploads=[];let configCalls=0;
  const fetcher=async(url,o={})=>{
   assert.equal(o.redirect,'manual');
   if(url==='https://supa.test/auth/v1/user')return Response.json({id:o.headers.Authorization==='Bearer other'?other:uid});
@@ -16,8 +16,8 @@ test('bridge authenticates, isolates jobs, preserves idempotency and returns bou
   assert(url.startsWith('https://el-cartel-mcp-fotos.cloudlesscraft64.chatgpt.site/api/pilot/'));assert.equal(o.headers['OAI-Sites-Authorization'],'Bearer '+token);assert.equal(o.headers.Authorization,undefined);
   if(redirect)return new Response(null,{status:302,headers:{Location:'https://untrusted.test/'}});
   if(url.endsWith('/status'))return Response.json({active_subscriptions:subscriptions,jobs:statusJobs});
-  if(url.endsWith('/upload')){const id=o.headers['x-photo-job-id'];uploads.push(id);jobs.set(id,{id,state});return Response.json({state,delivery:{accepted:1}})}
-  if(url.endsWith('/jobs'))return Response.json({jobs:[...jobs.values()].map(row=>({...row,state}))});
+  if(url.endsWith('/upload')){if(rejectUpload)return Response.json({error:'La cola admite hasta 20 fotografías pendientes.'},{status:400});const id=o.headers['x-photo-job-id'];uploads.push(id);jobs.set(id,{id,state});return Response.json({state,delivery:{accepted:1}})}
+  if(url.includes('/jobs?'))return Response.json({jobs:[...jobs.values()].map(row=>({...row,state}))});
   if(url.includes('/image?'))return new Response(tooLarge?new Uint8Array(205000):jpeg,{headers:{'Content-Type':'image/jpeg'}});
   throw Error('Unexpected outbound request');
  };
@@ -40,6 +40,9 @@ test('bridge authenticates, isolates jobs, preserves idempotency and returns bou
  subscriptions=0;assert.equal((await h(req('POST','','user',jpeg))).status,503);subscriptions=1;
  redirect=true;assert.equal((await h(req())).status,502);
  assert.notEqual(await privateJobId(uid,nonce,token),await privateJobId(other,nonce,token));
+ redirect=false;const secondHandler=createHandler(name=>({SUPABASE_URL:'https://supa.test',SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service-secret'}[name]),fetcher);rejectUpload=true;assert.equal((await secondHandler(req('POST','','user',jpeg))).status,400);rejectUpload=false;
+ const newRequest=id=>new Request('https://edge.test/',{method:'POST',headers:{Authorization:'Bearer user','Content-Type':'image/jpeg','x-photo-request-id':id},body:jpeg});assert.equal((await secondHandler(newRequest(other))).status,202,'rejected upstream upload does not consume the rate limit');const limited=await secondHandler(req('POST','','user',jpeg));assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'15');assert.equal((await limited.json()).code,'RATE_LIMITED');
+
 });
 test('form handles upload progress, asynchronous processing, original fallback and changed selection',async()=>{
  const html=fs.readFileSync('inventario-insumos.html','utf8');for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))if(match[1].includes('async function prepareInventoryCatalogPhoto'))new vm.Script(match[1]);

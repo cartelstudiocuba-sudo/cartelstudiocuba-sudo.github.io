@@ -2,7 +2,7 @@
 (()=>{'use strict';
 function create(client,{scope='inventory'}={}){
  const endpoint='https://jhumvctocphyiwhszeaz.supabase.co/functions/v1/inventory-photo-clean?scope='+encodeURIComponent(scope);
- let availability=null;
+ let availability=null;const attempts=new WeakMap();
  async function headers(){const {data,error}=await client.auth.getSession();if(error||!data?.session?.access_token)throw Error('Sesión caducada');return {Authorization:'Bearer '+data.session.access_token};}
  async function resize(file,{square=false,maxSide=1280,maxBytes=1536*1024,onStage=()=>{}}={}){
   const url=URL.createObjectURL(file),img=new Image();
@@ -23,23 +23,28 @@ function create(client,{scope='inventory'}={}){
   const xhr=new XMLHttpRequest();xhr.open('POST',endpoint);xhr.timeout=40000;
   Object.entries({...auth,'Content-Type':'image/jpeg','x-photo-request-id':id}).forEach(([k,v])=>xhr.setRequestHeader(k,v));
   xhr.upload.onprogress=e=>{if(!isCurrent()){xhr.abort();return;}onStage(e.lengthComputable?'Subiendo foto… '+Math.round(e.loaded/e.total*100)+'%':'Subiendo foto…',e.lengthComputable?e.loaded/e.total:null);};
-  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){let message='No se pudo enviar la foto';try{message=JSON.parse(xhr.responseText).error||message;}catch{}reject(Error(message));return;}try{resolve(JSON.parse(xhr.responseText));}catch{reject(Error('Respuesta no válida'));}};
+  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){let detail={};try{detail=JSON.parse(xhr.responseText);}catch{}const error=Error(detail.error||'No se pudo enviar la foto');if(xhr.status===429&&detail.code==='RATE_LIMITED')error.retryAfterMs=Math.min(30000,Math.max(1000,Number(detail.retry_after_seconds||15)*1000));reject(error);return;}try{resolve(JSON.parse(xhr.responseText));}catch{reject(Error('Respuesta no válida'));}};
   xhr.onerror=xhr.ontimeout=()=>reject(Error('No se pudo confirmar la carga'));xhr.onabort=()=>reject(new DOMException('Selección sustituida','AbortError'));xhr.send(input);
  });}
  async function prepare(file,onStage=()=>{},isCurrent=()=>true){
   if(!file.type?.startsWith('image/')||file.size>30*1024*1024)throw Error('Selecciona una foto de hasta 30 MB.');
-  let source=file,cleaned=false,notice='';
+  let source=file,cleaned=false,notice='';let attempt=attempts.get(file);if(!attempt){attempt={id:crypto.randomUUID(),input:null,sent:false};attempts.set(file,attempt);}
   try{
    onStage('Comprobando limpieza automática del fondo…');
-   if(!availability||!availability.available||Date.now()-availability.at>20000){const r=await fetch(endpoint,{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(15000)});let status;try{status=await r.json();}catch{throw Error('El servicio de limpieza no respondió correctamente');}if(!r.ok)throw Error(status.error||'Servicio de limpieza no disponible');availability={at:Date.now(),available:status.available===true,error:status.error};}
-   if(!availability.available)throw Error(availability.error||'La limpieza automática no está disponible');
-   const input=await resize(file,{onStage});if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-   const id=crypto.randomUUID(),job=await upload(input,id,onStage,isCurrent);if(job.job_id!==id)throw Error('Solicitud no válida');
+   if(!attempt.sent&&(!availability||!availability.available||Date.now()-availability.at>20000)){const r=await fetch(endpoint,{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(15000)});let status;try{status=await r.json();}catch{throw Error('El servicio de limpieza no respondió correctamente');}if(!r.ok)throw Error(status.error||'Servicio de limpieza no disponible');availability={at:Date.now(),available:status.available===true,error:status.error};}
+   if(!attempt.sent&&!availability.available)throw Error(availability.error||'La limpieza automática no está disponible');
+   const input=attempt.input||(attempt.input=await resize(file,{onStage}));if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
+   const id=attempt.id;let job;
+   for(let retry=0;retry<2;retry++){
+    try{attempt.sent=true;job=await upload(input,id,onStage,isCurrent);break;}
+    catch(error){if(!error.retryAfterMs||retry===1)throw error;const until=Date.now()+error.retryAfterMs;while(Date.now()<until){if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');onStage('Esperando '+Math.ceil((until-Date.now())/1000)+' segundos para reintentar el envío…');await new Promise(resolve=>setTimeout(resolve,Math.min(1000,until-Date.now())));}}
+   }
+   if(job.job_id!==id)throw Error('Solicitud no válida');
    const deadline=Date.now()+180000;
    while(Date.now()<deadline){
     if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
     const r=await fetch(endpoint+'&job_id='+encodeURIComponent(id),{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('No se pudo consultar la fotografía');
-    const status=await r.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');if(status.state==='failed')throw Error('No se pudo limpiar el fondo');
+    const status=await r.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');if(status.state==='failed'){attempts.delete(file);throw Error('No se pudo limpiar el fondo');}
     if(status.state==='complete'){
      onStage('Descargando fotografía con fondo limpio…');const result=await fetch(endpoint+'&job_id='+encodeURIComponent(id)+'&result=1',{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(25000)});
      if(!result.ok||!result.headers.get('content-type')?.startsWith('image/jpeg'))throw Error('Resultado no válido');source=await result.blob();if(!source.size||source.size>200*1024)throw Error('Imagen no válida');cleaned=true;break;
