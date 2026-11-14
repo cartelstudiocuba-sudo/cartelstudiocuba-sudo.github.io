@@ -8,4 +8,4 @@ async function menu(enabled,ordersFail=false){
  const labels=[...w.document.querySelectorAll('.personal-nav-group a')].map(a=>a.textContent);
  assert.equal(labels.includes('Nevera audiovisual'),enabled);assert.equal(labels.filter(x=>x==='Nevera audiovisual').length,enabled?1:0);assert(labels.includes('Insumos'));assert(w.cartelPersonalNavigationReady);dom.window.close();return labels;
 }
-(async()=>{const labels=await menu(true);assert.deepEqual(labels,['Insumos','Pedidos y entregas','Solicitud','Nevera audiovisual']);await menu(false);await menu(true,true);console.log('PASS: chief menu includes fridge exactly once, permission isolation and no dependency on optional order requests');})().catch(e=>{console.error(e);process.exitCode=1;});
+(async()=>{const labels=await menu(true);assert.deepEqual(labels,['Insumos','Pedidos y entregas','Solicitud','Nevera audiovisual','Cuadre de nevera']);await menu(false);await menu(true,true);console.log('PASS: chief menu includes fridge exactly once, permission isolation and no dependency on optional order requests');})().catch(e=>{console.error(e);process.exitCode=1;});

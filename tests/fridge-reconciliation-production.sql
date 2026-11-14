@@ -1,0 +1,30 @@
+-- Disposable transactions: no sales, money receipts, plans, reports or payouts survive this test.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"aedb58e6-56ca-4308-9796-bb77070f649a","role":"authenticated"}',true);
+do $$declare s jsonb;r jsonb;d jsonb;pid uuid;customer uuid;report uuid;req uuid:=gen_random_uuid();payload jsonb;plan_version integer;worker uuid;blocked boolean;begin
+ r:=public.fridge_command(gen_random_uuid(),'product',jsonb_build_object('name','TEST ROLLBACK Papitas','category','Papitas y snacks','price',200,'cost',100,'minimum',5));pid:=(r->>'product_id')::uuid;
+ perform public.fridge_command(gen_random_uuid(),'replenish',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',pid,'quantity',24,'unit_cost',100))));
+ r:=public.fridge_command(gen_random_uuid(),'customer',jsonb_build_object('kind','client','name','TEST ROLLBACK Cuadre '||pid::text));customer:=(r->>'customer_id')::uuid;
+ perform public.fridge_command(gen_random_uuid(),'sale',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',pid,'quantity',4,'price',200)),'customer_id',customer,'paid',200,'method','cash'));
+ s:=public.fridge_reconciliation_state();if (s#>>'{draft,reserve_cost}')::numeric<>100 or (s#>>'{draft,realized_profit}')::numeric<>100 then raise exception 'Incorrect collected cost/profit';end if;
+ payload:=jsonb_build_object('fingerprint',s#>>'{draft,fingerprint}','note','TEST ROLLBACK');r:=public.fridge_reconciliation_command(req,'submit',payload);report:=(r->>'report_id')::uuid;
+ r:=public.fridge_reconciliation_command(req,'submit',payload);if r->>'report_id'<>report::text then raise exception 'Duplicate submit';end if;
+ s:=public.fridge_reconciliation_state();if (s->>'unsettled')::numeric<>200 or jsonb_array_length(s#>'{draft,operation_ids}')<>0 then raise exception 'Submitted incorrectly cleared pending cash';end if;
+ blocked:=false;begin perform public.fridge_reconciliation_command(gen_random_uuid(),'approve',jsonb_build_object('report_id',report,'revision',1));exception when insufficient_privilege then blocked:=true;end;if not blocked then raise exception 'Chief can approve';end if;
+ perform set_config('request.jwt.claims','{"sub":"a0ee4b57-1f73-480b-bc68-0aa034d19bda","role":"authenticated"}',true);
+ s:=public.fridge_reconciliation_state();plan_version:=(s#>>'{plan,revision}')::integer;worker:=(s#>>'{staff,0,id}')::uuid;
+ perform public.fridge_reconciliation_command(gen_random_uuid(),'plan',jsonb_build_object('revision',plan_version,'rows',jsonb_build_array(jsonb_build_object('kind','company','percent',70),jsonb_build_object('kind','commission','employee_id',worker,'percent',30))));
+ d:=public.fridge_reconciliation_detail(report);if (d#>>'{proposed_distribution,2,amount}')::numeric<>30 then raise exception 'Commission wrong';end if;
+ blocked:=false;begin perform public.fridge_reconciliation_command(gen_random_uuid(),'approve',jsonb_build_object('report_id',report,'revision',1,'plan_revision',plan_version+1,'received_cash',199,'sales_reviewed',true));exception when raise_exception then blocked:=true;end;if not blocked then raise exception 'Incorrect cash accepted';end if;
+ perform public.fridge_reconciliation_command(gen_random_uuid(),'approve',jsonb_build_object('report_id',report,'revision',1,'plan_revision',plan_version+1,'received_cash',200,'sales_reviewed',true));
+ s:=public.fridge_reconciliation_state();if (s->>'unsettled')::numeric<>0 then raise exception 'Confirmed cash stays pending';end if;
+ d:=public.fridge_reconciliation_detail(report);perform public.fridge_reconciliation_command(gen_random_uuid(),'disburse',jsonb_build_object('report_id',report,'revision',(d->>'revision')::integer,'line_key','share-1','amount',30,'method','cash','note','TEST ROLLBACK payout'));
+ blocked:=false;begin perform public.fridge_reconciliation_command(gen_random_uuid(),'disburse',jsonb_build_object('report_id',report,'revision',(d->>'revision')::integer,'line_key','share-1','amount',1,'method','cash','note','TEST duplicate'));exception when raise_exception then blocked:=true;end;if not blocked then raise exception 'Excess commission accepted';end if;
+ perform set_config('request.jwt.claims','{"sub":"aedb58e6-56ca-4308-9796-bb77070f649a","role":"authenticated"}',true);
+ perform public.fridge_command(gen_random_uuid(),'payment',jsonb_build_object('customer_id',customer,'amount',300,'method','transfer'));s:=public.fridge_reconciliation_state();if (s#>>'{draft,reserve_cost}')::numeric<>150 or (s#>>'{draft,realized_profit}')::numeric<>150 then raise exception 'Old debt collection cost incorrect';end if;
+ perform set_config('request.jwt.claims','{"sub":"ae4ecb7a-e581-4538-b987-edd070de8ddd","role":"authenticated"}',true);
+ blocked:=false;begin perform public.fridge_reconciliation_state();exception when insufficient_privilege then blocked:=true;end;if not blocked then raise exception 'Unauthorized role leak';end if;
+end $$;
+select 'PASS: real chief/manager roles, snacks, partial sale, report replay, cash receipt, historical costs, commission budget and role isolation; all rolled back' as verified;
+rollback;

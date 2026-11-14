@@ -13,6 +13,8 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select 'Test'$$;`);
  await db.exec(fs.readFileSync('database/fridge_audiovisual.sql','utf8'));
  await db.exec(fs.readFileSync('database/fridge_catalog_photos.sql','utf8'));
+ await db.exec(`create function public.system_my_views() returns jsonb language sql as $$select '[]'::jsonb$$;`);
+ await db.exec(fs.readFileSync('database/fridge_reconciliation.sql','utf8'));
  const uuid=()=>crypto.randomUUID();
  async function who(id){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id,role:'authenticated'})]);}
  await who('6418ad20-d0e8-49c0-8d9a-e1da3daf71b6');
@@ -35,7 +37,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  await fails(()=>command('sale',{items:[{id,quantity:1,price:100}],paid:100,method:'cash'}),/Cambió el precio/);
  await fails(()=>command('sale',{items:[{id,quantity:1,price:200}],paid:0}),/selecciona una cuenta/);
  await fails(()=>command('sale',{items:[{id,quantity:1,price:200}],paid:300,method:'cash'}),/no puede superar/);
- await fails(()=>command('sale',{items:[{id,quantity:1,price:200},{id,quantity:1,price:200}],paid:400,method:'cash'}),/duplicadas/);
+ await fails(()=>command('sale',{items:[{id,quantity:1,price:200},{id,quantity:1,price:200}],paid:400,method:'cash'}),/duplicados/);
  ok((await state()).products[0].stock===21,'failed writes roll back');
  const v=s.products[0].version;
  await fails(()=>command('count',{items:[{id,quantity:20,version:v}]}),/Explica la diferencia/);
