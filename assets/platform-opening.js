@@ -1,14 +1,23 @@
-// Presentation timing is independent of authorization. Both must finish to reveal the app.
+// Start after a visible frame; authentication remains an independent gate.
 (() => {
- const root=document.documentElement;
- let ended=false,holdTimer,loadTimer;
- const finish=()=>{if(ended)return;ended=true;clearTimeout(holdTimer);clearTimeout(loadTimer);delete root.dataset.splashPending;};
+ const root=document.documentElement,brand=document.querySelector('.platform-splash-brand');
+ let ended=false,timer,frame,startedAt=null,remaining=2200;
+ const finish=()=>{if(ended)return;ended=true;clearTimeout(timer);cancelAnimationFrame(frame);document.removeEventListener('visibilitychange',visibility);delete root.dataset.splashPending;};
  window.CartelOpening={finish};
- const image=document.querySelector('.platform-splash-brand img');
- if(!image||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
- const start=()=>{if(ended)return;clearTimeout(loadTimer);holdTimer=setTimeout(finish,1600);};
- image.addEventListener('load',start,{once:true});
- image.addEventListener('error',finish,{once:true});
- if(image.complete){if(image.naturalWidth)start();else finish();}
- else loadTimer=setTimeout(finish,3000);
+ function visibility(){
+  if(ended)return;
+  if(document.visibilityState==='hidden'){
+   cancelAnimationFrame(frame);clearTimeout(timer);
+   if(startedAt!==null){remaining=Math.max(0,remaining-(performance.now()-startedAt));startedAt=null;}
+   brand?.classList.remove('is-animating');return;
+  }
+  // The first frame paints the opening surface; the next starts the vector.
+  frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{
+   if(ended||document.visibilityState==='hidden')return;
+   brand.classList.add('is-animating');startedAt=performance.now();timer=setTimeout(finish,remaining);
+  });});
+ }
+ if(!brand||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
+ document.addEventListener('visibilitychange',visibility);
+ visibility();
 })();

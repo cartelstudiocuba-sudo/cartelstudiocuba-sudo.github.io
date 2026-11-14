@@ -1,7 +1,7 @@
 /* The platform opens as soon as session/access checks finish; no minimum delay. */
 #dashboardBoot{z-index:10000;isolation:isolate;overflow:hidden;box-sizing:border-box;min-height:100dvh;place-items:center;place-content:center;gap:0;padding:24px;background:#0b1016;color:#fff}
 .platform-splash-brand{display:grid;place-items:center;margin:0;width:clamp(170px,36vw,216px);aspect-ratio:2048/1859;animation:cartel-opening-in .45s ease-out both}
-.platform-splash-brand img{display:block;width:100%;height:auto;max-width:100%;border-radius:0;background:none;box-shadow:none}
+.platform-splash-brand svg{display:block;width:100%;height:auto;max-width:100%;border-radius:0;background:none;box-shadow:none}
 #dashboardBootMessage{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
 @keyframes cartel-opening-in{from{opacity:.1;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.platform-splash-brand{animation:none}}
