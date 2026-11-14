@@ -23,7 +23,7 @@ function create(client,{scope='inventory'}={}){
   const xhr=new XMLHttpRequest();xhr.open('POST',endpoint);xhr.timeout=40000;
   Object.entries({...auth,'Content-Type':'image/jpeg','x-photo-request-id':id}).forEach(([k,v])=>xhr.setRequestHeader(k,v));
   xhr.upload.onprogress=e=>{if(!isCurrent()){xhr.abort();return;}onStage(e.lengthComputable?'Subiendo foto… '+Math.round(e.loaded/e.total*100)+'%':'Subiendo foto…',e.lengthComputable?e.loaded/e.total:null);};
-  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(Error('No se pudo enviar la foto'));return;}try{resolve(JSON.parse(xhr.responseText));}catch{reject(Error('Respuesta no válida'));}};
+  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){let message='No se pudo enviar la foto';try{message=JSON.parse(xhr.responseText).error||message;}catch{}reject(Error(message));return;}try{resolve(JSON.parse(xhr.responseText));}catch{reject(Error('Respuesta no válida'));}};
   xhr.onerror=xhr.ontimeout=()=>reject(Error('No se pudo confirmar la carga'));xhr.onabort=()=>reject(new DOMException('Selección sustituida','AbortError'));xhr.send(input);
  });}
  async function prepare(file,onStage=()=>{},isCurrent=()=>true){
@@ -31,8 +31,8 @@ function create(client,{scope='inventory'}={}){
   let source=file,cleaned=false,notice='';
   try{
    onStage('Comprobando limpieza automática del fondo…');
-   if(!availability||Date.now()-availability.at>20000){const r=await fetch(endpoint,{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Servicio no disponible');availability={at:Date.now(),available:(await r.json()).available===true};}
-   if(!availability.available)throw Error('Limpieza no disponible');
+   if(!availability||!availability.available||Date.now()-availability.at>20000){const r=await fetch(endpoint,{headers:await headers(),cache:'no-store',signal:AbortSignal.timeout(15000)});let status;try{status=await r.json();}catch{throw Error('El servicio de limpieza no respondió correctamente');}if(!r.ok)throw Error(status.error||'Servicio de limpieza no disponible');availability={at:Date.now(),available:status.available===true,error:status.error};}
+   if(!availability.available)throw Error(availability.error||'La limpieza automática no está disponible');
    const input=await resize(file,{onStage});if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
    const id=crypto.randomUUID(),job=await upload(input,id,onStage,isCurrent);if(job.job_id!==id)throw Error('Solicitud no válida');
    const deadline=Date.now()+180000;
@@ -47,7 +47,7 @@ function create(client,{scope='inventory'}={}){
     onStage(status.state==='processing'?'Limpiando fondo con ChatGPT… Puedes completar los demás campos.':'Foto enviada · esperando a ChatGPT… Puedes completar los demás campos.');await new Promise(resolve=>setTimeout(resolve,3000));
    }
    if(!cleaned)throw Error('La limpieza tardó demasiado');
-  }catch(e){if(!isCurrent())throw e;source=file;notice='No se pudo limpiar el fondo. Se conserva la foto original optimizada.';}
+  }catch(e){if(!isCurrent())throw e;source=file;notice='Limpieza no completada: '+(e.message||'No se pudo contactar con el servicio')+'. Se conserva la foto original optimizada.';}
   if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
   const blob=await resize(source,{square:true,maxSide:800,maxBytes:180000,onStage});
   if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');return {blob,cleaned,notice};

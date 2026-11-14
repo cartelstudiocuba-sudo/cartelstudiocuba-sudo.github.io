@@ -7,7 +7,7 @@ const nonce='12345678-1234-4234-8234-123456789012',uid='12345678-1234-4234-8234-
 const token='private-site-credential-abcdefghijklmnopqrstuvwxyz';
 const jpeg=Uint8Array.from([255,216,255,192,0,17,8,0,32,0,32,3,1,17,0,2,17,0,3,17,0,255,217]);
 test('bridge authenticates, isolates jobs, preserves idempotency and returns bounded private results',async()=>{
- let permission=true,subscriptions=1,state='queued',redirect=false,tooLarge=false;const jobs=new Map(),uploads=[];let configCalls=0;
+ let permission=true,subscriptions=1,state='queued',redirect=false,tooLarge=false,statusJobs=[];const jobs=new Map(),uploads=[];let configCalls=0;
  const fetcher=async(url,o={})=>{
   assert.equal(o.redirect,'manual');
   if(url==='https://supa.test/auth/v1/user')return Response.json({id:o.headers.Authorization==='Bearer other'?other:uid});
@@ -15,7 +15,7 @@ test('bridge authenticates, isolates jobs, preserves idempotency and returns bou
   if(url==='https://supa.test/rest/v1/rpc/inventory_photo_bridge_config'){configCalls++;assert.equal(o.headers.Authorization,'Bearer service-secret');return Response.json(token)}
   assert(url.startsWith('https://el-cartel-mcp-fotos.cloudlesscraft64.chatgpt.site/api/pilot/'));assert.equal(o.headers['OAI-Sites-Authorization'],'Bearer '+token);assert.equal(o.headers.Authorization,undefined);
   if(redirect)return new Response(null,{status:302,headers:{Location:'https://untrusted.test/'}});
-  if(url.endsWith('/status'))return Response.json({active_subscriptions:subscriptions,jobs:[]});
+  if(url.endsWith('/status'))return Response.json({active_subscriptions:subscriptions,jobs:statusJobs});
   if(url.endsWith('/upload')){const id=o.headers['x-photo-job-id'];uploads.push(id);jobs.set(id,{id,state});return Response.json({state,delivery:{accepted:1}})}
   if(url.endsWith('/jobs'))return Response.json({jobs:[...jobs.values()].map(row=>({...row,state}))});
   if(url.includes('/image?'))return new Response(tooLarge?new Uint8Array(205000):jpeg,{headers:{'Content-Type':'image/jpeg'}});
@@ -26,6 +26,11 @@ test('bridge authenticates, isolates jobs, preserves idempotency and returns bou
  assert.equal((await h(req('GET','',null))).status,401);permission=false;assert.equal((await h(req())).status,403);assert.equal(configCalls,0);permission=true;
  assert.equal((await h(new Request('https://edge.test',{headers:{origin:'https://evil.test'}}))).status,403);
  assert.equal((await(await h(req())).json()).available,true);
+ statusJobs=[{state:'complete',count:19},{state:'queued',count:1}];let availability=await(await h(req())).json();assert.equal(availability.available,true);assert.equal(availability.pending_jobs,1);
+ statusJobs=[{state:'complete',count:1000},{state:'failed',count:100},{state:'processing',count:1}];assert.equal((await(await h(req())).json()).available,true);
+ statusJobs=[{state:'queued',count:19},{state:'processing',count:1}];availability=await(await h(req())).json();assert.equal(availability.available,false);assert.equal(availability.code,'QUEUE_FULL');assert.equal(availability.pending_jobs,20);
+ subscriptions=0;assert.equal((await(await h(req())).json()).code,'PROCESSOR_DISCONNECTED');subscriptions=1;statusJobs=[];
+
  assert.equal((await h(req('POST','','user',jpeg))).status,202);assert.equal((await h(req('POST','','user',jpeg))).status,202);
  assert.equal(uploads[0],uploads[1]);assert.notEqual(uploads[0],nonce);assert.equal(jobs.size,1);
  assert.equal((await h(req('GET','?job_id='+nonce,'other'))).status,404);

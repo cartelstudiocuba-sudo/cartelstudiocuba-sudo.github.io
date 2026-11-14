@@ -45,7 +45,13 @@ export function createHandler(env,fetcher=fetch){
     if(!response.ok){await response.body?.cancel();throw Error('BRIDGE')}return response;
    };
    const requestUrl=new URL(req.url),requestId=req.method==='POST'?req.headers.get('x-photo-request-id'):requestUrl.searchParams.get('job_id');
-   if(req.method==='GET'&&!requestId){const status=await(await site('status')).json();return json({available:status.active_subscriptions>0&&(status.jobs||[]).reduce((n,r)=>n+r.count,0)<20,mode:'mcp'});}
+   if(req.method==='GET'&&!requestId){
+    const status=await(await site('status')).json();
+    // Completed and failed jobs are history, not pending work. Never let history fill the queue.
+    const pending=(status.jobs||[]).filter(r=>r.state==='queued'||r.state==='processing').reduce((n,r)=>n+Math.max(0,Number(r.count)||0),0);
+    const code=status.active_subscriptions<1?'PROCESSOR_DISCONNECTED':pending>=20?'QUEUE_FULL':null;
+    return json({available:code===null,mode:'mcp',pending_jobs:pending,...(code?{code,error:code==='QUEUE_FULL'?'La cola de limpieza está ocupada. Reintenta cuando termine alguna fotografía.':'La conexión de limpieza automática no está activa.'}:{})});
+   }
    if(!uuid.test(requestId||''))return json({error:'Solicitud de fotografía no válida.'},400);
    // A caller cannot address another user's jobs even if they learn its request nonce.
    const jobId=await privateJobId(user.id,requestId,config.token);
