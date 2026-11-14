@@ -47,3 +47,11 @@ Se actualiza únicamente la presentación de entrada: resumen global de fichas c
 Archivos de esta revisión: `fichas-costo.html`, `assets/finance-cost-sheets.css`, `assets/finance-cost-sheets.js`, `tests/finance-cost-sheets-ui.cjs` y este informe. Sin migraciones ni cambios de datos. Se conserva el editor actual; el diseño del pop-up de administración queda para la siguiente etapa acordada.
 
 Validación: 24 escenarios SQL y 58 comprobaciones de interfaz aprobados, incluidos totales globales, filtros, búsqueda, estados vacíos, creación, activación y recuperación sin duplicados. Estructura adaptable a móvil y escritorio verificada en DOM/CSS; revisión visual con sesión real pendiente.
+
+## Clasificación por área
+
+Se reutiliza `public.hr_departments` como registro de áreas. Las fichas incorporan `area_id` con referencia y eliminación SET NULL para conservarlas si se retira un área. El Bar se clasifica por el nombre existente Audiovisuales sin crear departamentos. Las nuevas fichas requieren área válida; los clientes previos que guardan borradores sin ese campo conservan la asignación actual. Las nuevas versiones guardan el identificador y nombre del área como fotografía histórica. Las versiones anteriores no se reescriben.
+
+El dashboard incorpora botones Todas y las áreas reales con cantidades, combinables con búsqueda y estado. Los contadores superiores continúan siendo globales. Cada tarjeta muestra el área; al crear desde un filtro de área se propone esa selección. El editor permite cambiarla, con control de borrador y activación existente. Si una ficha queda sin área, se conserva accesible bajo Sin área. Sin cambios de permisos, precios ni existencias.
+
+Migración: `database/finance_cost_sheet_areas.sql` (`finance_cost_sheet_area_classification`); reversión de funciones en `database/finance_cost_sheet_areas_rollback.sql`, conservando metadatos e historial. Validación: 34 escenarios SQL y 71 comprobaciones de interfaz aprobados. Incluyen área obligatoria, persistencia, asignación inicial del Bar, filtros combinados, cambio de área, renombrado/eliminación del departamento sin alterar historial, permisos, compatibilidad y reversión. Tras aplicar la migración, coincidieron las huellas de productos, ventas, movimientos, pagos, operaciones, cuadres y configuraciones de costo; no hubo nuevos avisos de seguridad.

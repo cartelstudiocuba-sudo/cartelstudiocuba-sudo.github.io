@@ -67,3 +67,10 @@
 #finance-cost-app .fc-banner .fc-heading-actions{margin-left:0;justify-content:flex-start}
 #finance-cost-app .fc-banner .fc-refresh{border:1px solid #ffffff25;border-radius:11px;background:#ffffff04;min-height:44px;width:44px}
 @media(max-width:600px){#finance-cost-app .fc-banner{padding:22px 18px;gap:20px}#finance-cost-app .fc-banner>div:first-child{flex-basis:100%}#finance-cost-app .fc-banner h2{font-size:27px}#finance-cost-app .fc-banner .fc-heading-actions{margin-left:0;width:100%}}
+
+#finance-cost-app .fc-area-filters{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex-wrap:wrap;margin:0 0 20px}
+#finance-cost-app .fc-area-filters button{display:flex;align-items:center;gap:10px;font-size:12px;padding:10px 14px;min-height:42px;max-width:100%;text-align:left;overflow-wrap:anywhere;background:linear-gradient(145deg,#2d2f35,#202228);box-shadow:0 3px 8px #0002}
+#finance-cost-app .fc-area-filters button[aria-pressed=true]{background:linear-gradient(135deg,#ffe86a,#ffda03);border-color:#ffdf4b;color:#181818;font-weight:650}
+#finance-cost-app .fc-area-filters button span{padding:1px 6px;border-radius:7px;background:#ffffff12;font-variant-numeric:tabular-nums}
+#finance-cost-app .fc-area-filters button[aria-pressed=true] span{background:#00000014}
+#finance-cost-app .fc-sheet-title .fc-card-area{font-size:11px;color:#e5d477;margin-top:8px}
