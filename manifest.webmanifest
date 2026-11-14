@@ -1,6 +1,6 @@
 {
-  "name": "El Cartel Studio · Gestión",
-  "short_name": "Cartel Gestión",
+  "name": "Cartel Studio",
+  "short_name": "Cartel Studio",
   "description": "Plataforma interna de gestión de El Cartel Studio",
   "start_url": "/dashboard.html",
   "scope": "/",
@@ -9,25 +9,25 @@
   "theme_color": "#FFDA03",
   "icons": [
     {
-      "src": "/assets/cartel-app-yellow-192.png",
+      "src": "/assets/cartel-minimal-any-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/cartel-app-maskable-192.png",
+      "src": "/assets/cartel-minimal-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/assets/cartel-app-yellow-512.png",
+      "src": "/assets/cartel-minimal-any-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/cartel-app-maskable-512.png",
+      "src": "/assets/cartel-minimal-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
