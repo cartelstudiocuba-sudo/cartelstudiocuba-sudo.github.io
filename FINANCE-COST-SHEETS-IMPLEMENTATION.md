@@ -39,3 +39,11 @@ Cobertura central: importación, aislamiento de borrador, persistencia, activaci
 ## Alcance pendiente
 
 Conexiones operativas de nuevas fichas con otros módulos y descuento automático de insumos compuestos requieren definición posterior. Se conserva la lógica actual de distribución del cuadre; editar la ficha de costo modifica el cálculo del mínimo, no introduce repartos de efectivo adicionales. No se modifican otras secciones.
+
+## Dashboard minimalista aprobado — 14 de noviembre
+
+Se actualiza únicamente la presentación de entrada: resumen global de fichas creadas, activas y borradores pendientes, tarjetas flotantes con módulo/estado/conceptos/versión, búsqueda por nombre o módulo sin distinguir tildes, filtros de estado y tarjeta para crear una ficha. Las cifras globales no dependen del filtro; una ficha activa con cambios pendientes cuenta también entre los borradores. La recuperación de envíos se muestra únicamente cuando existe una operación pendiente.
+
+Archivos de esta revisión: `fichas-costo.html`, `assets/finance-cost-sheets.css`, `assets/finance-cost-sheets.js`, `tests/finance-cost-sheets-ui.cjs` y este informe. Sin migraciones ni cambios de datos. Se conserva el editor actual; el diseño del pop-up de administración queda para la siguiente etapa acordada.
+
+Validación: 24 escenarios SQL y 58 comprobaciones de interfaz aprobados, incluidos totales globales, filtros, búsqueda, estados vacíos, creación, activación y recuperación sin duplicados. Estructura adaptable a móvil y escritorio verificada en DOM/CSS; revisión visual con sesión real pendiente.
