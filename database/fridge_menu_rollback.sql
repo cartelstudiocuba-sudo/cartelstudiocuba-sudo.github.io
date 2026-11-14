@@ -1,0 +1,3 @@
+-- Disable the added endpoints and uploads without deleting any draft, version, image or audit entry.
+revoke execute on function public.fridge_menu_public(uuid),public.fridge_menu_state(),public.fridge_menu_command(uuid,text,jsonb),studio_access_private.fridge_menu_allowed(),studio_access_private.fridge_menu_state(),studio_access_private.fridge_menu_command(uuid,text,jsonb) from anon,authenticated;
+revoke execute on function public.fridge_menu_image_ref(uuid),studio_access_private.fridge_menu_image_ref(uuid),public.fridge_menu_public(uuid),studio_access_private.fridge_menu_public(uuid) from service_role;
