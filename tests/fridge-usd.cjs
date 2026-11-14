@@ -10,7 +10,7 @@ create function studio_access_private.is_owner() returns boolean language sql st
 create function studio_access_private.inventory_order_role(text) returns boolean language sql stable as $$select ($1='jefe_audiovisuales' and auth.uid()='${chief}'::uuid) or ($1='manager_general' and auth.uid()='${manager}'::uuid)$$;
 create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select case when auth.uid()='${manager}' then 'Manager' else 'Jefe' end$$;
 create function public.system_my_views() returns jsonb language sql as $$select '[]'::jsonb$$;`);
-for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd','fridge_product_quantity'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
+for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd','fridge_product_quantity','fridge_latest_purchase_cost'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
 const who=async uid=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,role:'authenticated'})]);
 const call=async(fn,args=[])=> (await db.query('select public.'+fn+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value;
 const cmd=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,{...payload,currency:'USD',...(kind==='product'?{purchase:{currency:'USD',amount:payload.cost||0,rate:1}}:{}),...(kind==='replenish'?{items:payload.items.map(i=>({...i,unit_cost:i.unit_cost??100,purchase:{currency:'USD',amount:i.unit_cost??100,rate:1}}))}:{})}]),rec=(kind,payload,id=crypto.randomUUID())=>call('fridge_reconciliation_command',[id,kind,payload]);
@@ -36,7 +36,7 @@ await rec('plan',{revision:2,rows:[{kind:'company',percent:100}]});d=await detai
 await who(chief);await cmd('payment',{customer_id:cust,amount:300,method:'transfer'});s=await state();ok(Number(s.draft.sold)===0&&Number(s.draft.reserve_cost)===150&&Number(s.draft.realized_profit)===150,'later debt collection restores corresponding historical cost once');
 const second=(await rec('submit',{fingerprint:s.draft.fingerprint})).report_id;await who(manager);await fail(()=>rec('approve',{report_id:second,revision:1,plan_revision:3,received_cash:0,sales_reviewed:true}),/transferencias/);await rec('approve',{report_id:second,revision:1,plan_revision:3,received_cash:0,sales_reviewed:true,transfer_verified:true});
 await who(owner);await cmd('sale',{items:[{id:pid,quantity:1,price:200}],paid:200,method:'cash'});s=await state();const third=(await rec('submit',{fingerprint:s.draft.fingerprint})).report_id;await fail(()=>rec('approve',{report_id:third,revision:1,plan_revision:3,received_cash:200,sales_reviewed:true}),/Otro usuario/);
-await who(chief);await cmd('replenish',{items:[{id:pid,quantity:22,unit_cost:200}]});const afterRestock=await call('fridge_state');ok(Number(afterRestock.products.find(p=>p.id===pid).cost)===153.66,'new purchases update weighted reference cost');
+await who(chief);await cmd('replenish',{items:[{id:pid,quantity:22,unit_cost:200}]});const afterRestock=await call('fridge_state');ok(Number(afterRestock.products.find(p=>p.id===pid).cost)===200,'new purchases replace reference cost with last purchase cost');
 await cmd('sale',{items:[{id:pid,quantity:1,price:200}],paid:200,method:'cash'});let stale=await state();await cmd('replenish',{items:[{id:pid,quantity:1,unit_cost:200}]});await fail(()=>rec('submit',{fingerprint:stale.draft.fingerprint}),/Actualiza/);
 await who('ae4ecb7a-e581-4538-b987-edd070de8ddd');await fail(state,/Acceso no autorizado/);await fail(()=>detail(first),/Acceso no autorizado/);await fail(()=>rec('submit',{}),/Acceso no autorizado/);
 await db.exec('reset role');await db.exec('set role anon');await fail(state,/permission denied/);await db.exec('reset role');
@@ -63,5 +63,9 @@ await fail(()=>call('fridge_command',[crypto.randomUUID(),'product',editedPayloa
 for(const quantity of [-1,1.5,null,1000001])await fail(()=>call('fridge_command',[crypto.randomUUID(),'product',{...qtyPayload,stock_quantity:quantity}]),/cantidad/);
 await db.exec('reset role');const qtyMovements=(await db.query('select quantity,stock_after from studio_access_private.fridge_movements where product_id=$1 order by created_at',[qtyProduct.id])).rows;
 ok(qtyMovements.length===2&&qtyMovements[0].quantity===12&&qtyMovements[1].quantity===-3,'initial and adjusted quantities audited exactly once');
+await who(chief);await db.exec('set role authenticated');
+const receiptId=crypto.randomUUID(),receipt={currency:'USD',items:[{id:converted.product_id,quantity:4,unit_cost:0.5,purchase:{currency:'USD',amount:0.5,rate:1}}]};
+await call('fridge_command',[receiptId,'replenish',receipt]);await call('fridge_command',[receiptId,'replenish',receipt]);const received=(await call('fridge_state')).products.find(p=>p.id===converted.product_id);ok(received.stock===7&&Number(received.cost)===0.5,'existing receipt adds units once and uses last cost even when lower');
+await db.exec('reset role');const historic=(await db.query('select items from studio_access_private.fridge_sales order by created_at limit 1')).rows[0].items;ok(Number(historic[0].cost)===100,'old sale cost remains unchanged after new prices');
 await db.close();console.log('PASS '+passed+' reconciliation, receipt, allocation, commission and permission scenarios');
 })().catch(e=>{console.error(e);process.exitCode=1;});
