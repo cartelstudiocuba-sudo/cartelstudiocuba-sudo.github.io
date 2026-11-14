@@ -67,3 +67,11 @@ Se aplica la segunda propuesta visual conservando la distribución: banner, filt
 ## Abrir ficha desde la tarjeta
 
 Toda la superficie de la tarjeta permite abrir el editor con clic o toque, con indicador de puntero y realce de borde al pasar el cursor. El botón Administrar ficha conserva su acceso nativo por teclado y no se duplica la apertura por propagación del clic. Los controles permanecen bloqueados durante envíos. Pasaron 74 comprobaciones de interfaz, incluidas aperturas desde título, fondo de tarjeta y botón. Se preparan propuestas del futuro pop-up; esta revisión conserva el editor existente y no modifica su funcionalidad ni sus datos.
+
+## Iconos vectoriales predefinidos
+
+Se incorpora un selector de 13 iconos al crear fichas y en Datos de la ficha: los 12 vectores ya usados en Plazas y el icono de ficha existente. Se reutilizan los trazados en `assets/finance-cost-icons.js`, con nombres en español, selección amarilla y vista previa en la cabecera. El dashboard muestra el icono guardado. La selección se guarda como identificador de catálogo, nunca como SVG o HTML proporcionado por el usuario.
+
+Migración `finance_cost_sheet_predefined_vector_icons`, archivo `database/finance_cost_sheet_icons.sql`: columna `icon_code` en fichas y versiones, valor inicial `sheet`, catálogo permitido verificado en servidor y conservación del identificador al guardar desde clientes anteriores. Se mantiene el control de Manager, las revisiones de borrador y la activación expresa. Las versiones nuevas guardan el identificador histórico. Reversión de la función previa en `database/finance_cost_sheet_icons_rollback.sql`, conservando datos.
+
+Validación: 44 escenarios SQL y 83 comprobaciones de interfaz aprobados, incluyendo elección, vista previa, descarte, guardado, creación, compatibilidad, códigos inválidos, permisos e historial. La migración preservó las huellas de productos, ventas, movimientos, pagos, operaciones, cuadres y configuraciones de precios. Sin nuevos avisos de seguridad. Esta revisión añade el selector al editor actual; el diseño del pop-up seleccionado continúa siendo una etapa aparte.
