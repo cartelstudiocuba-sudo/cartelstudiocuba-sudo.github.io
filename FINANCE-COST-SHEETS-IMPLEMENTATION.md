@@ -59,3 +59,7 @@ Migración: `database/finance_cost_sheet_areas.sql` (`finance_cost_sheet_area_cl
 ## Botonera visual de áreas
 
 El resumen general se sustituye por botones de área que ocupan el mismo ancho completo del contenido, con iconos SVG, cantidad global de fichas por área y selección amarilla. Se conservan búsqueda, filtros de estado y administración. En móvil se distribuyen en dos columnas. Sin cambios de base de datos ni permisos. Pasaron las 71 comprobaciones de interfaz existentes, actualizadas para verificar cantidades por área y ausencia del resumen anterior.
+
+## Diseño aprobado: Relieve suave
+
+Se aplica la segunda propuesta visual conservando la distribución: banner, filtros por área a todo el ancho, búsqueda y estado, tarjeta de ficha y creación. Se incorpora `assets/finance-cost-dashboard-relief.css`, con superficies grafito elevadas, iluminación y sombras discretas, iconos SVG, insignia de área y botones amarillos con volumen. La tarjeta agrupa icono, nombre, módulo y estado en su encabezado y muestra conceptos, versión y porcentaje en una franja de metadatos. Adaptación a móvil con dos columnas de áreas y tarjetas apiladas. Se actualizan recursos en `fichas-costo.html` y el marcado de presentación de `assets/finance-cost-sheets.js`. Sin cambios en la base de datos, cálculos ni permisos. Pasaron las 71 comprobaciones funcionales de interfaz existentes; la propuesta aprobada se usó como referencia visual, sin afirmar una verificación de píxeles en navegador autenticado.
