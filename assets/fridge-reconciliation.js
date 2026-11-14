@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),client=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}}),dialog=$('fr-dialog');
 if(new URLSearchParams(location.search).get('within_nevera')==='1'&&window.parent!==window)document.body.classList.add('recon-inline');
-const esc=x=>String(x??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),money=x=>Number(x||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' CUP',when=x=>new Intl.DateTimeFormat('es-CU',{timeZone:'America/Havana',dateStyle:'short',timeStyle:'short'}).format(new Date(x));
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),money=x=>Number(x||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD',when=x=>new Intl.DateTimeFormat('es-CU',{timeZone:'America/Havana',dateStyle:'short',timeStyle:'short'}).format(new Date(x));
 const names={pending:'Pendiente de recibido',returned:'Devuelto para revisión',confirmed:'Recibido confirmado'};
 let user=null,state=null,current=null,status='pending',busy=false,formAction=null,pending=null,loadRun=0;
 const key=()=> 'cartel.fridge.reconciliation.pending.'+user.id;

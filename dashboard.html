@@ -210,7 +210,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
    }
   }catch(e){console.warn('Pedidos de insumos no disponibles',e)}
   if(data.fridge_audiovisual===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}
-  if(data.fridge_manager===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Cuadre de nevera',url:'/cuadre-nevera.html',icon:'◇'});}
+  if(data.fridge_manager===true&&data.fridge_audiovisual!==true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Cuadre de nevera',url:'/cuadre-nevera.html',icon:'◇'});}
   grouped.forEach((items,name)=>{
    const wrap=document.createElement('div');wrap.className='personal-nav-group';
    const parent=document.createElement('button');parent.type='button';parent.className='nav-parent';parent.innerHTML='<span class="ico">'+items[0].icon+'</span><span>'+name+'</span><span class="chev">⌄</span>';
@@ -407,4 +407,4 @@ function prepareSelectionFrame(){
  }
  window.addEventListener('load',load,{once:true});
 })();
-</script><script src="/assets/mobile-navigation.js?v=20261114-cuadre-1"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=1"></script></body></html>
+</script><script src="/assets/mobile-navigation.js?v=20261114-usd-1"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=2"></script></body></html>
