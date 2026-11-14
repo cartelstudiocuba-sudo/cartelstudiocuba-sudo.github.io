@@ -8,10 +8,12 @@
     "test:onboarding:edge": "node tests/onboarding-edge.cjs",
     "test:onboarding:browser": "node tests/onboarding-browser.cjs",
     "test:onboarding": "npm run test:onboarding:sql && npm run test:onboarding:edge && npm run test:onboarding:browser",
-    "test:onboarding:integral": "node scripts/test-onboarding-integral.cjs"
+    "test:onboarding:integral": "node scripts/test-onboarding-integral.cjs",
+    "test:fridge": "node tests/fridge-ledger.cjs && node tests/fridge-ui.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
+    "jsdom": "26.1.0",
     "playwright": "1.62.1"
   }
 }

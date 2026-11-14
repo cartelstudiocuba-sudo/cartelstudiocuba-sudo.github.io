@@ -167,7 +167,7 @@
 <a class="nav-item active" href="/dashboard.html" data-home><span class="ico">⌂</span>Inicio</a>
 <div><button class="nav-parent" data-menu="rh" data-view-route="/recursos-humanos.html"><span class="ico">♙</span>Recursos Humanos<span class="chev">›</span></button><div class="submenu" id="rh"><a href="#" data-selection><span class="rh-subico selection-menu-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12M6 12h8M6 17h5"></path><path d="m16 15 2 2 3-4"></path></svg></span><span class="rh-subtext">Captación y selección</span></a><a href="/usuarios-permisos.html?section=workers" data-module><span class="rh-subico">♙</span><span class="rh-subtext">Trabajadores</span></a><a href="/plazas.html" data-module><span class="rh-subico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2.5"></rect><path d="M9 5V3.5h6V5"></path><path d="M4 10h16"></path></svg></span><span class="rh-subtext">Plazas</span></a><a href="/nomencladores.html" data-module><span class="rh-subico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"></path><circle cx="8" cy="6" r="1.5"></circle><circle cx="15" cy="12" r="1.5"></circle><circle cx="10" cy="18" r="1.5"></circle></svg></span><span class="rh-subtext">Nomencladores</span></a></div></div>
 <div><button class="nav-parent" data-menu="com"><span class="ico">▦</span>Comercial<span class="chev">›</span></button><div class="submenu" id="com"><a href="#" data-soon>Punto de Venta</a><a href="#" data-soon>Catálogo</a></div></div>
-<div><button class="nav-parent" data-menu="inv"><span class="ico">◇</span>Inventario<span class="chev">›</span></button><div class="submenu" id="inv"><a href="/inventario-insumos.html" data-module>Insumos</a><a href="/inventario-pedidos.html" data-module>Pedidos y entregas</a><a href="/inventario-solicitud.html" data-module>Solicitud</a><a href="/inventario-aprobaciones.html" data-module>Aprobar solicitudes</a><a href="#" data-soon>Medios básicos</a><a href="#" data-soon>Tecnología audiovisual</a></div></div>
+<div><button class="nav-parent" data-menu="inv"><span class="ico">◇</span>Inventario<span class="chev">›</span></button><div class="submenu" id="inv"><a href="/inventario-insumos.html" data-module>Insumos</a><a href="/inventario-pedidos.html" data-module>Pedidos y entregas</a><a href="/inventario-solicitud.html" data-module>Solicitud</a><a href="/inventario-aprobaciones.html" data-module>Aprobar solicitudes</a><a href="/nevera-audiovisual.html" data-module>Nevera audiovisual</a><a href="#" data-soon>Medios básicos</a><a href="#" data-soon>Tecnología audiovisual</a></div></div>
 <div><button class="nav-parent" data-menu="plan"><span class="ico">□</span>Plan de Trabajo<span class="chev">›</span></button><div class="submenu" id="plan"><a href="#" data-soon>Tareas</a><a href="#" data-soon>Calendario</a></div></div>
 <a class="nav-item" href="#" data-soon><span class="ico">▱</span>Proyectos</a>
 <div><button class="nav-parent" data-menu="fin"><span class="ico">▥</span>Finanzas<span class="chev">›</span></button><div class="submenu" id="fin"><a href="#" data-soon>Ingresos</a><a href="#" data-soon>Gastos</a><a href="#" data-soon>Cuentas por cobrar</a><a href="#" data-soon>Cuentas por pagar</a><a href="#" data-soon>Reportes</a></div></div>
@@ -209,6 +209,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
     if(caps.approve)list.push({group:'Inventario',title:'Aprobar solicitudes',url:'/inventario-aprobaciones.html',icon:'◇'});
    }
   }catch(e){console.warn('Pedidos de insumos no disponibles',e)}
+  try{const r=await client.rpc('fridge_access');if(!r.error&&r.data){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}}catch(e){console.warn('Nevera audiovisual no disponible',e)}
   grouped.forEach((items,name)=>{
    const wrap=document.createElement('div');wrap.className='personal-nav-group';
    const parent=document.createElement('button');parent.type='button';parent.className='nav-parent';parent.innerHTML='<span class="ico">'+items[0].icon+'</span><span>'+name+'</span><span class="chev">⌄</span>';
@@ -230,6 +231,8 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
 }
 
 window.addEventListener('message',function(event){
+ if(event.origin===location.origin&&event.source===frame.contentWindow&&event.data?.type==='fridge-close'){document.querySelector('[data-home]')?.click();return;}
+
  if(event.origin!==location.origin||event.data?.type!=='cartel-return-captacion-dashboard')return;
  // Keep the desktop shell/sidebar and replace the Convocatorias iframe.
  const nav=document.querySelector('.submenu a[data-selection]');
@@ -403,4 +406,4 @@ function prepareSelectionFrame(){
  }
  window.addEventListener('load',load,{once:true});
 })();
-</script><script src="/assets/mobile-navigation.js?v=20261113-request-icon-2"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script></body></html>
+</script><script src="/assets/mobile-navigation.js?v=20261114-fridge-1"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script></body></html>

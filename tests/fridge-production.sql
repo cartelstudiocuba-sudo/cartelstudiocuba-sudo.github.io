@@ -1,0 +1,44 @@
+-- Full transaction rollback: no test products, sales, debts or movements are retained.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"6418ad20-d0e8-49c0-8d9a-e1da3daf71b6","role":"authenticated","email":"cartelstudiocuba@gmail.com"}',true);
+do $$
+declare p uuid;c uuid;op uuid:=gen_random_uuid();payload jsonb;r jsonb;s jsonb;v integer;blocked boolean;
+begin
+ if not public.fridge_access() then raise exception 'Owner access missing';end if;
+ r:=public.fridge_command(gen_random_uuid(),'product',jsonb_build_object('name','TEST ROLLBACK Agua','category','Agua','price',200,'minimum',5));p:=(r->>'product_id')::uuid;
+ perform public.fridge_command(gen_random_uuid(),'replenish',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',p,'quantity',24)),'note','TEST inicial'));
+ r:=public.fridge_command(gen_random_uuid(),'customer',jsonb_build_object('kind','client','name','TEST ROLLBACK '||p::text));c:=(r->>'customer_id')::uuid;
+ payload:=jsonb_build_object('customer_id',c,'items',jsonb_build_array(jsonb_build_object('id',p,'quantity',3,'price',200)),'paid',200,'method','cash');
+ r:=public.fridge_command(op,'sale',payload);if (r->>'pending')::numeric<>400 then raise exception 'Partial balance';end if;
+ perform public.fridge_command(op,'sale',payload);
+ s:=public.fridge_state();select value into r from jsonb_array_elements(s->'products') where value->>'id'=p::text;
+ if (r->>'stock')::integer<>21 then raise exception 'Sale duplicate stock';end if;
+ perform public.fridge_command(gen_random_uuid(),'payment',jsonb_build_object('customer_id',c,'amount',100,'method','transfer'));
+ s:=public.fridge_state();select value into r from jsonb_array_elements(s->'customers') where value->>'id'=c::text;
+ if (r->>'balance')::numeric<>300 then raise exception 'Payment balance';end if;
+ select value into r from jsonb_array_elements(s->'products') where value->>'id'=p::text;
+ if (r->>'stock')::integer<>21 then raise exception 'Payment changed stock';end if;v:=(r->>'version')::integer;
+ blocked:=false;begin perform public.fridge_command(gen_random_uuid(),'payment',jsonb_build_object('customer_id',c,'amount',301,'method','cash'));exception when raise_exception then blocked:=true;end;
+ if not blocked then raise exception 'Overpayment accepted';end if;
+ blocked:=false;begin perform public.fridge_command(gen_random_uuid(),'sale',jsonb_build_object('customer_id',c,'items',jsonb_build_array(jsonb_build_object('id',p,'quantity',22,'price',200)),'paid',0));exception when raise_exception then blocked:=true;end;
+ if not blocked then raise exception 'Overselling accepted';end if;
+ blocked:=false;begin perform public.fridge_command(gen_random_uuid(),'count',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',p,'quantity',20,'version',v))));exception when raise_exception then blocked:=true;end;
+ if not blocked then raise exception 'Unexplained count accepted';end if;
+ perform public.fridge_command(gen_random_uuid(),'count',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',p,'quantity',20,'version',v)),'note','TEST diferencia'));
+ blocked:=false;begin perform public.fridge_command(gen_random_uuid(),'count',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',p,'quantity',20,'version',v)),'note','TEST stale'));exception when raise_exception then blocked:=true;end;
+ if not blocked then raise exception 'Stale count accepted';end if;
+ perform public.fridge_command(gen_random_uuid(),'loss',jsonb_build_object('items',jsonb_build_array(jsonb_build_object('id',p,'quantity',1)),'reason','breakage','note','TEST rotura'));
+ s:=public.fridge_state();select value into r from jsonb_array_elements(s->'products') where value->>'id'=p::text;
+ if (r->>'stock')::integer<>19 then raise exception 'Loss stock';end if;
+ r:=public.fridge_history(c,0);if jsonb_array_length(r->'rows')<>3 then raise exception 'History incomplete';end if;
+ perform set_config('request.jwt.claims','{"sub":"aedb58e6-56ca-4308-9796-bb77070f649a","role":"authenticated"}',true);
+ if not public.fridge_access() then raise exception 'Audiovisual chief access missing';end if;perform public.fridge_state();
+ perform set_config('request.jwt.claims','{"sub":"ae4ecb7a-e581-4538-b987-edd070de8ddd","role":"authenticated"}',true);
+ if public.fridge_access() then raise exception 'Graphics chief access leak';end if;
+ blocked:=false;begin perform public.fridge_state();exception when insufficient_privilege then blocked:=true;end;if not blocked then raise exception 'Unauthorized read';end if;
+ blocked:=false;begin perform public.fridge_command(gen_random_uuid(),'product','{}');exception when insufficient_privilege then blocked:=true;end;if not blocked then raise exception 'Unauthorized write';end if;
+ blocked:=false;begin update studio_access_private.fridge_products set stock=999 where id=p;exception when insufficient_privilege then blocked:=true;end;if not blocked then raise exception 'Direct write allowed';end if;
+end $$;
+select 'PASS: owner/chief access, partial sale, replay, payment, stock limits, count explanation/version, loss, history and access isolation' as verified;
+rollback;
