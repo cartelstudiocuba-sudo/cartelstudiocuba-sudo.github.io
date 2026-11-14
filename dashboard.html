@@ -209,7 +209,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
     if(caps.approve)list.push({group:'Inventario',title:'Aprobar solicitudes',url:'/inventario-aprobaciones.html',icon:'◇'});
    }
   }catch(e){console.warn('Pedidos de insumos no disponibles',e)}
-  try{const r=await client.rpc('fridge_access');if(!r.error&&r.data){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}}catch(e){console.warn('Nevera audiovisual no disponible',e)}
+  if(data.fridge_audiovisual===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}
   grouped.forEach((items,name)=>{
    const wrap=document.createElement('div');wrap.className='personal-nav-group';
    const parent=document.createElement('button');parent.type='button';parent.className='nav-parent';parent.innerHTML='<span class="ico">'+items[0].icon+'</span><span>'+name+'</span><span class="chev">⌄</span>';
