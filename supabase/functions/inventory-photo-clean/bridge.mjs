@@ -32,8 +32,10 @@ export function createHandler(env,fetcher=fetch){
    const userResponse=await fetcher(url+'/auth/v1/user',{headers:authHeaders,redirect:'manual',signal:AbortSignal.timeout(10000)});
    if(!userResponse.ok)return json({error:'La sesión ha caducado.'},401);
    const user=await userResponse.json();if(!uuid.test(user.id||''))return json({error:'Sesión no válida.'},401);
-   const access=await fetcher(url+'/rest/v1/rpc/inventory_has_access',{method:'POST',headers:{...authHeaders,'Content-Type':'application/json'},body:JSON.stringify({operation:'write'}),redirect:'manual',signal:AbortSignal.timeout(10000)});
-   if(!access.ok||await access.json()!==true)return json({error:'No tienes permiso para editar insumos.'},403);
+   const scope=new URL(req.url).searchParams.get('scope')||'inventory';
+   if(!['inventory','fridge'].includes(scope))return json({error:'Módulo de fotografía no válido.'},400);
+   const access=await fetcher(url+'/rest/v1/rpc/'+(scope==='fridge'?'fridge_access':'inventory_has_access'),{method:'POST',headers:{...authHeaders,'Content-Type':'application/json'},body:JSON.stringify(scope==='fridge'?{}:{operation:'write'}),redirect:'manual',signal:AbortSignal.timeout(10000)});
+   if(!access.ok||await access.json()!==true)return json({error:scope==='fridge'?'No tienes permiso para editar bebidas.':'No tienes permiso para editar insumos.'},403);
    if(!config||config.until<Date.now()){
     const response=await fetcher(url+'/rest/v1/rpc/inventory_photo_bridge_config',{method:'POST',headers:{apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'},body:'{}',redirect:'manual',signal:AbortSignal.timeout(10000)});
     if(!response.ok)throw Error('CONFIG');const token=await response.json();if(typeof token!=='string'||token.length<32)throw Error('CONFIG');config={token,until:Date.now()+60000};

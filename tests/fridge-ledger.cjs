@@ -12,6 +12,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  create function studio_access_private.inventory_order_role(text) returns boolean language sql stable as $$select $1='jefe_audiovisuales' and auth.uid()='aedb58e6-56ca-4308-9796-bb77070f649a'::uuid$$;
  create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select 'Test'$$;`);
  await db.exec(fs.readFileSync('database/fridge_audiovisual.sql','utf8'));
+ await db.exec(fs.readFileSync('database/fridge_catalog_photos.sql','utf8'));
  const uuid=()=>crypto.randomUUID();
  async function who(id){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id,role:'authenticated'})]);}
  await who('6418ad20-d0e8-49c0-8d9a-e1da3daf71b6');
@@ -47,6 +48,9 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  await fails(()=>command('loss',{items:[{id,quantity:1}],reason:'breakage'}),/motivo/);
  await command('payment',{customer_id:c.customer_id,amount:300,method:'cash'});ok((await state()).stats.open_accounts===0,'closed paid account');
  const h=(await db.query('select public.fridge_history($1,0) result',[c.customer_id])).rows[0].result;ok(h.rows.length===5,'customer history including account, sale and payments');
+ const photoVersion=(await state()).products[0].version;
+ await command('product',{id,version:photoVersion,name:'Agua prueba',category:'Agua',price:200,cost:100,minimum:5,photo_path:'6418ad20-d0e8-49c0-8d9a-e1da3daf71b6/12345678-1234-4234-8234-123456789012.jpg',photo_background_cleaned:true});
+ ok((await state()).products[0].photo_background_cleaned===true,'photo cleanup status persisted');
  await who('aedb58e6-56ca-4308-9796-bb77070f649a');ok((await state()).products.length===1,'chief access');
  await who('ae4ecb7a-e581-4538-b987-edd070de8ddd');await fails(state,/No tienes acceso/);await fails(()=>command('product',{name:'x'}),/No tienes acceso/);
  await db.exec('set role anon');await fails(()=>db.query('select public.fridge_state()'),/permission denied/);await db.exec('reset role');
