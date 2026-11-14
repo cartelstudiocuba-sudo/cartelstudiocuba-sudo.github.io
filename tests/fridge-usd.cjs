@@ -10,7 +10,7 @@ create function studio_access_private.is_owner() returns boolean language sql st
 create function studio_access_private.inventory_order_role(text) returns boolean language sql stable as $$select ($1='jefe_audiovisuales' and auth.uid()='${chief}'::uuid) or ($1='manager_general' and auth.uid()='${manager}'::uuid)$$;
 create function studio_access_private.inventory_actor_name() returns text language sql stable as $$select case when auth.uid()='${manager}' then 'Manager' else 'Jefe' end$$;
 create function public.system_my_views() returns jsonb language sql as $$select '[]'::jsonb$$;`);
-for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
+for(const file of ['fridge_audiovisual','fridge_catalog_photos','fridge_reconciliation','fridge_usd','fridge_product_quantity'])await db.exec(fs.readFileSync('database/'+file+'.sql','utf8'));
 const who=async uid=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,role:'authenticated'})]);
 const call=async(fn,args=[])=> (await db.query('select public.'+fn+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value;
 const cmd=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,{...payload,currency:'USD',...(kind==='product'?{purchase:{currency:'USD',amount:payload.cost||0,rate:1}}:{}),...(kind==='replenish'?{items:payload.items.map(i=>({...i,unit_cost:i.unit_cost??100,purchase:{currency:'USD',amount:i.unit_cost??100,rate:1}}))}:{})}]),rec=(kind,payload,id=crypto.randomUUID())=>call('fridge_reconciliation_command',[id,kind,payload]);
@@ -52,5 +52,16 @@ await call('fridge_command',[crypto.randomUUID(),'replenish',{currency:'USD',ite
 ok(Number((await call('fridge_state')).products.find(p=>p.id===converted.product_id).cost)===1,'CUP replenishment converted once');
 await db.exec('reset role');const audit=(await db.query("select details from studio_access_private.fridge_movements where product_id=$1",[converted.product_id])).rows[0].details;
 ok(audit.purchase.currency==='CUP'&&audit.purchase.rate===500,'original currency and rate persisted');
+await who(chief);await db.exec('set role authenticated');
+const qtyRequest=crypto.randomUUID(),qtyPayload={...purchasePayload,name:'Producto con cantidad',stock_quantity:12};
+const qtyResult=await call('fridge_command',[qtyRequest,'product',qtyPayload]);let qtyProduct=(await call('fridge_state')).products.find(p=>p.id===qtyResult.product_id);
+ok(qtyProduct.stock===12,'initial stock saved with product');
+await call('fridge_command',[qtyRequest,'product',qtyPayload]);ok((await call('fridge_state')).products.find(p=>p.id===qtyResult.product_id).stock===12,'retry does not add initial stock twice');
+const editedPayload={...qtyPayload,id:qtyProduct.id,version:qtyProduct.version,stock_quantity:9};
+await call('fridge_command',[crypto.randomUUID(),'product',editedPayload]);ok((await call('fridge_state')).products.find(p=>p.id===qtyProduct.id).stock===9,'editing declares absolute quantity');
+await fail(()=>call('fridge_command',[crypto.randomUUID(),'product',editedPayload]),/cambió/);
+for(const quantity of [-1,1.5,null,1000001])await fail(()=>call('fridge_command',[crypto.randomUUID(),'product',{...qtyPayload,stock_quantity:quantity}]),/cantidad/);
+await db.exec('reset role');const qtyMovements=(await db.query('select quantity,stock_after from studio_access_private.fridge_movements where product_id=$1 order by created_at',[qtyProduct.id])).rows;
+ok(qtyMovements.length===2&&qtyMovements[0].quantity===12&&qtyMovements[1].quantity===-3,'initial and adjusted quantities audited exactly once');
 await db.close();console.log('PASS '+passed+' reconciliation, receipt, allocation, commission and permission scenarios');
 })().catch(e=>{console.error(e);process.exitCode=1;});
