@@ -198,7 +198,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   const catalog=JSON.parse(document.getElementById('personal-view-registry').textContent);
   nav.querySelectorAll(':scope > *').forEach(node=>{if(!node.matches('[data-home]'))node.hidden=true});
   const grouped=new Map();
-  views.forEach(v=>{const def=catalog[v.code];if(!def)return;if(!grouped.has(def.group))grouped.set(def.group,[]);grouped.get(def.group).push({...def,code:v.code})});
+  views.forEach(v=>{if(data.fridge_manager===true&&v.code==='inventory_graphics_read')return;const def=catalog[v.code];if(!def)return;if(!grouped.has(def.group))grouped.set(def.group,[]);grouped.get(def.group).push({...def,code:v.code})});
   try{
    const result=await client.rpc('inventory_order_capabilities');
    const caps=result.data;
@@ -206,7 +206,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
     if(!grouped.has('Inventario'))grouped.set('Inventario',[]);
     const list=grouped.get('Inventario');
     if(caps.fulfil&&caps.area!=='Gráfica')list.push({group:'Inventario',title:'Pedidos y entregas',url:'/inventario-pedidos.html',icon:'◇'});
-    if(caps.create)list.push({group:'Inventario',title:'Solicitud',url:'/inventario-solicitud.html',icon:'◇'});
+    if(caps.create&&data.fridge_manager!==true)list.push({group:'Inventario',title:'Solicitud',url:'/inventario-solicitud.html',icon:'◇'});
     if(caps.approve)list.push({group:'Inventario',title:'Aprobar solicitudes',url:'/inventario-aprobaciones.html',icon:'◇'});
    }
   }catch(e){console.warn('Pedidos de insumos no disponibles',e)}
