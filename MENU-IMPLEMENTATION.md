@@ -114,3 +114,9 @@ Reversión: restaurar frontend y función Edge anteriores; conservar la columna 
 Al desplegar una definición se muestran directamente las alternativas como botones, con la selección actual marcada; no hay un segundo selector dentro. Formato, caras, color, esquinas y gramaje cierran el panel al elegir. Material queda abierto para elegir gramaje o escribir «Otro material». Se conservan borrador, validación, revisión y publicación.
 
 La franja entre las barras se corrige únicamente en Nevera incrustada y en móvil: la página principal deja de sumar el alto mínimo de pantalla y una segunda reserva inferior; el iframe ocupa el espacio disponible justo encima de la barra global. La barra interna deja 6 px de separación. El ajuste se activa por ruta y estado de la vista y se retira al regresar a inicio o abrir otro módulo; no altera escritorio ni otras vistas. Se comprueban selección directa, navegación entre módulos y conservación de ambas barras.
+
+## Formato Otro y orientación de la vista
+
+«Otro» permite declarar ancho y alto/largo en centímetros, entre 10 y 40 cm y hasta 16 megapíxeles para limitar memoria de exportación. Las medidas se validan en cliente y servidor, quedan en el borrador y snapshot aprobado y se usan en JPG, impresión e instrucciones. Se admite formato personalizado horizontal, manteniendo proporciones de texto y QR. Las versiones anteriores permanecen intactas. Migración `fridge_menu_custom_size` y función de imágenes compatibles con dimensiones personalizadas acotadas.
+
+En vista horizontal desde 700 px útiles, vista previa a la derecha de los productos; en vertical queda debajo en el orden de lectura. No se cambia la navegación ni el diseño de Carta digital.
