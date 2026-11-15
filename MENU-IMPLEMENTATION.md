@@ -74,3 +74,15 @@ El editor agrupa dimensiones, material, acabado, aprobación, JPG, impresión, W
 Migración `fridge_menu_cup_note`: reconoce `elegant-cup-v4` y fija el texto en el snapshot del servidor para futuras aprobaciones; mantiene los diseños anteriores y sus versiones inmutables. No añade permisos ni actualiza registros reales. El nuevo diseño requiere aprobación explícita para descarga/publicación. La reversión consiste en restaurar frontend anterior; los nuevos metadatos son compatibles y pueden conservarse, o restaurar la función previa de `fridge_menu_elegant_design.sql`.
 
 Pruebas: render de nota y JPG/QR, ajuste del catálogo de 15 productos, agrupación de controles, flujo de aprobación y enlaces, nota accesible pública, persistencia del texto e historial de versiones sin alteración.
+
+## QR compacto, miniaturas y orden móvil
+
+Se retira del diseño impreso «PRECIOS EN USD» y sus líneas laterales, así como el texto y espacio lateral «Carta digital» del recuadro QR. Se conserva la nota de pago en CUP. Nota y QR siguen al último producto mediante posiciones calculadas; el QR real queda centrado en una tarjeta blanca cuadrada de 400 px con esquinas redondeadas y módulos/márgenes completos, alineados a píxeles enteros. El diseño se identifica como `elegant-compact-v5`, conservando los JPG históricos.
+
+La vista previa va inmediatamente después del selector en el DOM y en móvil/tablet (hasta 1050 px); en escritorio sigue a la derecha mediante áreas de la cuadrícula. Después aparecen las tarjetas de impresión y carta digital. El selector utiliza tarjetas con miniatura, nombre completo, categoría, precio, casilla y orden, resaltado de incluidos y contador de selección.
+
+Las miniaturas reutilizan las fotografías privadas del inventario: el módulo recibe un cargador que descarga desde `fridge-images` con la sesión actual y aprovecha la caché de la nevera. Las solicitudes se reutilizan al buscar/reordenar; fallos o fotos ausentes muestran un icono. Se ignoran respuestas al cerrar sesión y se revocan las URL locales de imágenes. No se añaden fotos ni rutas de almacenamiento al snapshot público de la carta, ni se cambia el catálogo o su huella.
+
+Migración `fridge_menu_compact_design`: acepta el nuevo identificador y conserva la nota en nuevas aprobaciones; mantiene los anteriores. No reescribe datos ni amplía permisos. Reversión: restaurar frontend anterior y, si se requiere, la función de `fridge_menu_cup_note.sql`; las versiones se conservan.
+
+Verificación: QR decodificado desde JPG, pie sin etiquetas retiradas, posiciones dentro de la hoja para listas cortas/largas y el catálogo de 15 productos, orden móvil por DOM/CSS, carga y ausencia de miniaturas, caché, selección y flujos de aprobación. Inspección visual del JPG y suite completa de Nevera.

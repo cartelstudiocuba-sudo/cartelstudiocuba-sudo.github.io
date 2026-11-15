@@ -2,7 +2,7 @@
 (function(root){'use strict';
 const WIDTH=2550,HEIGHT=3300,DPI=300,PUBLIC_URL='https://gestion.elcartelstudio.com/carta-menu.html',IMAGE_URL='https://jhumvctocphyiwhszeaz.supabase.co/functions/v1/fridge-menu-image';
 const PAYMENT_NOTE='Puedes pagar los productos en CUP según la tasa de cambio del día.';
-const family='Barlow Condensed',DESIGN='elegant-cup-v4',ARTWORK_URL='/assets/menu/elegant-background-v3.jpg';let fontsPromise,artwork;
+const family='Barlow Condensed',DESIGN='elegant-compact-v5',ARTWORK_URL='/assets/menu/elegant-background-v3.jpg';let fontsPromise,artwork;
 function ready(){if(typeof document==='undefined'||!document.fonts||!root.Image)return Promise.reject(Error('No se pudo cargar el diseño para imprimir.'));return fontsPromise||(fontsPromise=Promise.all([document.fonts.load('700 100px "Barlow Condensed"').then(f=>{if(!f.length)throw Error('No se pudo cargar la tipografía.');}),new Promise((resolve,reject)=>{const img=new root.Image();img.onload=()=>{if(!img.naturalWidth)return reject(Error('Diseño no válido.'));artwork=img;resolve();};img.onerror=()=>reject(Error('No se pudo cargar el diseño. Reintenta antes de exportar.'));img.src=ARTWORK_URL;})]).catch(e=>{fontsPromise=null;artwork=null;throw e;}));}
 function imageUrl(id,download=false){return IMAGE_URL+(id?'?version='+encodeURIComponent(id):'')+(download?(id?'&':'?')+'download=1':'');}
 function qr(canvas,url=PUBLIC_URL,factory=root.qrcode){if(!factory)throw Error('No se pudo cargar el generador QR.');const code=factory(0,'M');code.addData(url);code.make();const n=code.getModuleCount(),ctx=canvas.getContext('2d'),size=Math.min(canvas.width,canvas.height),unit=Math.floor(size/(n+8)),offset=Math.floor((size-n*unit)/2);if(unit<1)throw Error('El QR no cabe.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#000';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(code.isDark(y,x))ctx.fillRect(offset+x*unit,offset+y*unit,unit,unit);return code;}
@@ -28,20 +28,19 @@ function layout(ctx,products){
  return last;
 }
 function roundRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);}
-function tracked(c,text,x,y,spacing){const widths=[...text].map(ch=>c.measureText(ch).width),total=widths.reduce((a,b)=>a+b,0)+spacing*(widths.length-1);let at=x-total/2;[...text].forEach((ch,i)=>{c.fillText(ch,at,y);at+=widths[i]+spacing;});}
 function render(canvas,snapshot,{qrFactory=root.qrcode,link=PUBLIC_URL,background=artwork}={}){
  if(!background)throw Error('Espera a que termine de cargar el diseño de la carta.');
  canvas.width=WIDTH;canvas.height=HEIGHT;const c=canvas.getContext('2d');if(!c)throw Error('El navegador no permite generar la carta.');const products=snapshot.products||[];c.fillStyle='#fff';c.fillRect(0,0,WIDTH,HEIGHT);c.save();roundRect(c,0,0,WIDTH,HEIGHT,75);c.clip();c.drawImage(background,0,0,WIDTH,HEIGHT);
  const fit=layout(c,products);c.font='700 '+fit.size+'px "'+family+'"';c.fillStyle='#111';c.textAlign='left';
  if(!fit.overflow){for(const row of fit.rows){if(row.separate){c.strokeStyle='#111';c.lineWidth=2;c.beginPath();c.moveTo(585,row.ruleY);c.lineTo(1965,row.ruleY);c.stroke();}row.lines.forEach((line,i)=>c.fillText(line,PRODUCT_AREA.left,row.baseline+i*fit.lineHeight));c.textAlign='right';c.fillText('$'+Number(row.p.price).toFixed(2),PRODUCT_AREA.right,row.baseline);c.textAlign='left';}}
  if(fit.overflow||!products.length){c.textAlign='center';c.font='700 65px "'+family+'"';c.fillText(fit.overflow?'La selección no cabe en una hoja':'Selecciona los productos',WIDTH/2,1900);c.fillText(fit.overflow?'Reduce la selección para ver la carta completa':'de la carta',WIDTH/2,1980);}
- // Rounded white card surrounds the untouched square QR and its full quiet zone.
- c.fillStyle='#fff';roundRect(c,785,2820,980,390,65);c.fill();
+ // Footer follows the actual last row; keep the complete quiet zone inside a compact square.
+ const lastBottom=fit.overflow?PRODUCT_AREA.bottom:(fit.rows.at(-1)?.bottom||2200),noteBaseline=Math.round(Math.min(2665,lastBottom+65)),card={x:(WIDTH-400)/2,y:noteBaseline+40,width:400,height:400},qrBox={x:card.x+25,y:card.y+25,size:350};
+ c.fillStyle='#111';c.textAlign='center';c.font='700 44px "'+family+'"';c.fillText(PAYMENT_NOTE,WIDTH/2,noteBaseline);
+ c.fillStyle='#fff';roundRect(c,card.x,card.y,card.width,card.height,50);c.fill();
  const qcanvas=canvas.ownerDocument?canvas.ownerDocument.createElement('canvas'):null;
- if(qcanvas){qcanvas.width=qcanvas.height=350;qr(qcanvas,link,qrFactory);c.drawImage(qcanvas,810,2840);}else{const code=qrFactory(0,'M');code.addData(link);code.make();const n=code.getModuleCount(),u=Math.floor(350/(n+8)),o=Math.floor((350-n*u)/2);c.fillStyle='#fff';c.fillRect(810,2840,350,350);c.fillStyle='#000';for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(code.isDark(r,col))c.fillRect(810+o+col*u,2840+o+r*u,u,u);}
- c.strokeStyle='#111';c.lineWidth=3;c.beginPath();c.moveTo(1210,2885);c.lineTo(1210,3145);c.stroke();c.fillStyle='#111';c.textAlign='left';c.font='700 95px "'+family+'"';c.fillText('Carta',1280,2985);c.fillText('digital',1280,3090);
- c.strokeStyle='#111';c.lineWidth=2;c.beginPath();c.moveTo(745,2705);c.lineTo(895,2705);c.moveTo(1655,2705);c.lineTo(1805,2705);c.stroke();
- c.font='700 49px "'+family+'"';tracked(c,'PRECIOS EN USD',WIDTH/2,2725,9);c.textAlign='center';c.font='700 44px "'+family+'"';c.fillText(PAYMENT_NOTE,WIDTH/2,2783);c.restore();return {...fit,count:products.length,renderedCount:fit.overflow?0:products.length};
+ if(qcanvas){qcanvas.width=qcanvas.height=qrBox.size;qr(qcanvas,link,qrFactory);c.drawImage(qcanvas,qrBox.x,qrBox.y);}else{const code=qrFactory(0,'M');code.addData(link);code.make();const n=code.getModuleCount(),u=Math.floor(qrBox.size/(n+8)),o=Math.floor((qrBox.size-n*u)/2);c.fillStyle='#fff';c.fillRect(qrBox.x,qrBox.y,qrBox.size,qrBox.size);c.fillStyle='#000';for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(code.isDark(r,col))c.fillRect(qrBox.x+o+col*u,qrBox.y+o+r*u,u,u);}
+ c.restore();return {...fit,count:products.length,renderedCount:fit.overflow?0:products.length,footer:{noteBaseline,card,qr:qrBox}};
 }
 function dpi(bytes){const a=new Uint8Array(bytes);if(a[0]!==255||a[1]!==216)throw Error('JPEG no válido');let p=2;while(p+16<a.length&&a[p]===255){const marker=a[p+1],len=a[p+2]*256+a[p+3];if(marker===224&&a[p+4]===74&&a[p+5]===70&&a[p+6]===73&&a[p+7]===70){a[p+11]=1;a[p+12]=1;a[p+13]=44;a[p+14]=1;a[p+15]=44;return a;}if(marker===218||len<2)break;p+=len+2;}
  // Add a JFIF density segment when the browser's encoder omitted one.
