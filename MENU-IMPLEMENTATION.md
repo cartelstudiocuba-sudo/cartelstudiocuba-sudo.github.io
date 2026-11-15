@@ -132,3 +132,11 @@ En vista horizontal desde 700 px útiles, vista previa a la derecha de los produ
 - Hero asset `assets/menu/digital-hero-v1.jpg`: built-in image generation; prompt: wide editorial photograph of an espresso cup, peach juice and beer on a dark wooden Cuban bar counter, warm bokeh, empty dark upper center for live title, no text/labels/interface. Generated PNG optimized to a 1440px-wide JPEG for delivery.
 
 Validation: full `npm run test:fridge` passed, including 53 menu SQL checks, print/render/decoded QR regression checks, 71 editor/public-print checks and 26 new digital/photo checks. Production migration preserved the approved history hash; direct photo RPC is denied to anon and authenticated, allowed only to service_role. Edge version 5 is active. Existing unrelated project-wide advisory findings were left unchanged.
+
+## 2026-11-15 — Approved photo-card grid refinement
+
+- Replaced category sections with one continuous grid in approved product order. Removed repeated category subtitles from the cards; category information remains available in product details.
+- Larger vertical photo cards: two columns on mobile and three from 760px. Images are contained without cropping, full card remains a keyboard/touch button, and long names wrap without truncation.
+- Category filters are raised icon tiles with distinct SVGs for all products, beers, sweets, juices, other, soft drinks and water. Selected state uses corporate yellow and aria-pressed. Narrow screens scroll filters horizontally.
+- Changed only public HTML/CSS/JS, regression assertions and this log. No database, catalog, price, approved snapshot, QR URL, JPG or backend changes.
+- Verification: `npm run test:fridge:menu` passed: 53 SQL checks, renderer/JPEG/QR regressions, 71 editor/public print checks, and 29 digital menu/photo checks. Responsive layout was checked through CSS/DOM; physical-device visual review remains separate. Rollback: revert this frontend commit.
