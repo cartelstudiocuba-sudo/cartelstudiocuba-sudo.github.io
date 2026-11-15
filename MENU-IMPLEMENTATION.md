@@ -86,3 +86,11 @@ Las miniaturas reutilizan las fotografías privadas del inventario: el módulo r
 Migración `fridge_menu_compact_design`: acepta el nuevo identificador y conserva la nota en nuevas aprobaciones; mantiene los anteriores. No reescribe datos ni amplía permisos. Reversión: restaurar frontend anterior y, si se requiere, la función de `fridge_menu_cup_note.sql`; las versiones se conservan.
 
 Verificación: QR decodificado desde JPG, pie sin etiquetas retiradas, posiciones dentro de la hoja para listas cortas/largas y el catálogo de 15 productos, orden móvil por DOM/CSS, carga y ausencia de miniaturas, caché, selección y flujos de aprobación. Inspección visual del JPG y suite completa de Nevera.
+
+## Gestionar impresión · Tarjetas de acción
+
+Propuesta 2 seleccionada por el usuario. La tarjeta incorpora resumen de formato, cuatro especificaciones con iconos, selección Mate/Brillo mediante radios visuales y estado borrador/aprobado. «Revisar y aprobar» abre un diálogo con el listado completo de productos y precios, acabado y nota de CUP. Se exige marcar la confirmación para habilitar «Aprobar y publicar». Cancelar vuelve a edición sin guardar ni publicar.
+
+Las tres tarjetas de salida (Descargar JPG, Imprimir y WhatsApp a imprenta) muestran iconos y candados mientras el diseño no está aprobado; mantienen los enlaces y protecciones existentes. Las instrucciones de impresión y el historial quedan en desplegables. El diálogo muestra errores a través del aviso de la vista al cerrarse y conserva la recuperación de envíos inciertos; no permite avanzar con datos locales cambiados o contenido que desborde la hoja.
+
+Se conserva el diseño impreso, los snapshots y el flujo de servidor: no se modifica la base de datos ni se publica una carta real durante el cambio. Se comprueban selector de acabado, revisión, cancelación, confirmación, bloqueo por tamaño, recuperación sin duplicados y cambios de precios durante publicación. La reversión consiste en restaurar estos archivos frontend.
