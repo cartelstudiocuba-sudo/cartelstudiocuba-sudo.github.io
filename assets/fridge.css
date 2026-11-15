@@ -19,3 +19,5 @@
 
 /* Left layout applies only to Nevera. */
 .fridge-left-layout #fridge-app{margin-left:0;margin-right:auto;text-align:left}.fridge-left-layout .fr-nav{left:min(50%,610px)}.fr-stock-item{width:100%;text-align:left;border:0;border-bottom:1px solid #ffffff14;border-radius:12px;padding:14px 12px;background:transparent}.fr-stock-arrow{font-size:26px;color:var(--muted);flex-shrink:0;line-height:1}.fr-stock-item:hover,.fr-stock-item:focus-visible{background:linear-gradient(120deg,#ffda0315,#ffda0305);box-shadow:inset 0 0 0 1px #ffda0360}.fr-stock-item:hover .fr-stock-arrow,.fr-stock-item:focus-visible .fr-stock-arrow{color:var(--yellow)}.fr-stock-item:active:not(:disabled){background:#ffda0324}@media(prefers-reduced-motion:no-preference){.fr-stock-item{transition:background .15s,box-shadow .15s,transform .15s}.fr-stock-item:hover{transform:translateY(-1px)}}
+
+@media(max-width:900px){body.fr-embedded .fr-nav{bottom:6px}}

@@ -108,3 +108,9 @@ La vista de impresión pública usa el tamaño aprobado; al elegir dos caras pre
 Pruebas: persistencia y validación de opciones, tamaños y color de exportación, QR legible en cada formato, rechazo de dimensiones discrepantes, impresión dúplex esperada, conservación de versiones y compatibilidad de clientes anteriores. Las opciones son editables en escritorio y móvil a través de controles nativos desplegables. No se rediseña aún «Carta digital»: se entregó una propuesta visual separada pendiente de aprobación.
 
 Reversión: restaurar frontend y función Edge anteriores; conservar la columna nueva y versiones. Si se necesita retirar la funcionalidad del servidor, restaurar las funciones de `fridge_menu_compact_design.sql` y la referencia de imagen anterior sin borrar ajustes, archivos ni registros.
+
+## Selección directa y separación de barras móviles
+
+Al desplegar una definición se muestran directamente las alternativas como botones, con la selección actual marcada; no hay un segundo selector dentro. Formato, caras, color, esquinas y gramaje cierran el panel al elegir. Material queda abierto para elegir gramaje o escribir «Otro material». Se conservan borrador, validación, revisión y publicación.
+
+La franja entre las barras se corrige únicamente en Nevera incrustada y en móvil: la página principal deja de sumar el alto mínimo de pantalla y una segunda reserva inferior; el iframe ocupa el espacio disponible justo encima de la barra global. La barra interna deja 6 px de separación. El ajuste se activa por ruta y estado de la vista y se retira al regresar a inicio o abrir otro módulo; no altera escritorio ni otras vistas. Se comprueban selección directa, navegación entre módulos y conservación de ambas barras.

@@ -35,4 +35,8 @@ function render(){scheduled=false;if(!window.cartelPersonalNavigationReady)retur
 function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(render);}
 new MutationObserver(schedule).observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
 window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();});if(window.cartelPersonalNavigationReady)schedule();
+// Only the embedded Nevera uses a viewport dock above the global mobile bar.
+const workspace=document.getElementById('workspace'),moduleFrame=document.getElementById('frame');
+function syncFridgeDock(){let fridge=false;try{const url=new URL(moduleFrame?.getAttribute('src')||'',location.href);fridge=!!workspace?.classList.contains('embedded')&&!workspace.classList.contains('selection-mode')&&url.origin===location.origin&&url.pathname==='/nevera-audiovisual.html';}catch{}document.documentElement.classList.toggle('fridge-workspace-active',fridge);}
+if(workspace&&moduleFrame){new MutationObserver(syncFridgeDock).observe(workspace,{attributes:true,attributeFilter:['class']});new MutationObserver(syncFridgeDock).observe(moduleFrame,{attributes:true,attributeFilter:['src']});syncFridgeDock();}
 })();

@@ -23,3 +23,5 @@
 .fr-menu-spec-tiles>details[open]{grid-column:1/-1}
 
 #fr-menu-review-summary,#fr-menu-print-instructions{overflow-wrap:anywhere;line-height:1.6}
+
+.fr-menu-choice-group>span{font-size:12px;color:#c6c8ce;display:block;margin-bottom:9px}.fr-menu-choice-group>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fr-menu-choice-group button{display:flex;justify-content:space-between;align-items:center;gap:9px;text-align:left;min-width:0;font-size:12px;line-height:1.5;padding:11px 12px;min-height:46px}.fr-menu-choice-group button span{min-width:0;overflow-wrap:anywhere}.fr-menu-choice-group button b{color:transparent;flex:0 0 15px}.fr-menu-choice-group button[aria-pressed=true]{border-color:#ffda03;background:#ffda0314;color:#ffda03}.fr-menu-choice-group button[aria-pressed=true] b{color:#ffda03}.fr-menu-choice-group button:hover{border-color:#ffda0370}@media(max-width:380px){.fr-menu-choice-group>div{grid-template-columns:minmax(0,1fr)}}
