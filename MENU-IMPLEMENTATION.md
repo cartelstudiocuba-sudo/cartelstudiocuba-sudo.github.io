@@ -146,3 +146,11 @@ Validation: full `npm run test:fridge` passed, including 53 menu SQL checks, pri
 - Investigated the internal digital link: it points to the same correct public page. Live HTML already contains the new grid assets, while GitHub Pages advertises a 600-second browser cache lifetime. A stale browser document is consistent with the reported difference; the user's browser cache was not directly inspected.
 - Internal “Ver carta digital” now uses a presentation revision and a fresh document URL on every activation, including middle-click. WhatsApp digital links include the presentation revision. Existing QR URLs, approved versions and print links remain unchanged.
 - Bumped the editor script URL so reloading the platform gets the new link behavior. No database or backend changes. Regression tests check fresh navigation, share revision and existing menu behavior. Revert this frontend commit to undo.
+
+## 2026-11-15 — Approved minimal digital sharing panel
+
+- Reorganized the administrative Carta digital panel with a QR/caption column, explanatory text and yellow open action, paired Download QR / Copy link controls, and one green WhatsApp action below. Uses existing SVG icons and actual QR canvas, no generated screenshot assets.
+- Container-width and mobile CSS stack QR above actions when the panel is narrow, including a narrow column on desktop. Scoped styles preserve neighboring print controls and public menu layout.
+- Copy link writes the stable public URL with the current presentation revision. If browser clipboard access is unavailable/denied, a readonly field is shown, focused and fully selected for manual copying. Clipboard completion checks session generation before touching UI.
+- Existing approved-version gating for QR/WhatsApp also governs Copy link. Open-link cache refresh behavior, QR target, public menu, JPG and print specifications remain intact. No database changes or messages sent.
+- Verification: menu SQL, renderer/JPEG/QR, editor/public printing and digital delivery suites passed. Editor checks include clipboard success, failure/manual selection and current digital entry. Responsive layout reviewed as DOM/CSS; physical-device visual review remains separate. Rollback: revert this frontend commit.
