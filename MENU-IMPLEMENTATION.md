@@ -64,3 +64,13 @@ Migración `fridge_menu_elegant_design`: permite la etiqueta `elegant-v3` para f
 El cálculo anterior bloqueaba el catálogo de 15 productos por un interlineado rígido y un ancho fijo de nombre. El ajuste ahora reserva el ancho medido del precio, aprovecha el ancho restante para nombres completos y busca el mayor tamaño legible con espaciado normal o compacto. Los separadores se contabilizan en la misma geometría que usa el dibujo; todos los renglones quedan dentro del área segura, con un mínimo de 56 px (13,44 pt a 300 ppp). El desbordamiento real sigue bloqueando la aprobación y muestra un aviso dentro de la vista previa en vez de una carta truncada.
 
 Regresión verificada con los 15 nombres completos del catálogo, orden inverso, cambio de categoría en cada fila y un nombre largo en dos líneas con precio de cuatro cifras. Las pruebas comprueban límites verticales, separación nombre/precio, conservación de todos los textos y conteo de productos dibujados; el caso excesivo de 100 productos sigue bloqueado. No cambia la base de datos, los productos, precios ni aprobaciones.
+
+## Nota de pago en CUP y tarjetas de impresión/digital
+
+El pie de la carta incorpora «Puedes pagar los productos en CUP según la tasa de cambio del día.», debajo de «PRECIOS EN USD» y encima del QR. La selección, importes en USD y conversión de compras mantienen su lógica. La nota aparece en la vista previa y en futuros JPG aprobados; no reescribe cartas anteriores. La página digital presenta también la nota del snapshot aprobado como texto accesible.
+
+El editor agrupa dimensiones, material, acabado, aprobación, JPG, impresión, WhatsApp de imprenta e historial dentro de una tarjeta independiente «Gestionar impresión». Otra tarjeta debajo, «Carta digital», agrupa QR, enlace de revisión, descarga PNG y WhatsApp para clientes. Ambas comparten bordes, fondo y tratamiento de tarjeta de la vista previa y se apilan en móvil.
+
+Migración `fridge_menu_cup_note`: reconoce `elegant-cup-v4` y fija el texto en el snapshot del servidor para futuras aprobaciones; mantiene los diseños anteriores y sus versiones inmutables. No añade permisos ni actualiza registros reales. El nuevo diseño requiere aprobación explícita para descarga/publicación. La reversión consiste en restaurar frontend anterior; los nuevos metadatos son compatibles y pueden conservarse, o restaurar la función previa de `fridge_menu_elegant_design.sql`.
+
+Pruebas: render de nota y JPG/QR, ajuste del catálogo de 15 productos, agrupación de controles, flujo de aprobación y enlaces, nota accesible pública, persistencia del texto e historial de versiones sin alteración.
