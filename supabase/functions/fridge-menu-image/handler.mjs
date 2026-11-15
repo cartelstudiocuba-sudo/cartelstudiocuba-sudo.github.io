@@ -15,7 +15,7 @@ export function createHandler(env,fetcher=fetch){return async req=>{
   const file=await fetcher(base+'/storage/v1/object/fridge-menu/'+row.path,{headers,redirect:'manual',signal:AbortSignal.timeout(20000)});if(!file.ok)throw Error('FILE');
   const reader=file.body.getReader(),parts=[];let length=0;while(true){const {value,done}=await reader.read();if(done)break;length+=value.length;if(length>4194304){await reader.cancel();throw Error('SIZE');}parts.push(value);}
   const bytes=new Uint8Array(length);let pos=0;for(const part of parts){bytes.set(part,pos);pos+=part.length;}
-  const dims=jpegSize(bytes);if(dims.width!==2550||dims.height!==3300)throw Error('DIMENSIONS');
+  const dims=jpegSize(bytes);const expected={width:row.width??2550,height:row.height??3300};if(!['2550x3300','2480x3508','1748x2480','2550x4200'].includes(expected.width+'x'+expected.height)||dims.width!==expected.width||dims.height!==expected.height)throw Error('DIMENSIONS');
   const sha=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');if(sha!==row.sha256)throw Error('HASH');
   return new Response(req.method==='HEAD'?null:bytes,{headers:{...cors,'Content-Type':'image/jpeg','Content-Length':String(length),'Content-Disposition':(u.searchParams.get('download')==='1'?'attachment':'inline')+'; filename="carta-menu-bar-v'+Number(row.number)+'.jpg"','Cache-Control':version?'public, max-age=31536000, immutable':'public, max-age=60','ETag':'"'+sha+'"'}});
  }catch{return error('No se pudo obtener la carta aprobada. Reintenta en unos segundos.',503);}

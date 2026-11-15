@@ -2,26 +2,32 @@
 (function(root){'use strict';
 const WIDTH=2550,HEIGHT=3300,DPI=300,PUBLIC_URL='https://gestion.elcartelstudio.com/carta-menu.html',IMAGE_URL='https://jhumvctocphyiwhszeaz.supabase.co/functions/v1/fridge-menu-image';
 const PAYMENT_NOTE='Puedes pagar los productos en CUP según la tasa de cambio del día.';
-const family='Barlow Condensed',DESIGN='elegant-compact-v5',ARTWORK_URL='/assets/menu/elegant-background-v3.jpg';let fontsPromise,artwork;
+const family='Barlow Condensed',DESIGN='elegant-print-v6',ARTWORK_URL='/assets/menu/elegant-background-v3.jpg';let fontsPromise,artwork;
+const PRINT_DEFAULTS={format:'letter',paper:'bristol',paper_other:'',weight:'180–220',sides:1,color:'color',corners:'rounded'};
+const FORMATS={letter:{label:'Carta vertical',width_cm:21.59,height_cm:27.94},a4:{label:'A4 vertical',width_cm:21,height_cm:29.7},a5:{label:'A5 vertical',width_cm:14.8,height_cm:21},legal:{label:'Oficio vertical',width_cm:21.59,height_cm:35.56}};
+function normalizePrint(value={}){const p=Object.fromEntries(Object.keys(PRINT_DEFAULTS).map(k=>[k,value?.[k]??PRINT_DEFAULTS[k]]));p.sides=Number(p.sides);if(!Object.hasOwn(FORMATS,p.format)||!['bristol','couche','bond','other'].includes(p.paper)||!['180–220','80','90','120','150','180','200','220','250','300'].includes(p.weight)||![1,2].includes(p.sides)||!['color','bw'].includes(p.color)||!['rounded','square'].includes(p.corners)||typeof p.paper_other!=='string'||p.paper_other.length>80||p.paper==='other'&&!p.paper_other.trim())throw Error('Revisa las opciones de impresión.');p.paper_other=p.paper==='other'?p.paper_other.trim():'';return p;}
+function dimensions(p={}){const f=FORMATS[normalizePrint(p).format];return {...f,width_px:Math.round(f.width_cm/2.54*DPI),height_px:Math.round(f.height_cm/2.54*DPI)};}
+function paperLabel(p){return ({bristol:'Cartulina Bristol',couche:'Papel couché',bond:'Papel bond',other:p.paper_other})[p.paper]+' · '+p.weight+' g/m²';}
+function printDescription(p={},finish='mate'){p=normalizePrint(p);const f=dimensions(p);return f.label+' · '+f.width_cm.toLocaleString('es-ES')+' × '+f.height_cm.toLocaleString('es-ES')+' cm · '+paperLabel(p)+' · '+(p.sides===2?'Dos caras, mismo diseño':'Una cara')+' · '+(p.color==='bw'?'Blanco y negro':'Full color')+' · '+(p.corners==='rounded'?'Esquinas redondeadas':'Esquinas rectas')+' · '+finish;}
 function ready(){if(typeof document==='undefined'||!document.fonts||!root.Image)return Promise.reject(Error('No se pudo cargar el diseño para imprimir.'));return fontsPromise||(fontsPromise=Promise.all([document.fonts.load('700 100px "Barlow Condensed"').then(f=>{if(!f.length)throw Error('No se pudo cargar la tipografía.');}),new Promise((resolve,reject)=>{const img=new root.Image();img.onload=()=>{if(!img.naturalWidth)return reject(Error('Diseño no válido.'));artwork=img;resolve();};img.onerror=()=>reject(Error('No se pudo cargar el diseño. Reintenta antes de exportar.'));img.src=ARTWORK_URL;})]).catch(e=>{fontsPromise=null;artwork=null;throw e;}));}
 function imageUrl(id,download=false){return IMAGE_URL+(id?'?version='+encodeURIComponent(id):'')+(download?(id?'&':'?')+'download=1':'');}
 function qr(canvas,url=PUBLIC_URL,factory=root.qrcode){if(!factory)throw Error('No se pudo cargar el generador QR.');const code=factory(0,'M');code.addData(url);code.make();const n=code.getModuleCount(),ctx=canvas.getContext('2d'),size=Math.min(canvas.width,canvas.height),unit=Math.floor(size/(n+8)),offset=Math.floor((size-n*unit)/2);if(unit<1)throw Error('El QR no cabe.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#000';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(code.isDark(y,x))ctx.fillRect(offset+x*unit,offset+y*unit,unit,unit);return code;}
 function wrap(ctx,text,width){const lines=[];let line='';for(const word of String(text).split(/\s+/)){if(ctx.measureText(line+(line?' ':'')+word).width<=width){line+=(line?' ':'')+word;continue;}if(line)lines.push(line);line='';for(const char of word){if(ctx.measureText(line+char).width>width&&line){lines.push(line);line='';}line+=char;}}if(line)lines.push(line);return lines;}
 const PRODUCT_AREA={left:620,right:1940,top:1230,bottom:2580};
-function layout(ctx,products){
+function layout(ctx,products,{area=PRODUCT_AREA,minSize=56}={}){
  let last;
  // Prefer the largest readable size. Tighten spacing only when the list needs it.
- for(let size=144;size>=56;size-=2){
+ for(let size=144;size>=minSize;size-=2){
   ctx.font='700 '+size+'px "'+family+'"';
-  const priceWidth=Math.max(0,...products.map(p=>ctx.measureText('$'+Number(p.price).toFixed(2)).width)),nameWidth=Math.min(1180,PRODUCT_AREA.right-PRODUCT_AREA.left-priceWidth-85);
+  const priceWidth=Math.max(0,...products.map(p=>ctx.measureText('$'+Number(p.price).toFixed(2)).width)),nameWidth=Math.min(1180,area.right-area.left-priceWidth-85);
   for(const compact of [false,true]){
    const lineHeight=size*1.12,gap=size*(compact ? .12 : .30),sectionGap=size*(compact ? .20 : .30),ascent=size*.88,descent=size*.24;
    const rows=products.map((p,i)=>({p,separate:i>0&&p.category!==products[i-1].category,lines:wrap(ctx,String(p.name),Math.max(1,nameWidth))}));
-   const height=rows.reduce((n,r,i)=>n+r.lines.length*lineHeight+(i?gap+(r.separate?sectionGap:0):0),0),available=PRODUCT_AREA.bottom-PRODUCT_AREA.top;
+   const height=rows.reduce((n,r,i)=>n+r.lines.length*lineHeight+(i?gap+(r.separate?sectionGap:0):0),0),available=area.bottom-area.top;
    const overflow=height>available||nameWidth<200||rows.some(r=>r.lines.length>2);
-   let cursor=PRODUCT_AREA.top+Math.max(0,(available-height)/2);
+   let cursor=area.top+Math.max(0,(available-height)/2);
    for(let i=0;i<rows.length;i++){const row=rows[i];if(i){const spacing=gap+(row.separate?sectionGap:0);row.ruleY=cursor+spacing/2;cursor+=spacing;}row.top=cursor;row.baseline=cursor+ascent;row.bottom=cursor+row.lines.length*lineHeight;cursor=row.bottom;}
-   last={size,rows,height,nameWidth,priceWidth,lineHeight,ascent,descent,compact,overflow};
+   last={size,rows,height,nameWidth,priceWidth,lineHeight,ascent,descent,compact,overflow,area};
    if(!overflow)return last;
   }
  }
@@ -30,23 +36,24 @@ function layout(ctx,products){
 function roundRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);}
 function render(canvas,snapshot,{qrFactory=root.qrcode,link=PUBLIC_URL,background=artwork}={}){
  if(!background)throw Error('Espera a que termine de cargar el diseño de la carta.');
- canvas.width=WIDTH;canvas.height=HEIGHT;const c=canvas.getContext('2d');if(!c)throw Error('El navegador no permite generar la carta.');const products=snapshot.products||[];c.fillStyle='#fff';c.fillRect(0,0,WIDTH,HEIGHT);c.save();roundRect(c,0,0,WIDTH,HEIGHT,75);c.clip();c.drawImage(background,0,0,WIDTH,HEIGHT);
- const fit=layout(c,products);c.font='700 '+fit.size+'px "'+family+'"';c.fillStyle='#111';c.textAlign='left';
+ const print=normalizePrint(snapshot.print_options),dims=dimensions(print),scale=dims.width_px/WIDTH,logicalHeight=dims.height_px/scale,area={...PRODUCT_AREA,bottom:logicalHeight-Math.max(720,650/scale)};
+ canvas.width=dims.width_px;canvas.height=dims.height_px;const c=canvas.getContext('2d');if(!c)throw Error('El navegador no permite generar la carta.');const products=snapshot.products||[];c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);c.save();c.scale(scale,scale);roundRect(c,0,0,WIDTH,logicalHeight,print.corners==='rounded'?75:0);c.clip();const bw=background.naturalWidth||background.width,bh=background.naturalHeight||background.height,split=bh*1200/HEIGHT;c.drawImage(background,0,0,bw,split,0,0,WIDTH,1200);c.drawImage(background,0,split,bw,bh-split,0,1200,WIDTH,logicalHeight-1200);
+ const fit=layout(c,products,{area,minSize:Math.ceil(56/scale)});c.font='700 '+fit.size+'px "'+family+'"';c.fillStyle='#111';c.textAlign='left';
  if(!fit.overflow){for(const row of fit.rows){if(row.separate){c.strokeStyle='#111';c.lineWidth=2;c.beginPath();c.moveTo(585,row.ruleY);c.lineTo(1965,row.ruleY);c.stroke();}row.lines.forEach((line,i)=>c.fillText(line,PRODUCT_AREA.left,row.baseline+i*fit.lineHeight));c.textAlign='right';c.fillText('$'+Number(row.p.price).toFixed(2),PRODUCT_AREA.right,row.baseline);c.textAlign='left';}}
  if(fit.overflow||!products.length){c.textAlign='center';c.font='700 65px "'+family+'"';c.fillText(fit.overflow?'La selección no cabe en una hoja':'Selecciona los productos',WIDTH/2,1900);c.fillText(fit.overflow?'Reduce la selección para ver la carta completa':'de la carta',WIDTH/2,1980);}
- // Footer follows the actual last row; keep the complete quiet zone inside a compact square.
- const lastBottom=fit.overflow?PRODUCT_AREA.bottom:(fit.rows.at(-1)?.bottom||2200),noteBaseline=Math.round(Math.min(2665,lastBottom+65)),card={x:(WIDTH-400)/2,y:noteBaseline+40,width:400,height:400},qrBox={x:card.x+25,y:card.y+25,size:350};
- c.fillStyle='#111';c.textAlign='center';c.font='700 44px "'+family+'"';c.fillText(PAYMENT_NOTE,WIDTH/2,noteBaseline);
- c.fillStyle='#fff';roundRect(c,card.x,card.y,card.width,card.height,50);c.fill();
+ // QR and payment note retain their physical resolution across formats.
+ const lastBottom=fit.overflow?area.bottom:(fit.rows.at(-1)?.bottom||Math.min(2200,area.bottom)),noteBaseline=Math.round(lastBottom*scale+65),card={x:Math.round((canvas.width-400)/2),y:noteBaseline+40,width:400,height:400},qrBox={x:card.x+25,y:card.y+25,size:350};
+ c.restore();c.save();roundRect(c,0,0,canvas.width,canvas.height,print.corners==='rounded'?75*scale:0);c.clip();c.fillStyle='#111';c.textAlign='center';c.font='700 44px "'+family+'"';c.fillText(PAYMENT_NOTE,canvas.width/2,noteBaseline);c.fillStyle='#fff';roundRect(c,card.x,card.y,card.width,card.height,50);c.fill();
  const qcanvas=canvas.ownerDocument?canvas.ownerDocument.createElement('canvas'):null;
  if(qcanvas){qcanvas.width=qcanvas.height=qrBox.size;qr(qcanvas,link,qrFactory);c.drawImage(qcanvas,qrBox.x,qrBox.y);}else{const code=qrFactory(0,'M');code.addData(link);code.make();const n=code.getModuleCount(),u=Math.floor(qrBox.size/(n+8)),o=Math.floor((qrBox.size-n*u)/2);c.fillStyle='#fff';c.fillRect(qrBox.x,qrBox.y,qrBox.size,qrBox.size);c.fillStyle='#000';for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(code.isDark(r,col))c.fillRect(qrBox.x+o+col*u,qrBox.y+o+r*u,u,u);}
- c.restore();return {...fit,count:products.length,renderedCount:fit.overflow?0:products.length,footer:{noteBaseline,card,qr:qrBox}};
+ c.restore();if(print.color==='bw'){const pixels=c.getImageData(0,0,canvas.width,canvas.height),data=pixels.data;for(let i=0;i<data.length;i+=4){const gray=Math.round(.2126*data[i]+.7152*data[i+1]+.0722*data[i+2]);data[i]=data[i+1]=data[i+2]=gray;}c.putImageData(pixels,0,0);}
+ return {...fit,count:products.length,renderedCount:fit.overflow?0:products.length,output:dims,scale,footer:{noteBaseline,card,qr:qrBox}};
 }
 function dpi(bytes){const a=new Uint8Array(bytes);if(a[0]!==255||a[1]!==216)throw Error('JPEG no válido');let p=2;while(p+16<a.length&&a[p]===255){const marker=a[p+1],len=a[p+2]*256+a[p+3];if(marker===224&&a[p+4]===74&&a[p+5]===70&&a[p+6]===73&&a[p+7]===70){a[p+11]=1;a[p+12]=1;a[p+13]=44;a[p+14]=1;a[p+15]=44;return a;}if(marker===218||len<2)break;p+=len+2;}
  // Add a JFIF density segment when the browser's encoder omitted one.
  const segment=Uint8Array.from([255,224,0,16,74,70,73,70,0,1,1,1,1,44,1,44,0,0]),out=new Uint8Array(a.length+segment.length);out.set(a.slice(0,2));out.set(segment,2);out.set(a.slice(2),20);return out;
 }
 async function jpeg(canvas){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.95));if(!blob)throw Error('No se pudo generar el JPG.');return new Blob([dpi(await blob.arrayBuffer())],{type:'image/jpeg'});}
-function printMessage(version){const s=version.snapshot;return 'Carta menú de El Cartel Studio · versión '+version.number+'\n\nDescargar JPG: '+imageUrl(version.id,true)+'\n\nMedida final: 21,59 cm de ancho × 27,94 cm de alto (8,5 × 11 pulgadas), vertical.\nMaterial: cartulina Bristol o similar de 180–220 g/m².\nImpresión a una sola cara, full color, acabado '+s.finish+'.\nCorte con esquinas redondeadas.\nImprimir al 100 %, tamaño real, sin ajustar a página.'+(s.payment_note?'\n\nNota de la carta: '+s.payment_note:'')+'\n\nCarta digital: '+PUBLIC_URL;}
-const api={WIDTH,HEIGHT,DPI,DESIGN,PAYMENT_NOTE,ARTWORK_URL,PRODUCT_AREA,PUBLIC_URL,IMAGE_URL,ready,imageUrl,qr,render,layout,dpi,jpeg,printMessage};root.CartelFridgeMenuRender=api;if(typeof module!=='undefined')module.exports=api;
+function printMessage(version){const s=version.snapshot,p=normalizePrint(s.print_options||{}),f=s.print_options?dimensions(p):{width_cm:s.width_cm||21.59,height_cm:s.height_cm||27.94};return 'Carta menú de El Cartel Studio · versión '+version.number+'\n\nDescargar JPG: '+imageUrl(version.id,true)+'\n\nMedida final: '+f.width_cm.toLocaleString('es-ES')+' cm de ancho × '+f.height_cm.toLocaleString('es-ES')+' cm de alto ('+(f.width_cm/2.54).toFixed(2).replace('.',',')+' × '+(f.height_cm/2.54).toFixed(2).replace('.',',')+' pulgadas), vertical.\nMaterial: '+(s.print_options?paperLabel(p):s.paper||'Cartulina Bristol o similar de 180–220 g/m²')+'.\nImpresión: '+(p.sides===2?'dos caras, mismo diseño en ambas caras (dúplex)':'a una sola cara')+', '+(p.color==='bw'?'blanco y negro':'full color')+', acabado '+s.finish+'.\nCorte con esquinas '+(p.corners==='rounded'?'redondeadas':'rectas')+'.\nImprimir al 100 %, tamaño real, sin ajustar a página.'+(s.payment_note?'\n\nNota de la carta: '+s.payment_note:'')+'\n\nCarta digital: '+PUBLIC_URL;}
+const api={PRINT_DEFAULTS,FORMATS,normalizePrint,dimensions,paperLabel,printDescription,WIDTH,HEIGHT,DPI,DESIGN,PAYMENT_NOTE,ARTWORK_URL,PRODUCT_AREA,PUBLIC_URL,IMAGE_URL,ready,imageUrl,qr,render,layout,dpi,jpeg,printMessage};root.CartelFridgeMenuRender=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -94,3 +94,17 @@ Propuesta 2 seleccionada por el usuario. La tarjeta incorpora resumen de formato
 Las tres tarjetas de salida (Descargar JPG, Imprimir y WhatsApp a imprenta) muestran iconos y candados mientras el diseño no está aprobado; mantienen los enlaces y protecciones existentes. Las instrucciones de impresión y el historial quedan en desplegables. El diálogo muestra errores a través del aviso de la vista al cerrarse y conserva la recuperación de envíos inciertos; no permite avanzar con datos locales cambiados o contenido que desborde la hoja.
 
 Se conserva el diseño impreso, los snapshots y el flujo de servidor: no se modifica la base de datos ni se publica una carta real durante el cambio. Se comprueban selector de acabado, revisión, cancelación, confirmación, bloqueo por tamaño, recuperación sin duplicados y cambios de precios durante publicación. La reversión consiste en restaurar estos archivos frontend.
+
+## Definiciones editables de impresión
+
+Cada tarjeta de definición se despliega para editar. Formatos verticales: Carta, A4, A5 y Oficio. Material: Bristol, couché, bond u otro nombre (hasta 80 caracteres); gramaje: rango 180–220 o valores predefinidos de 80 a 300 g/m²; caras: una o dos repitiendo la misma carta; color: full color/blanco y negro; esquinas redondeadas/rectas. Mate/Brillo conserva su selector visual. Los cambios actualizan resumen y preview, invalidan una revisión abierta y requieren guardar/aprobar antes de generar una nueva versión pública.
+
+`print_options` en los ajustes privados conserva el borrador. La migración `fridge_menu_editable_print` normaliza y valida las opciones en servidor, captura las especificaciones y dimensiones a 300 ppp en cada aprobación `elegant-print-v6` y conserva el comportamiento Letter de clientes/versiones anteriores. No modifica productos, costos, existencias, ventas ni cuadres. Se añade una función interna de validación sin acceso de clientes y se mantiene la autorización actual de los comandos.
+
+El JPG se genera con las dimensiones físicas elegidas; texto y QR mantienen proporciones, el QR conserva su resolución de 350 px y el límite de legibilidad ajusta la capacidad del formato. A5 puede requerir menos productos. El modo blanco y negro se aplica a la imagen exportada y las esquinas se dibujan según la selección. La función de entrega sigue validando ruta, hash y tamaño; ahora compara las dimensiones del JPG con las del snapshot aprobado entre los cuatro formatos admitidos.
+
+La vista de impresión pública usa el tamaño aprobado; al elegir dos caras prepara dos páginas con el mismo diseño (el usuario configura dúplex en su impresora). El JPG es un único diseño reutilizado en ambas caras; no se incluye un editor de reverso independiente. El mensaje a imprenta refleja material, gramaje, caras, color, acabado, esquinas y medidas del snapshot.
+
+Pruebas: persistencia y validación de opciones, tamaños y color de exportación, QR legible en cada formato, rechazo de dimensiones discrepantes, impresión dúplex esperada, conservación de versiones y compatibilidad de clientes anteriores. Las opciones son editables en escritorio y móvil a través de controles nativos desplegables. No se rediseña aún «Carta digital»: se entregó una propuesta visual separada pendiente de aprobación.
+
+Reversión: restaurar frontend y función Edge anteriores; conservar la columna nueva y versiones. Si se necesita retirar la funcionalidad del servidor, restaurar las funciones de `fridge_menu_compact_design.sql` y la referencia de imagen anterior sin borrar ajustes, archivos ni registros.
