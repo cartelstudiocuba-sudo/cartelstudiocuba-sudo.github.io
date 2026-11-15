@@ -140,3 +140,9 @@ Validation: full `npm run test:fridge` passed, including 53 menu SQL checks, pri
 - Category filters are raised icon tiles with distinct SVGs for all products, beers, sweets, juices, other, soft drinks and water. Selected state uses corporate yellow and aria-pressed. Narrow screens scroll filters horizontally.
 - Changed only public HTML/CSS/JS, regression assertions and this log. No database, catalog, price, approved snapshot, QR URL, JPG or backend changes.
 - Verification: `npm run test:fridge:menu` passed: 53 SQL checks, renderer/JPEG/QR regressions, 71 editor/public print checks, and 29 digital menu/photo checks. Responsive layout was checked through CSS/DOM; physical-device visual review remains separate. Rollback: revert this frontend commit.
+
+## 2026-11-15 — Fresh digital menu entry from editor
+
+- Investigated the internal digital link: it points to the same correct public page. Live HTML already contains the new grid assets, while GitHub Pages advertises a 600-second browser cache lifetime. A stale browser document is consistent with the reported difference; the user's browser cache was not directly inspected.
+- Internal “Ver carta digital” now uses a presentation revision and a fresh document URL on every activation, including middle-click. WhatsApp digital links include the presentation revision. Existing QR URLs, approved versions and print links remain unchanged.
+- Bumped the editor script URL so reloading the platform gets the new link behavior. No database or backend changes. Regression tests check fresh navigation, share revision and existing menu behavior. Revert this frontend commit to undo.
