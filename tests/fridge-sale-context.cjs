@@ -21,7 +21,7 @@ const ok=(value,msg)=>{assert(value,msg);passed++;},fail=async(fn,regex)=>{await
 await db.exec(fs.readFileSync('database/fridge_standard_costs.sql','utf8'));await db.exec(fs.readFileSync('database/finance_cost_sheets.sql','utf8'));await db.exec(fs.readFileSync('database/fridge_composite_products.sql','utf8'));
 const c=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,payload]);
 await db.exec(fs.readFileSync('database/fridge_cost_settlement.sql','utf8'));await who(chief);await db.exec('set role authenticated');await call('fridge_state');await state();await c('customer',{currency:'USD',kind:'client',name:'Cuenta anterior'});await db.exec('reset role');await db.exec(fs.readFileSync('database/fridge_sale_context.sql','utf8'));
-await who(chief);await db.exec('set role authenticated');
+await db.exec(fs.readFileSync('database/fridge_cost_courtesy.sql','utf8'));await who(chief);await db.exec('set role authenticated');
 const p=await c('product',{name:'Agua de prueba',category:'Agua',price:1.2,cost:.5,currency:'USD',minimum:5,stock_quantity:30,cost_confirmed:true,pricing_revision:1,purchase:{currency:'USD',amount:.5,rate:1}}),pid=p.product_id;
 const items=q=>[{id:pid,quantity:q,price:1.2}];
 const project={currency:'USD',items:items(2),paid:1,method:'cash',sale_context:{kind:'project',name:'Video de prueba'},collection:{currency:'CUP',amount:500,rate:500,source:'manual'}};
@@ -36,6 +36,47 @@ await fail(()=>c('sale',{...project,sale_context:{kind:'project',name:''}}),/nom
 const before=(await call('fridge_state')).products[0].stock;await fail(()=>c('sale',{...project,items:items(1000)}),/Existencias/);ok((await call('fridge_state')).products[0].stock===before,'failed checkout leaves all inventory unchanged');
 const draft=await state();ok(draft.draft.courtesies.length===1&&draft.draft.operation_ids.includes(op),'courtesy is included in the next reconciliation');ok(draft.draft.courtesies[0].courtesy_items[0].quantity===2,'courtesy quantity and cost are historical');const submitted=await rec('submit',{fingerprint:draft.draft.fingerprint,note:'Cuadre de prueba'});ok((await detail(submitted.report_id)).snapshot.courtesies[0].courtesy_cost===1,'submitted reconciliation freezes courtesy details');ok(!(await state()).draft.operation_ids.includes(op),'submitted courtesy is not counted again');
 const onlyGift=await c('loss',{...gift,sale_context:{kind:'courtesy',name:'Segunda atención'}});const onlyDraft=(await state()).draft;ok(onlyDraft.courtesies.length===1&&onlyDraft.receipts===0&&onlyDraft.sold===0,'courtesy-only reconciliation remains zero income');ok((await rec('submit',{fingerprint:onlyDraft.fingerprint,note:'Solo cortesía'})).report_id,'courtesy-only report can be presented without inventing payment');
+
+// New courtesy sales charge purchase cost, retain a payable identity and recover only supplies.
+const atCost={currency:'USD',items:[{id:pid,quantity:2,price:1.2,cost:.5}],paid:.5,method:'cash',sale_context:{kind:'courtesy',name:'Invitado al costo'},note:'Atención aprobada',collection:{currency:'CUP',amount:250,rate:500,source:'manual'}};
+const costId=crypto.randomUUID(),costSale=await c('sale',atCost,costId);
+ok(costSale.amount===1&&costSale.pending===.5&&costSale.paid===.5,'courtesy total is cost times quantity, not catalog price');
+ok(costSale.items[0].price===.5&&costSale.items[0].pricing.percentages.length===0&&costSale.items[0].pricing_basis==='cost_only','frozen cost-only sheet has no percentages');
+ok(costSale.sale_context.pricing_basis==='cost_only'&&costSale.customer_id,'courtesy records cost-only identity and account');
+ok(JSON.stringify(await c('sale',atCost,costId))===JSON.stringify(costSale),'cost-only replay does not duplicate stock, account or collection');
+let costDraft=(await state()).draft;
+ok(costDraft.cost_settlement.reserve===.5&&costDraft.cost_settlement.distribution.length===1&&costDraft.cost_settlement.pending_cost===.5,'partial courtesy collection entirely funds supplies without commissions');
+const costReport=await rec('submit',{fingerprint:costDraft.fingerprint,note:'Cortesía al costo'});
+const costSnapshot=JSON.stringify((await detail(costReport.report_id)).snapshot);
+await c('payment',{currency:'USD',customer_id:costSale.customer_id,amount:.5,method:'transfer'});
+costDraft=(await state()).draft;
+ok(costDraft.cost_settlement.reserve===.5&&costDraft.cost_settlement.distribution.length===1,'later debt collection also accrues no commissions');
+ok(JSON.stringify((await detail(costReport.report_id)).snapshot)===costSnapshot,'new receipts leave prior approved snapshots unchanged');
+await rec('submit',{fingerprint:costDraft.fingerprint,note:'Cobro posterior'});
+const full=await c('sale',{...atCost,paid:1,collection:{currency:'USD',amount:1,rate:1,source:'manual'}});
+ok(full.amount===1&&full.pending===0,'full courtesy is paid at cost');
+const credit=await c('sale',{...atCost,paid:0,collection:null,sale_context:{kind:'courtesy',name:'Invitado AL COSTO'}});
+ok(credit.pending===1&&credit.customer_id===costSale.customer_id,'courtesy credit reuses account identity');
+await fail(()=>c('sale',{...atCost,items:[{id:pid,quantity:1,price:1.2,cost:.4}]}),/Cambió el costo/);
+await fail(()=>c('sale',{...atCost,items:[{id:pid,quantity:1,price:1.2}]}),/Cambió el costo/);
+await fail(()=>c('sale',{...atCost,paid:1.2,collection:null,items:[{id:pid,quantity:1,price:1.2,cost:.5}]}),/cobro no puede superar/);
+await fail(()=>c('sale',{...atCost,note:''}),/motivo/);
+const changedStock=(await call('fridge_state')).products[0].stock;
+await fail(()=>c('sale',{...atCost,items:[{id:pid,quantity:10000,price:1.2,cost:.5}]}),/Existencias/);
+ok((await call('fridge_state')).products[0].stock===changedStock,'failed cost-only sale is atomic');
+// Composite courtesy preserves the exact ingredient cost snapshot for the fund.
+const composite=await c('product',{name:'Café compuesto',category:'Café',price:1,cost:.3,currency:'USD',minimum:1,stock_quantity:5,cost_confirmed:true,pricing_revision:1,product_type:'composite',recipe_revision:0,components:[{name:'Café en polvo',unit:'g',quantity:10,unit_cost:.02},{name:'Azúcar',unit:'unidad',quantity:1,unit_cost:.1}],purchase:{currency:'USD',amount:.3,rate:1}});
+const compositeSale=await c('sale',{...atCost,items:[{id:composite.product_id,quantity:1,price:1,cost:.3}],paid:.3,collection:null});
+ok(compositeSale.amount===.3&&compositeSale.items[0].components.length===2,'composite courtesy freezes ingredients at cost');
+costDraft=(await state()).draft;ok(costDraft.cost_settlement.components.some(x=>x.name==='Café en polvo')&&costDraft.cost_settlement.distribution.length===1,'ingredient recovery keeps no percentage distributions');
+const zero=await c('product',{name:'Sin costo',category:'Otros',price:1,cost:0,currency:'USD',minimum:1,stock_quantity:1,cost_confirmed:true,pricing_revision:1,purchase:{currency:'USD',amount:0,rate:1}});
+await fail(()=>c('sale',{...atCost,items:[{id:zero.product_id,quantity:1,price:1,cost:0}],paid:0,collection:null}),/costo total|saldo pendiente/);
+await fail(()=>c('sale',{...atCost,items:[{id:pid,quantity:1.5,price:1.2,cost:.5}]}),/cantidad entera/);
+const regular=await c('sale',{currency:'USD',items:items(1),paid:1.2,method:'cash',sale_context:{kind:'project',name:'Venta normal tras cortesía',pricing_basis:'cost_only'},pricing_basis:'cost_only'});
+ok(regular.amount===1.2&&regular.items[0].price===1.2&&regular.items[0].pricing.percentages.length===8&&regular.sale_context.pricing_basis===undefined,'normal sale cannot forge the cost-only basis or suppress its sheet');
+await db.exec('reset role');await db.exec(fs.readFileSync('database/fridge_cost_courtesy_rollback.sql','utf8'));await db.exec('set role authenticated');
+await fail(()=>c('sale',atCost),/Destino/);
+ok((await detail(costReport.report_id)).snapshot.cost_settlement.distribution.length===1,'rollback preserves historical cost-only reports');
 await who(worker);await fail(()=>c('sale',project),/acceso/);await db.exec('reset role');await db.exec('set role anon');await fail(()=>call('fridge_command',[crypto.randomUUID(),'sale',project]),/permission denied/);await db.exec('reset role');ok((await db.query("select has_function_privilege('authenticated','studio_access_private.fridge_command_before_checkout(uuid,text,jsonb)','execute') allowed")).rows[0].allowed===false,'previous command cannot bypass checkout validation');
 await db.exec(fs.readFileSync('database/fridge_sale_context_rollback.sql','utf8'));await who(chief);await db.exec('set role authenticated');await fail(()=>c('sale',project),/Actualiza la pantalla/);ok((await c('customer',{currency:'USD',kind:'client',name:'Legacy after rollback'})).customer_id,'rollback retains legacy commands without silently discarding new context');ok((await call('fridge_state')).customers.some(x=>x.id===manual.customer_id),'rollback preserves manually declared staff account');await db.exec('reset role');
 await db.close();console.log('PASS '+passed+' checkout destination, USD/CUP, courtesy, accounts, stock, reconciliation and access checks');
