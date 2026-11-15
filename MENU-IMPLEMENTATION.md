@@ -154,3 +154,10 @@ Validation: full `npm run test:fridge` passed, including 53 menu SQL checks, pri
 - Copy link writes the stable public URL with the current presentation revision. If browser clipboard access is unavailable/denied, a readonly field is shown, focused and fully selected for manual copying. Clipboard completion checks session generation before touching UI.
 - Existing approved-version gating for QR/WhatsApp also governs Copy link. Open-link cache refresh behavior, QR target, public menu, JPG and print specifications remain intact. No database changes or messages sent.
 - Verification: menu SQL, renderer/JPEG/QR, editor/public printing and digital delivery suites passed. Editor checks include clipboard success, failure/manual selection and current digital entry. Responsive layout reviewed as DOM/CSS; physical-device visual review remains separate. Rollback: revert this frontend commit.
+
+## 2026-11-15 — Collapsed print configuration
+
+- Added one native, initially closed “Configurar impresión” disclosure around the format/material/sides/color/corners controls, finish choices and review/draft actions. Editing is available through the summary arrow when needed.
+- Kept the three graphic output actions outside the disclosure and directly visible. Removed the “¿Qué quieres hacer?”, approved-version paragraph and repetitive output instructions. Existing approval/dirty/pending safeguards remain; unavailable actions have an explanatory title.
+- Changed only editor frontend, cache versions, this log and existing regression checks. QR, public digital menu, print artifacts, database and backend are unchanged.
+- Verification: full menu suite (SQL, JPEG/QR rendering, editor/public print, digital delivery) plus assertions that the disclosure starts closed, all edit/review controls are inside it and the output actions remain outside. Layout reviewed as DOM/CSS; physical-device browser appearance not claimed. Rollback: revert this frontend commit.

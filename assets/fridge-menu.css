@@ -52,3 +52,20 @@
 @container(max-width:480px){.fr-menu-digital-layout{grid-template-columns:minmax(0,1fr);gap:16px}.fr-menu-digital-code{justify-self:center}.fr-menu-digital-code canvas{width:140px;height:140px}.fr-menu-digital-actions{padding:0;border:0}.fr-menu-digital-actions>p{text-align:center}.fr-menu-digital-secondary{gap:8px}.fr-menu-digital-secondary button{padding:11px 7px;gap:6px;flex-wrap:wrap}.fr-menu-digital-actions a,.fr-menu-digital-actions button,.fr-menu-digital-share{font-size:11px}}
 @media(max-width:480px){.fr-menu-digital-layout{grid-template-columns:minmax(0,1fr);gap:16px}.fr-menu-digital-code{justify-self:center}.fr-menu-digital-code canvas{width:140px;height:140px}.fr-menu-digital-actions{padding:0;border:0}.fr-menu-digital-actions>p{text-align:center}}
 @media(prefers-reduced-motion:reduce){.fr-menu-digital-actions a,.fr-menu-digital-actions button,.fr-menu-digital-share{transition:none}}
+
+/* Keep print editing optional; the three output actions remain immediately visible. */
+.fr-menu-print-settings{border:1px solid #ffffff25;border-radius:14px;background:#ffffff03;overflow:hidden}
+.fr-menu-print-settings>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;padding:14px 15px;min-height:64px;text-align:left}
+.fr-menu-print-settings>summary::-webkit-details-marker{display:none}
+.fr-menu-print-settings>summary>span{display:grid;gap:4px;min-width:0}
+.fr-menu-print-settings>summary strong{font-size:13px;color:#f4f4f5}
+.fr-menu-print-settings>summary small{font-size:11px;color:#aeb0b7;line-height:1.4}
+.fr-menu-print-settings>summary>b{color:#ffda03;font-size:20px;transition:transform .15s}
+.fr-menu-print-settings[open]>summary{border-bottom:1px solid #ffffff18}
+.fr-menu-print-settings[open]>summary>b{transform:rotate(180deg)}
+.fr-menu-print-settings>summary:focus-visible{outline:2px solid #ffda03;outline-offset:-3px}
+.fr-menu-print-settings-body{padding:14px}
+.fr-menu-action-panel .fr-menu-approval-result{margin-top:14px}
+.fr-menu-approval-result>.fr-menu-output-tiles{margin:0}
+@media(max-width:480px){.fr-menu-print-settings-body{padding:10px}.fr-menu-print-settings>summary{padding:12px}}
+@media(prefers-reduced-motion:reduce){.fr-menu-print-settings>summary>b{transition:none}}
