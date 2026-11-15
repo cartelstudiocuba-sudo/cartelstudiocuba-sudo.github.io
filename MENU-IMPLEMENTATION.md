@@ -161,3 +161,10 @@ Validation: full `npm run test:fridge` passed, including 53 menu SQL checks, pri
 - Kept the three graphic output actions outside the disclosure and directly visible. Removed the “¿Qué quieres hacer?”, approved-version paragraph and repetitive output instructions. Existing approval/dirty/pending safeguards remain; unavailable actions have an explanatory title.
 - Changed only editor frontend, cache versions, this log and existing regression checks. QR, public digital menu, print artifacts, database and backend are unchanged.
 - Verification: full menu suite (SQL, JPEG/QR rendering, editor/public print, digital delivery) plus assertions that the disclosure starts closed, all edit/review controls are inside it and the output actions remain outside. Layout reviewed as DOM/CSS; physical-device browser appearance not claimed. Rollback: revert this frontend commit.
+
+## 2026-11-15 — Public customer branding and footer cleanup
+
+- Replaced the text-only studio/bar branding with the existing yellow `assets/cartel-studio-lettering.svg` logo, centered above “Nuestra carta”, sized at 90px desktop / 78px mobile.
+- Removed the public footer version line and JPG/print buttons; the customer footer retains the approved CUP payment note. Product USD prices remain visible.
+- Administrative JPG downloads and approved-version `?print=1` links continue to work, including custom dimensions and two-face image loading. Removed only the public button bindings. Updated public asset versions and the administrative share revision to avoid a stale document.
+- No changes to product data, prices, approved snapshots, QR target, print artwork, database or backend. Regression suite passed: SQL, rendering/decoded QR, editor/public printing and digital menu checks, including actual logo source and absence of customer print/version controls. Rollback: revert this frontend commit.
