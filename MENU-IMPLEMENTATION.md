@@ -42,3 +42,13 @@ Suite completa `npm run test:fridge` y suite específica `npm run test:fridge:me
 El JPG se inspeccionó visualmente. En producción se comprobó la lectura autorizada del editor y que el endpoint público devuelve `null` sin versión aprobada, 404 para una imagen aún no publicada y 400 para una versión inválida. La interfaz adaptable se comprobó por estructura DOM/CSS y flujo sintético; queda pendiente inspección visual autenticada en escritorio/móvil y la primera impresión física. No se subió ni aprobó una carta ficticia en producción.
 
 Reversión: restaurar frontend del commit anterior y ejecutar `fridge_menu_rollback.sql` para retirar los nuevos accesos, sin eliminar borradores, versiones, imágenes ni auditoría. Los archivos privados sin publicar se pueden revisar posteriormente desde administración de almacenamiento.
+
+## Actualización visual · Urbano creativo
+
+Diseño elegido por el usuario: fondo amarillo ilustrado, lettering «Menú» sobre pincelada negra, ilustraciones de bar en el perímetro, nombres en mayúsculas y precios alineados. El fondo estático `assets/menu/urban-background-v2.jpg` contiene solo arte y encabezado; todos los productos, precios, QR y pie se dibujan desde los datos actuales. Se carga desde el mismo dominio y se bloquea la exportación si no se puede cargar. El arte se preparó con generación de imágenes a partir de la propuesta aprobada; no contiene productos ni precios de ejemplo.
+
+El QR real conserva sus módulos cuadrados y margen blanco; lo rodea una tarjeta blanca con esquinas redondeadas. La hoja/exportación sigue siendo 2550 × 3300 px con 300 ppp; el arte de fondo original es de 1103 × 1426 px y se escala, mientras textos y QR se dibujan directamente a resolución final. La imagen exportada se inspeccionó visualmente y el QR se decodificó desde el JPG comprimido.
+
+Migración `fridge_menu_urban_design`: añade `design` a los snapshots de futuras aprobaciones, conserva `original-v1` para clientes anteriores y registra `urban-v2` en el nuevo editor. No reescribe versiones. El editor requiere aprobar el nuevo diseño antes de descargarlo o compartirlo, aunque sus productos coincidan con una versión antigua. Se mantiene la descarga de versiones anteriores desde el historial. También normaliza el punto literal de la extensión JPG en la validación de ruta y en la política de subida (`[.]`), sin ampliar permisos ni rutas.
+
+No se modifican datos del catálogo, ventas, existencias ni cuadres; no se publica una carta real automáticamente. Reversión visual: restaurar los archivos frontend previos; el nuevo metadato de diseño es compatible y se puede conservar. La función anterior está en `fridge_menu.sql` si se requiere restaurarla conservando los permisos actuales.
