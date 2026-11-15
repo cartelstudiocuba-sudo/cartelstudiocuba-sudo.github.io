@@ -5,10 +5,17 @@ export function createHandler(env,fetcher=fetch){return async req=>{
  const error=(text,status)=>Response.json({error:text},{status,headers:{...cors,'Cache-Control':'no-store'}});
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(!['GET','HEAD'].includes(req.method))return error('Método no permitido',405);
- const u=new URL(req.url),version=u.searchParams.get('version');if(version&&!uuid.test(version))return error('Versión no válida',400);
+ const u=new URL(req.url),version=u.searchParams.get('version'),photo=u.searchParams.get('photo');if(version&&!uuid.test(version))return error('Versión no válida',400);if(photo&&!uuid.test(photo))return error('Producto no válido',400);if(photo&&u.searchParams.has('data'))return error('Solicitud no válida',400);
  try{
   const base=env('SUPABASE_URL'),key=env('SUPABASE_SERVICE_ROLE_KEY');if(!base||!key)throw Error('CONFIG');
   const headers={apikey:key,Authorization:'Bearer '+key};
+  if(photo){
+   const lookup=await fetcher(base+'/rest/v1/rpc/fridge_menu_product_photo_ref',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({p_product:photo,p_version:version||null}),redirect:'manual',signal:AbortSignal.timeout(10000)});if(!lookup.ok)throw Error('PHOTO_LOOKUP');const ref=await lookup.json();if(!ref)return error('Fotografía no disponible',404);
+   if(!/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/.test(ref.path||''))throw Error('PHOTO_PATH');
+   const file=await fetcher(base+'/storage/v1/object/fridge-images/'+ref.path,{headers,redirect:'manual',signal:AbortSignal.timeout(15000)});if(!file.ok)return error('Fotografía no disponible',404);
+   const reader=file.body.getReader(),chunks=[];let size=0;while(true){const {value,done}=await reader.read();if(done)break;size+=value.length;if(size>4194304){await reader.cancel();throw Error('PHOTO_SIZE');}chunks.push(value);}const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}const dims=jpegSize(bytes);if(!dims.width||!dims.height||dims.width*dims.height>16000000)throw Error('PHOTO_DIMENSIONS');
+   return new Response(req.method==='HEAD'?null:bytes,{headers:{...cors,'Content-Type':'image/jpeg','Content-Length':String(size),'Cache-Control':'public, max-age=60'}});
+  }
   const dataMode=u.searchParams.get('data')==='1';
   const r=await fetcher(base+'/rest/v1/rpc/'+(dataMode?'fridge_menu_public':'fridge_menu_image_ref'),{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({p_version:version||null}),redirect:'manual',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('LOOKUP');const row=await r.json();if(dataMode)return Response.json(row,{headers:{...cors,'Cache-Control':'no-store'}});if(!row)return error('Todavía no hay una carta aprobada',404);
   if(!/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/.test(row.path||'')||!uuid.test(row.id||''))throw Error('PATH');
