@@ -92,3 +92,5 @@
 @media print{#fr-mobile-cart-bar,#fr-mobile-cart,#fr-mobile-more-sheet,#fr-mobile-more{display:none!important}}
 
 @media(max-width:650px){.fr-mobile-active .fr-nav button[aria-current]:after{display:none}}
+
+#fr-mobile-cart-discard{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;border:0;border-top:1px solid #ffffff16;border-radius:0;background:transparent;color:#e6a0a4;font-size:13px;min-height:43px}#fr-mobile-cart-discard svg{width:17px;height:17px}#fr-mobile-cart-discard:hover:not(:disabled){color:#ffb4b8;background:#ff6b7908}
