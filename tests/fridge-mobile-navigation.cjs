@@ -1,0 +1,18 @@
+const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{
+const dom=new JSDOM('<div class="app"><aside><nav class="nav"><a href="/dashboard.html" data-home>Inicio</a><section><button class="nav-parent">Inventario</button><a href="/nevera-audiovisual.html">Nevera audiovisual</a><a href="/inventario-insumos.html" id="allowed">Insumos</a><a href="/private" hidden>Sin permiso</a></section><section hidden><button class="nav-parent">Oculto</button><a href="/secret">Secreto</a></section><a href="#" data-soon>Próximamente</a></nav></aside><div id="workspace" class="workspace embedded"><iframe id="frame" src="/nevera-audiovisual.html?embedded=1"></iframe></div></div><div id="cartel-account">Mi cuenta</div>',{url:'https://gestion.elcartelstudio.com/dashboard.html',runScripts:'outside-only'}),w=dom.window,d=w.document;
+Object.defineProperty(w,'innerWidth',{value:390,writable:true});w.cartelPersonalNavigationReady=true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+const frame=d.querySelector('#frame'),sent=[];frame.contentWindow.postMessage=message=>sent.push(message);let clicks=0;d.querySelector('#allowed').onclick=e=>{e.preventDefault();clicks++;};
+w.eval(fs.readFileSync('assets/mobile-navigation.js','utf8'));await new Promise(r=>setTimeout(r,10));
+const dispatch=(data,origin=w.location.origin,source=frame.contentWindow)=>w.dispatchEvent(new w.MessageEvent('message',{data,origin,source}));
+dispatch({type:'fridge-navigation-request',ready:true},'https://other.example');assert(!d.documentElement.classList.contains('fridge-mobile-unified'));
+dispatch({type:'fridge-navigation-request',ready:true},w.location.origin,w);assert(!d.documentElement.classList.contains('fridge-mobile-unified'));
+dispatch({type:'fridge-navigation-request',ready:true});assert(d.documentElement.classList.contains('fridge-mobile-unified'));const items=sent.at(-1).items;assert(items.some(x=>x.label==='Inicio'));assert(items.some(x=>x.key==='__account__'));assert(items.some(x=>x.label==='Insumos'));assert(!items.some(x=>x.label==='Sin permiso'||x.label==='Secreto'));assert(items.find(x=>x.label==='Próximamente').disabled);
+dispatch({type:'fridge-navigation-go',key:'/secret'});assert.equal(clicks,0);dispatch({type:'fridge-navigation-go',key:'/inventario-insumos.html'});assert.equal(clicks,1);
+d.querySelector('#allowed').hidden=true;dispatch({type:'fridge-navigation-go',key:'/inventario-insumos.html'});assert.equal(clicks,1,'actions revalidate current grants rather than trusting old menu');
+dispatch({type:'fridge-navigation-go',key:'__account__'});assert(d.querySelector('#worker-mobile-sheet').open);assert(d.querySelector('#worker-mobile-sheet #cartel-account'),'account retains existing controls');
+w.innerWidth=800;w.dispatchEvent(new w.Event('resize'));assert(!d.documentElement.classList.contains('fridge-mobile-unified'),'tablet restores previous global bar');
+w.innerWidth=390;w.dispatchEvent(new w.Event('resize'));assert(d.documentElement.classList.contains('fridge-mobile-unified'));d.querySelector('#workspace').classList.remove('embedded');await new Promise(r=>setTimeout(r,0));assert(!d.documentElement.classList.contains('fridge-mobile-unified'),'leaving Nevera restores global navigation');
+const before=sent.length;dispatch({type:'fridge-navigation-request',ready:true});assert.equal(sent.length,before,'non-Nevera frames cannot enable unified navigation');
+dom.window.close();console.log('PASS: unified parent/child navigation, current grants, account, origin/source checks and responsive cleanup');
+})().catch(e=>{console.error(e);process.exitCode=1;});

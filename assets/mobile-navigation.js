@@ -13,7 +13,7 @@ const svg=type=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const icon=text=>/nevera/i.test(text)?'fridge':/aprobar/i.test(text)?'check':/consulta|buscador/i.test(text)?'search':/solicitud/i.test(text)?'request':/pedido/i.test(text)?'truck':/insumo|inventario/i.test(text)?'box':'grid';
 const bar=document.createElement('nav');bar.id='worker-mobile-nav';bar.setAttribute('aria-label','Menú de tu cuenta');
 const sheet=document.createElement('dialog');sheet.id='worker-mobile-sheet';sheet.setAttribute('aria-labelledby','worker-mobile-sheet-title');sheet.innerHTML='<header><h2 id="worker-mobile-sheet-title" tabindex="-1"></h2><button type="button" aria-label="Cerrar menú">×</button></header><div id="worker-mobile-sheet-content"></div>';
-let mounted=false,accountAnchor=null,accountNode=null,scheduled=false,openedLabel=null;
+let mounted=false,accountAnchor=null,accountNode=null,scheduled=false,openedLabel=null,unifiedFridge=false;
 sheet.querySelector('header button').onclick=()=>sheet.close();
 sheet.addEventListener('click',event=>{if(event.target!==sheet)return;const r=sheet.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)sheet.close();});
 sheet.addEventListener('close',()=>{if(sheet.open)return;openedLabel=null;if(accountAnchor&&accountNode){accountAnchor.replaceWith(accountNode);accountAnchor=accountNode=null;}bar.querySelectorAll('[aria-expanded]').forEach(b=>b.setAttribute('aria-expanded','false'));syncBarSelection();});
@@ -34,9 +34,26 @@ function render(){scheduled=false;if(!window.cartelPersonalNavigationReady)retur
 }
 function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(render);}
 new MutationObserver(schedule).observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
-window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();});if(window.cartelPersonalNavigationReady)schedule();
+window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();if(innerWidth>650)document.documentElement.classList.remove('fridge-mobile-unified');else if(unifiedFridge)document.documentElement.classList.add('fridge-mobile-unified');});if(window.cartelPersonalNavigationReady)schedule();
 // Only the embedded Nevera uses a viewport dock above the global mobile bar.
 const workspace=document.getElementById('workspace'),moduleFrame=document.getElementById('frame');
-function syncFridgeDock(){let fridge=false;try{const url=new URL(moduleFrame?.getAttribute('src')||'',location.href);fridge=!!workspace?.classList.contains('embedded')&&!workspace.classList.contains('selection-mode')&&url.origin===location.origin&&url.pathname==='/nevera-audiovisual.html';}catch{}document.documentElement.classList.toggle('fridge-workspace-active',fridge);}
+function syncFridgeDock(){let fridge=false;try{const url=new URL(moduleFrame?.getAttribute('src')||'',location.href);fridge=!!workspace?.classList.contains('embedded')&&!workspace.classList.contains('selection-mode')&&url.origin===location.origin&&url.pathname==='/nevera-audiovisual.html';}catch{}document.documentElement.classList.toggle('fridge-workspace-active',fridge);if(!fridge){unifiedFridge=false;document.documentElement.classList.remove('fridge-mobile-unified');}}
 if(workspace&&moduleFrame){new MutationObserver(syncFridgeDock).observe(workspace,{attributes:true,attributeFilter:['class']});new MutationObserver(syncFridgeDock).observe(moduleFrame,{attributes:true,attributeFilter:['src']});syncFridgeDock();}
+// Only the live same-origin Nevera frame may request its authorized global links.
+function fridgeLinks(){const home=nav.querySelector('[data-home]');const links=[...nav.querySelectorAll('a,button[data-view-route]')].filter(a=>!a.hasAttribute('data-home')&&allowed(a,nav));return [...(home&&allowed(home,nav)?[home]:[]),...new Map(links.map(a=>[navigationKey(a),a])).values()];}
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==moduleFrame?.contentWindow||!document.documentElement.classList.contains('fridge-workspace-active'))return;
+ if(event.data?.type==='fridge-navigation-request'){
+  unifiedFridge=event.data.ready===true&&innerWidth<=650&&!!window.cartelPersonalNavigationReady;
+  document.documentElement.classList.toggle('fridge-mobile-unified',unifiedFridge);
+  const items=fridgeLinks().map(a=>({key:navigationKey(a),label:a.hasAttribute('data-home')?'Inicio':linkTitle(a),group:a.hasAttribute('data-home')?'General':moduleName(a),icon:a.hasAttribute('data-home')?'home':icon(linkTitle(a)),disabled:a.hasAttribute('data-soon')||a.classList.contains('personal-view-pending')}));
+  if(document.getElementById('cartel-account'))items.splice(items[0]?.group==='General'?1:0,0,{key:'__account__',label:'Cuenta',group:'General',icon:'account'});
+  moduleFrame.contentWindow.postMessage({type:'fridge-navigation-items',items},location.origin);
+ }else if(event.data?.type==='fridge-navigation-go'&&unifiedFridge){
+  if(event.data.key==='__account__'){bar.querySelector('button[aria-label="Cuenta"]')?.click();return;}
+  const link=fridgeLinks().find(a=>navigationKey(a)===event.data.key);
+  if(link&&!link.hasAttribute('data-soon')&&!link.classList.contains('personal-view-pending'))go(link);
+ }
+});
+moduleFrame?.addEventListener('load',()=>{unifiedFridge=false;document.documentElement.classList.remove('fridge-mobile-unified');moduleFrame.contentWindow?.postMessage({type:'fridge-navigation-refresh'},location.origin);});
 })();
