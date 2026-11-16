@@ -1,6 +1,6 @@
 # Phone navigation and live sale cart
 
-At viewport widths up to 650 CSS pixels, Nevera uses the approved four-button dock: Vender, Cuentas, Existencias, Más. Más opens a native modal with the three other Nevera views (Resumen, Carta menú, Cuadre) and the authenticated global navigation. Tablet and desktop retain the previous navigation and inline cart.
+At viewport widths up to 650 CSS pixels, Nevera uses the approved four-button dock: Resumen, Venta, Cuenta, Más. Más opens a native modal with the three other Nevera views (Existencias, Carta menú, Cuadre) and the authenticated global navigation. Tablet and desktop retain the previous navigation and inline cart.
 
 The outer dashboard hides its global dock only after the current, same-origin Nevera iframe reports that its phone UI is ready. The iframe then occupies the full available viewport. The handshake reverses on sign-out, leaving Nevera or widening the viewport. Child and parent messages validate origin and the current window source. Global entries are derived from existing visible authorized sidebar links; action requests revalidate the live links. Account opens the existing account controls. No permissions are added. A standalone Nevera page provides a safe return to Inicio for global navigation.
 
