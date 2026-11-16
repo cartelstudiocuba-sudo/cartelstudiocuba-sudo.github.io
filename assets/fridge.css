@@ -78,3 +78,6 @@
 
 /* Payment methods must fit narrow checkout columns without clipped labels. */
 .fr-checkout-dialog [data-checkout-field="method"]{flex-wrap:wrap;column-gap:5px;row-gap:3px;padding:8px 5px;font-size:12px;overflow-wrap:anywhere}.fr-checkout-dialog [data-checkout-field="method"] svg{width:18px;height:18px}.fr-checkout-dialog [data-checkout-field="method"] span{min-width:0;max-width:100%}@media(max-width:430px){.fr-checkout-dialog .fr-checkout-columns{grid-template-columns:minmax(0,1fr);gap:0}.fr-checkout-dialog [data-checkout-field="method"]{font-size:13px;min-height:42px}}
+
+/* Paired payment controls share the same height, even when a label wraps. */
+.fr-checkout-columns>.fr-checkout-control{display:flex;flex-direction:column}.fr-checkout-columns .fr-checkout-segments{flex:1;min-height:46px}.fr-checkout-columns .fr-checkout-segments>button{min-height:46px;height:auto}@media(max-width:430px){.fr-checkout-columns .fr-checkout-segments{flex:none;height:46px}.fr-checkout-columns .fr-checkout-segments>button{min-height:0;height:100%}}
