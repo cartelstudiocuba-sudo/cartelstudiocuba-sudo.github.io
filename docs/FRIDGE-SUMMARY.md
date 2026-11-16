@@ -1,13 +1,13 @@
-# Essential Nevera summary — 2026-11-15
+# Nevera control center — 2026-11-16
 
-Implements the approved open-layout proposal. Three metrics reuse the existing server-provided `sales_today`, `collected_today` and `owed`, with a note distinguishing collections from same-day sales. No financial calculation, currency conversion or permissions change.
+Implements selected proposal 2: a graphical inventory status card with a refrigerator icon, segmented ring, labeled status counts and expected units; three compact money cards; photo replenishment rows with minimum-level bars; accounts and activity cards. The existing mobile dock remains unchanged.
 
-The replenishment list contains only active products whose expected stock is at or below the configured minimum. Zero stock is clearly labeled. Rows open the existing product form; account rows open the existing account detail. Counts cover all qualifying records; previews show the first four, with links to full stock/accounts views. Empty lists have accurate messages. All names are escaped.
+Inventory counts include active products only. Statuses are exclusive: stock at or below zero is exhausted, positive stock at or below minimum requires replenishment, remaining stock is adequate. The ring shows product counts, not money or sales history. Its labels expose counts without relying on color. The zero-product state avoids division by zero. Total expected units use those same active products. Replenishment shows the first four with access to the full inventory and existing product forms.
 
-The summary uses open typography, thin rules and two desktop columns that stack at 600px. The existing dock remains the only route for sale, accounts, inventory, menu and reconciliation. Only the summary receives the restrained selected-nav indicator; other sections retain their header and styling. Refresh, return to Inicio and activity remain accessible.
+Money figures reuse server sales_today, collected_today and owed. The note distinguishes prior-account collections and total outstanding debt from today's sales. No financial, pricing, currency, permissions, ledger or database changes. Existing account and history routes remain available.
 
-Files: `assets/fridge.js`, `assets/fridge.css`, `nevera-audiovisual.html`, `tests/fridge-ui.cjs`, this note. No database/backend changes or real data mutations. Asset URLs were bumped for deployment.
+Scoped CSS replaces the old serif/open layout with compact sans-serif typography, graphite cards, yellow icons, amber/red inventory warnings and responsive stacking. Existing navigation, checkout and desktop/tablet workflows are preserved. Asset URLs are bumped to load the new design.
 
-Verification: complete `npm run test:fridge` passed. Summary UI checks cover the three server figures, exclusion of adequate/inactive stock, no-stock state, product/account navigation, activity and normal section-header restoration. Existing sales, payment, retry, pricing, settlement, print and public menu checks also passed. Responsive review is DOM/CSS based; a physical-device browser review is not claimed.
+Verification: summary DOM checks cover active/inactive, exact minimum, below minimum, zero stock, empty catalog, exclusive ring percentages, expected units, money figures, and product/account/history navigation. Full fridge regressions run before publishing. Responsive verification is source/DOM based; no physical-device browser review is claimed.
 
-Rollback: revert this frontend commit. Existing records, ledger and printed menus remain unchanged.
+Rollback: revert this frontend commit; no stored data was changed.
