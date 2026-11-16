@@ -21,7 +21,7 @@ const ok=(value,msg)=>{assert(value,msg);passed++;},fail=async(fn,regex)=>{await
 await db.exec(fs.readFileSync('database/fridge_standard_costs.sql','utf8'));await db.exec(fs.readFileSync('database/finance_cost_sheets.sql','utf8'));await db.exec(fs.readFileSync('database/fridge_composite_products.sql','utf8'));
 const c=(kind,payload,id=crypto.randomUUID())=>call('fridge_command',[id,kind,payload]);
 await db.exec(fs.readFileSync('database/fridge_cost_settlement.sql','utf8'));await who(chief);await db.exec('set role authenticated');await call('fridge_state');await state();await c('customer',{currency:'USD',kind:'client',name:'Cuenta anterior'});await db.exec('reset role');await db.exec(fs.readFileSync('database/fridge_sale_context.sql','utf8'));
-await db.exec(fs.readFileSync('database/fridge_cost_courtesy.sql','utf8'));await who(chief);await db.exec('set role authenticated');
+await db.exec(fs.readFileSync('database/fridge_cost_courtesy.sql','utf8'));await db.exec(fs.readFileSync('database/fridge_existing_account.sql','utf8'));await who(chief);await db.exec('set role authenticated');
 const p=await c('product',{name:'Agua de prueba',category:'Agua',price:1.2,cost:.5,currency:'USD',minimum:5,stock_quantity:30,cost_confirmed:true,pricing_revision:1,purchase:{currency:'USD',amount:.5,rate:1}}),pid=p.product_id;
 const items=q=>[{id:pid,quantity:q,price:1.2}];
 const project={currency:'USD',items:items(2),paid:1,method:'cash',sale_context:{kind:'project',name:'Video de prueba'},collection:{currency:'CUP',amount:500,rate:500,source:'manual'}};
@@ -74,6 +74,26 @@ await fail(()=>c('sale',{...atCost,items:[{id:zero.product_id,quantity:1,price:1
 await fail(()=>c('sale',{...atCost,items:[{id:pid,quantity:1.5,price:1.2,cost:.5}]}),/cantidad entera/);
 const regular=await c('sale',{currency:'USD',items:items(1),paid:1.2,method:'cash',sale_context:{kind:'project',name:'Venta normal tras cortesía',pricing_basis:'cost_only'},pricing_basis:'cost_only'});
 ok(regular.amount===1.2&&regular.items[0].price===1.2&&regular.items[0].pricing.percentages.length===8&&regular.sale_context.pricing_basis===undefined,'normal sale cannot forge the cost-only basis or suppress its sheet');
+
+const existingPayload={currency:'USD',customer_id:r.customer_id,sale_context:{kind:'existing',name:'Nombre distinto ignorado',pricing_basis:'cost_only'},items:items(1),paid:0,collection:null};
+const existingId=crypto.randomUUID(),beforeCustomers=(await call('fridge_state')).customers.length,appended=await c('sale',existingPayload,existingId);
+ok(appended.customer_id===r.customer_id&&appended.sale_context.kind==='project'&&appended.sale_context.name==='Video de prueba'&&appended.amount===1.2&&appended.pending===1.2,'existing account uses exact ID and server context, without relying on a typed name');
+ok((await call('fridge_state')).customers.length===beforeCustomers,'appending creates no new customer identity');
+ok((await call('fridge_state')).customers.find(x=>x.id===r.customer_id).balance===2.6,'new credit adds to the earlier project balance');
+ok(JSON.stringify(await c('sale',existingPayload,existingId))===JSON.stringify(appended),'existing-account retry is idempotent');
+const staffAppend=await c('sale',{...existingPayload,customer_id:manual.customer_id});ok(staffAppend.customer_id===manual.customer_id&&staffAppend.sale_context.kind==='staff','staff account remains attached by identity');
+const costAppend=await c('sale',{...existingPayload,customer_id:costSale.customer_id,items:[{id:pid,quantity:1,price:1.2,cost:.5}]});ok(costAppend.amount===.5&&costAppend.items[0].pricing.percentages.length===0&&costAppend.sale_context.pricing_basis==='cost_only','courtesy account preserves its cost-only basis');
+ok((await call('fridge_state')).customers.find(x=>x.id===costSale.customer_id).pricing_basis==='cost_only','account picker receives authoritative cost-only mode');
+const oldPayments=(await state()).draft.payments.length;
+await c('sale',{...existingPayload,customer_id:manual.customer_id});ok((await state()).draft.payments.length===oldPayments,'adding consumption records no collection');
+await fail(()=>c('sale',{...existingPayload,customer_id:crypto.randomUUID()}),/no existe/);
+await fail(()=>c('sale',{...existingPayload,paid:.1}),/sin cobro/);
+await fail(()=>c('sale',{...existingPayload,collection:{currency:'USD',amount:1,rate:1,source:'manual'}}),/sin cobro/);
+const settled=await c('sale',{currency:'USD',items:items(1),paid:1.2,method:'cash',sale_context:{kind:'project',name:'Cuenta pagada'}});
+await fail(()=>c('sale',{...existingPayload,customer_id:settled.customer_id}),/saldo pendiente/);
+const beforeInvalid=(await call('fridge_state')).products.find(x=>x.id===pid).stock;
+await fail(()=>c('sale',{...existingPayload,items:items(10000)}),/Existencias/);ok((await call('fridge_state')).products.find(x=>x.id===pid).stock===beforeInvalid,'invalid append rolls back stock and debt together');
+await db.exec('reset role');await db.exec(fs.readFileSync('database/fridge_existing_account_rollback.sql','utf8'));await db.exec('set role authenticated');await fail(()=>c('sale',existingPayload),/Destino/);ok((await call('fridge_state')).customers.some(x=>x.id===r.customer_id&&x.balance===2.6),'rollback retains appended debts');
 await db.exec('reset role');await db.exec(fs.readFileSync('database/fridge_cost_courtesy_rollback.sql','utf8'));await db.exec('set role authenticated');
 await fail(()=>c('sale',atCost),/Destino/);
 ok((await detail(costReport.report_id)).snapshot.cost_settlement.distribution.length===1,'rollback preserves historical cost-only reports');
