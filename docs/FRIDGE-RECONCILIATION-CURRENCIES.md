@@ -9,3 +9,5 @@ The embedded reconciliation uses the intrinsic main content height and a dark ba
 Validation: mixed CUP/USD cash and CUP transfers, wrong amount rejection, missing and duplicate currency rejection, transfer verification, idempotency, immutable snapshots, audit, rollback, operator/manager UI, and the fridge regression suite. Tests use synthetic local data only.
 
 Deployment order: apply database/fridge_reconciliation_currencies.sql, then publish frontend assets. Rollback frontend approval form and database wrapper together using database/fridge_reconciliation_currencies_rollback.sql. Rollback preserves reports and audit records.
+
+Mobile detail tables (up to 650 px) render as two-column labelled cards with the person or product across the full width. Desktop keeps tabular layout. Column labels are generated from the same headers, preserving original amounts, cost values and existing actions.
