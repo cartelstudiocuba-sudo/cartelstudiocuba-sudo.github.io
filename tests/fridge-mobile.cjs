@@ -3,7 +3,7 @@ const html=fs.readFileSync('nevera-audiovisual.html','utf8');
 const code=fs.readFileSync('assets/fridge.js','utf8');
 const tick=()=>new Promise(r=>setTimeout(r,15));
 (async()=>{
- const dom=new JSDOM(html,{url:'https://gestion.elcartelstudio.com/nevera-audiovisual.html',runScripts:'outside-only'}),w=dom.window,d=w.document;
+ const dom=new JSDOM(html,{url:'https://gestion.elcartelstudio.com/nevera-audiovisual.html?tab=reconciliation',runScripts:'outside-only'}),w=dom.window,d=w.document;
  let scroll=420;Object.defineProperty(w,'scrollY',{get:()=>scroll});w.scrollTo=o=>{scroll=Number(o.top)||0;};let phone=true;const mediaListeners=[];w.matchMedia=()=>({get matches(){return phone;},addEventListener:(name,fn)=>mediaListeners.push(fn)});w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;w.queueMicrotask(()=>this.dispatchEvent(new w.Event('close')));};
  const p={photo_path:'test/photo.jpg',id:'p1',name:'Botella de agua natural de nombre muy largo de ejemplo',category:'Agua',price:200,cost:100,stock:24,minimum:5,version:1,active:true};
  const state={products:[p],customers:[{id:'c1',name:'Cliente de ejemplo',balance:400,kind:'client'}],staff:[{id:'s1',name:'Trabajador de ejemplo'}],stats:{sales_today:600,collected_today:200,owed:400,open_accounts:1,stock:24}};let calls=[],commandError=null,photoResolve=null;
@@ -13,7 +13,7 @@ const tick=()=>new Promise(r=>setTimeout(r,15));
  state.products.push({...p,id:'p2',name:'Cerveza de prueba',price:65,cost:30,stock:2,category:'Cervezas'});w.fetch=async()=>({ok:false});w.eval(fs.readFileSync('assets/fridge-inventory.js','utf8'));w.eval(fs.readFileSync('assets/fridge-pricing.js','utf8'));w.eval(fs.readFileSync('assets/fridge-composition.js','utf8'));w.eval(fs.readFileSync('assets/fridge-menu-render.js','utf8'));w.eval(fs.readFileSync('assets/fridge-menu.js','utf8'));w.eval(code);await tick();
 
  const click=sel=>{const el=d.querySelector(sel);assert(el,'Missing '+sel);el.click();};
- assert(d.body.classList.contains('fr-mobile-active'));assert.equal(d.querySelector('#fr-mobile-more').getAttribute('aria-current'),'page');
+ assert(d.querySelector('#fr-reconciliation-frame'),'direct Cuadre entry uses Nevera with its own mobile navigation');assert(d.querySelector('#fr-reconciliation-frame').getAttribute('src').includes('within_nevera=1'));assert(d.body.classList.contains('fr-mobile-active'));assert.equal(d.querySelector('#fr-mobile-more').getAttribute('aria-current'),'page');
  click('[data-tab="sale"]');assert(d.querySelector('#fr-mobile-cart-bar').hidden);scroll=420;
  const commands=()=>calls.filter(x=>x[0]==='fridge_command');
  click('[data-add="p1"]');click('[data-add="p1"]');click('[data-add="p2"]');
