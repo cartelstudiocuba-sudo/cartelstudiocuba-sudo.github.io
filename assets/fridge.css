@@ -147,3 +147,8 @@
 }
 
 .fr-reconciliation-active>.fr-head,.fr-reconciliation-active #fr-reconciliation-panel>.fr-section-title,.recon-manager #fridge-app>.fr-head{display:none}.fr-reconciliation-active #fr-reconciliation-panel{margin-top:0}.recon-manager .manager-heading{margin-top:0}
+
+/* Blend the embedded workspace into its host and align the card status. */
+#fr-reconciliation-frame,html:has(body.recon-inline),body.recon-inline{background:transparent}
+.manager-card-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}.recon-manager .manager-card-title h3{margin:0;font-size:23px}.manager-card-title .recon-history-state{font-size:11px;padding:4px 8px}.manager-card-content{margin-top:0}.recon-manager:not(.manager-report-open) #recon-detail[hidden]{display:none!important;border:0;padding:0;margin:0;box-shadow:none}@media(max-width:650px){.manager-card-title{gap:6px;margin-bottom:6px}.recon-manager .manager-card-title h3{font-size:19px}.manager-card-title .recon-history-state{font-size:10px;padding:3px 7px}}
+html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-manager{background:transparent}
