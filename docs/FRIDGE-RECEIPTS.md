@@ -1,0 +1,9 @@
+# Accounts and receipts — proposal 2
+
+Pending accounts list only customers with positive current balances; searching retains this filter. Paid sales and liquidated accounts are accessible from Historial de ventas. Ledger activity remains available separately. Sale history uses historical recorded amounts, never current catalog prices. Account detail reads all operation pages, sums consumed sales and shows individual recorded payments. Single-sale receipts show that sale, not the customer's unrelated sales. Previously credited sales appear as Cuenta liquidada in history only when their customer is currently settled, and open the full account rather than claiming the original credit transaction was paid immediately.
+
+Receipt has a total consumed hero, paid/pending badge, payment/unit tiles, Productos/Pago controls, thumbnail product rows, historical subtotals and explicit total. Pending accounts retain Facturar cuenta; paid receipts show Sin deuda and no billing button. Original payment currencies, amounts and CUP exchange rates appear in Pago. Repeated project headings are removed. Images may use the current product photo but prices/names/quantities are recorded sale values.
+
+Successful checkout routes to its operation's receipt (or pending account); existing-account attachment retains the existing flow. All-data loading checks that its target remains connected before rendering, and an incomplete history fetch shows an error rather than a partial financial total. No database changes, record reversals, role changes or production data mutations.
+
+Tests cover history pagination, historical price versus current catalog price, closed account exclusion even during search, product/payment switching, original CUP values and exchange rate, no second billing on a paid receipt, and existing account attachment/payment flows. Verification is DOM/source based, not a physical-device browser review.
