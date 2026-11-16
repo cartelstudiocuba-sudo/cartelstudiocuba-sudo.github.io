@@ -8,7 +8,7 @@ const functions=html.slice(html.indexOf('async function openTrainingDocumentatio
 const mock=`const candidates=[{id:'c',vacancy_id:'v',status:'trial',full_name:'Daniel Ficticio'}],vacancies=[{id:'v'}],roles=[];
 const role={id:'r',title:'Plaza ficticia',work_days:'De lunes a sábado',schedule:'De 9:00 a. m. a 6:00 p. m.',compensation:'15000',payment_frequency:'Semanal'};
 const trialPeriodsByCandidate={c:{id:'t'}},trainingDecisionByTrial={t:'continue'},roleForVacancy=()=>role,candidatePhone=()=> '5350000000',preserveCandidateSheet=()=>{};
-window.rememberTrainingNotification=()=>{};window.preserveCandidateSheet=()=>{};window.confirmTrainingCandidateNotification=async()=>{throw Error('Confirmación sintética pendiente')};window.scenario='ok';window.calls=[];window.open=(...args)=>window.opened=args;
+window.rememberTrainingNotification=()=>{};window.preserveCandidateSheet=()=>{};window.confirmTrainingCandidateNotification=async()=>{window.trainingCloseCount=(window.trainingCloseCount||0)+1};window.scenario='ok';window.calls=[];window.open=(...args)=>window.opened=args;
 const sb={async rpc(name,args){calls.push({name,args});if(scenario==='slow')await new Promise(r=>setTimeout(r,300));return scenario==='fail'?{error:{message:'denied'}}:{data:{url:(scenario==='foreign'?'https://attacker.invalid':'https://gestion.elcartelstudio.com')+'/plaza-ficha.html?documento=contenido#token='+'a'.repeat(64),role_id:scenario==='wrongrole'?'other':'r'}};}};`;
 const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripción vigente',direct_manager:'Tutor',work_content:{custom:[{title:'Función vigente',text:'CONTENIDO VIGENTE DEL GENERADOR '+('Texto extenso de regresión con acentos áéíóú y pasos verificables. '.repeat(180))+'FIN DEL BLOQUE LARGO'}],protocol_blocks:[{title:'Protocolo vigente',objective:'Objetivo vigente',steps:['Paso uno']}],evaluation_master:{criteria:[{name:'Puntualidad',desc:'Llegar a tiempo',weight:100}]}}},nomenclators:[{id:'n',category:'informacion_institucional',key:'mision',label:'Misión',value:'MISIÓN VIGENTE',applies_to_all_roles:true}],roles:[],expires_at:'2099-01-01T00:00:00Z'};
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
@@ -37,7 +37,7 @@ const fixture={role:{id:'r',title:'Plaza de verificación',description:'Descripc
  // Custom options must pass the concurrency check after normalization.
  await page.evaluate(()=>window.scenario='ok');await dialog.locator('[name=workdays]').selectOption('__other__');await dialog.locator('[name=workdaysOther]').fill('Martes y jueves');await prepare.click();await page.locator('[data-preview]').waitFor();assert((await page.locator('[data-preview] textarea').inputValue()).includes('Martes y jueves'));assert(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
  await page.screenshot({path:path.join(root,'test-results/training-content','documentation-'+width+'.png')});
- await dialog.locator('[data-close]').click();await page.evaluate(()=>openTrainingDocumentation('c'));
+ await dialog.locator('[data-close]').click();await dialog.waitFor({state:'hidden'});await page.evaluate(()=>openTrainingDocumentation('c'));
  for(const key of ['start','tutor','phone'])assert.equal(await page.locator('[name='+key+']').inputValue(),'');
  await page.screenshot({path:path.join(root,'test-results/training-content','documentation-empty-'+width+'.png')});
  await context.close();console.log('PASS training form and WhatsApp, no attachments/contracts, errors, custom options, concurrent edits, '+width+'px');

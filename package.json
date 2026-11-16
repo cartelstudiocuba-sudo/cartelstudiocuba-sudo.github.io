@@ -2,6 +2,7 @@
   "name": "cartel-gestion-verification",
   "private": true,
   "scripts": {
+    "test:training:notification": "node tests/training-notification-close.cjs",
     "test:hr:model": "node --test tests/hr-dashboard-model.cjs",
     "test:hr:browser": "node tests/hr-dashboard-browser.cjs",
     "test:onboarding:sql": "node tests/onboarding-sql.cjs",
