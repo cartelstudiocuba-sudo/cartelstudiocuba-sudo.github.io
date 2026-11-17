@@ -223,3 +223,10 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 
 .fr-stock-quantity{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;margin-left:auto;color:#e1f8eb;font-variant-numeric:tabular-nums}.fr-stock-quantity strong{font-size:29px;line-height:1.15;font-weight:750}.fr-stock-quantity small{font-size:10px;color:#aebbb6;margin-top:3px}.fr-stock-quantity.is-low{color:#ffda03}.fr-stock-quantity.is-empty{color:#ff9199}
 @media(max-width:480px){.fr-stock-quantity{min-width:48px}.fr-stock-quantity strong{font-size:25px}.fr-stock-quantity small{font-size:9px}.fr-stock-item{gap:10px}}
+
+/* Brief entry and count-up; final layout stays in place throughout. */
+.fr-summary-stock-track i{transform-origin:left center}.fr-summary-metrics dd,.fr-summary-stock-number,.fr-summary-balance,[data-summary-stock]{font-variant-numeric:tabular-nums}
+@keyframes fridge-summary-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.fr-summary-motion>.fr-summary-hero,.fr-summary-motion>.fr-summary-metrics>div,.fr-summary-motion .fr-summary-columns>.fr-summary-section{animation:fridge-summary-enter 420ms cubic-bezier(.22,.7,.25,1) backwards}
+.fr-summary-motion>.fr-summary-metrics>div:nth-child(1){animation-delay:60ms}.fr-summary-motion>.fr-summary-metrics>div:nth-child(2){animation-delay:100ms}.fr-summary-motion>.fr-summary-metrics>div:nth-child(3){animation-delay:140ms}.fr-summary-motion .fr-summary-columns>.fr-summary-section:nth-child(1){animation-delay:130ms}.fr-summary-motion .fr-summary-columns>.fr-summary-section:nth-child(2){animation-delay:180ms}
+@media(prefers-reduced-motion:reduce){.fr-summary-motion>.fr-summary-hero,.fr-summary-motion>.fr-summary-metrics>div,.fr-summary-motion .fr-summary-columns>.fr-summary-section{animation:none}.fr-summary-stock-track i{transform:none!important}}
