@@ -34,7 +34,7 @@ function render(){scheduled=false;if(!window.cartelPersonalNavigationReady)retur
 }
 function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(render);}
 new MutationObserver(schedule).observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
-window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();if(innerWidth>650)document.documentElement.classList.remove('fridge-mobile-unified');else if(unifiedFridge)document.documentElement.classList.add('fridge-mobile-unified');});if(window.cartelPersonalNavigationReady)schedule();
+window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();if(innerWidth>900)document.documentElement.classList.remove('fridge-mobile-unified');else if(unifiedFridge)document.documentElement.classList.add('fridge-mobile-unified');});if(window.cartelPersonalNavigationReady)schedule();
 // Only the embedded Nevera uses a viewport dock above the global mobile bar.
 const workspace=document.getElementById('workspace'),moduleFrame=document.getElementById('frame');
 function syncFridgeDock(){let fridge=false;try{const url=new URL(moduleFrame?.getAttribute('src')||'',location.href);fridge=!!workspace?.classList.contains('embedded')&&!workspace.classList.contains('selection-mode')&&url.origin===location.origin&&url.pathname==='/nevera-audiovisual.html';}catch{}document.documentElement.classList.toggle('fridge-workspace-active',fridge);if(!fridge){unifiedFridge=false;document.documentElement.classList.remove('fridge-mobile-unified');}}
@@ -44,7 +44,7 @@ function fridgeLinks(){const home=nav.querySelector('[data-home]');const links=[
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==moduleFrame?.contentWindow||!document.documentElement.classList.contains('fridge-workspace-active'))return;
  if(event.data?.type==='fridge-navigation-request'){
-  unifiedFridge=event.data.ready===true&&innerWidth<=650&&!!window.cartelPersonalNavigationReady;
+  unifiedFridge=event.data.ready===true&&innerWidth<=900&&!!window.cartelPersonalNavigationReady;
   document.documentElement.classList.toggle('fridge-mobile-unified',unifiedFridge);
   const items=fridgeLinks().map(a=>({key:navigationKey(a),label:a.hasAttribute('data-home')?'Inicio':linkTitle(a),group:a.hasAttribute('data-home')?'General':moduleName(a),icon:a.hasAttribute('data-home')?'home':icon(linkTitle(a)),disabled:a.hasAttribute('data-soon')||a.classList.contains('personal-view-pending')}));
   if(document.getElementById('cartel-account'))items.splice(items[0]?.group==='General'?1:0,0,{key:'__account__',label:'Cuenta',group:'General',icon:'account'});
