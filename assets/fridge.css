@@ -211,3 +211,5 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 .recon-manager button.manager-inbox-card .manager-card-content{width:100%;margin:0;min-height:105px}.manager-inbox-card .manager-card-content>span:last-child{min-width:0}.manager-card-number{font-size:23px;line-height:1.25;letter-spacing:-.5px}.manager-inbox-card .manager-card-person,.manager-inbox-card .recon-history-meta{display:block}
 .recon-manager button.manager-inbox-card:hover{border-color:#ffda0370;box-shadow:inset 0 1px #ffffff25,0 14px 26px #0006}.recon-manager button.manager-inbox-card:active{transform:translateY(2px)}.recon-manager button.manager-inbox-card:focus-visible{outline:2px solid #ffda03;outline-offset:4px}
 @media(max-width:650px){.manager-card-number{font-size:19px}.recon-manager button.manager-inbox-card .manager-card-content{min-height:84px}}
+
+.recon-operator .fr-sale-banner-actions{flex-wrap:wrap}.recon-operator #recon-toolbar>.fr-primary{width:100%;flex-basis:100%}.recon-banner-history[aria-expanded=true]{border-color:#d6ffa1;color:#e6ffc4;background:#002f2855}
