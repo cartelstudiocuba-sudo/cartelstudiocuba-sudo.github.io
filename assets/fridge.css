@@ -230,3 +230,5 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 .fr-summary-motion>.fr-summary-hero,.fr-summary-motion>.fr-summary-metrics>div,.fr-summary-motion .fr-summary-columns>.fr-summary-section{animation:fridge-summary-enter 560ms cubic-bezier(.22,.7,.25,1) backwards}
 .fr-summary-motion>.fr-summary-metrics>div:nth-child(1){animation-delay:80ms}.fr-summary-motion>.fr-summary-metrics>div:nth-child(2){animation-delay:140ms}.fr-summary-motion>.fr-summary-metrics>div:nth-child(3){animation-delay:200ms}.fr-summary-motion .fr-summary-columns>.fr-summary-section:nth-child(1){animation-delay:220ms}.fr-summary-motion .fr-summary-columns>.fr-summary-section:nth-child(2){animation-delay:280ms}
 @media(prefers-reduced-motion:reduce){.fr-summary-motion>.fr-summary-hero,.fr-summary-motion>.fr-summary-metrics>div,.fr-summary-motion .fr-summary-columns>.fr-summary-section{animation:none}.fr-summary-stock-track i{transform:none!important}}
+
+.fr-stock-banner .fr-sale-banner-actions{flex-wrap:wrap}
