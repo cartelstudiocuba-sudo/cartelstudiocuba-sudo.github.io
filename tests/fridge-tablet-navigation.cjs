@@ -17,7 +17,7 @@ const tick=()=>new Promise(r=>setTimeout(r,15));
  assert.equal(d.querySelector('#fr-mobile-more').getAttribute('aria-current'),'page');
  d.querySelector('#fr-mobile-more').click();assert(d.querySelector('#fr-mobile-more-sheet').open,'tablet More opens');
  d.querySelector('[data-mobile-tab="stock"]').click();await tick();assert(!d.querySelector('#fr-mobile-more-sheet').open);
- d.querySelector('[data-tab="sale"]').click();d.querySelector('[data-add="p1"]').click();
+ d.querySelector('[data-tab="sale"]').click();assert(d.querySelector('#fridge-app').classList.contains('fr-sale-active'));assert.equal(d.querySelector('.fr-sale-banner h1').textContent,'Nueva venta');assert(d.querySelector('.fr-sale-banner [data-action="refresh"]'));d.querySelector('[data-add="p1"]').click();
  assert.equal(d.querySelector('#fr-cart [data-quantity="p1"]').value,'1');assert(d.querySelector('#fr-mobile-cart-bar').hidden);
  width=1024;mediaListeners.forEach(fn=>fn());assert(!d.body.classList.contains('fr-compact-navigation'));
  width=390;mediaListeners.forEach(fn=>fn());assert(d.body.classList.contains('fr-compact-navigation'));assert(d.body.classList.contains('fr-mobile-active'));assert(!d.querySelector('#fr-mobile-cart-bar').hidden);
