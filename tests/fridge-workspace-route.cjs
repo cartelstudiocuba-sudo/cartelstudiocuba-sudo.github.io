@@ -14,4 +14,4 @@ for(const scenario of [{operator:true,search:'?embedded=1',pending:false,expecte
 console.log('PASS: legacy review route, operator container, safe handoff, loop/recovery guards and unchanged review access');})().catch(e=>{console.error(e);process.exitCode=1;});
 
 assert.match(fs.readFileSync('assets/fridge.js','utf8'),/within_nevera=1&v=20261133-status-history/,'Nested reconciliation URL must change with the new currency UI');
-assert.match(fs.readFileSync('nevera-audiovisual.html','utf8'),/fridge\.js\?v=64-sale-banner/);
+assert.match(fs.readFileSync('nevera-audiovisual.html','utf8'),/fridge\.js\?v=65-workspace-banners/);
