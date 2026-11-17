@@ -213,3 +213,10 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 @media(max-width:650px){.manager-card-number{font-size:19px}.recon-manager button.manager-inbox-card .manager-card-content{min-height:84px}}
 
 .recon-operator .fr-sale-banner-actions{flex-wrap:wrap}.recon-operator #recon-toolbar>.fr-primary{width:100%;flex-basis:100%}.recon-banner-history[aria-expanded=true]{border-color:#d6ffa1;color:#e6ffc4;background:#002f2855}
+
+/* Equal full-width green footers for summary cards. */
+.fr-summary-section{--summary-card-inset:20px;display:flex;flex-direction:column;padding:var(--summary-card-inset) var(--summary-card-inset) 0;overflow:hidden}
+.fr-summary-section>.fr-summary-list{margin-bottom:18px}
+.fr-summary-card-action{display:flex;align-items:center;justify-content:center;flex:none;align-self:stretch;width:calc(100% + var(--summary-card-inset) + var(--summary-card-inset));min-height:54px;margin:auto calc(-1 * var(--summary-card-inset)) 0;padding:14px 18px;border:0;border-top:1px solid #89e6b94d;border-radius:0;background:linear-gradient(115deg,#087358,#129873);color:#fff;font-size:14px;font-weight:650;box-shadow:inset 0 1px #ffffff15;text-align:center}
+.fr-summary-card-action:hover{background:linear-gradient(115deg,#0b8464,#17aa80)}.fr-summary-card-action:active{background:#08674f}.fr-summary-card-action:focus-visible{outline-offset:-4px}
+@media(max-width:650px){.fr-summary-section{--summary-card-inset:17px}.fr-summary-card-action{min-height:52px}}
