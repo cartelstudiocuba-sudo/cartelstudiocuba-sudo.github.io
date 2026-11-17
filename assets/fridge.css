@@ -205,3 +205,9 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 
 .manager-inbox-banner .fr-sale-banner-copy{max-width:560px}.manager-inbox-banner p{max-width:440px}.manager-inbox-banner{margin:0 0 28px}.manager-inbox-art-back{position:absolute;width:108px;height:128px;left:47px;top:16px;border-radius:25px;transform:rotate(8deg);background:linear-gradient(145deg,#d7f7bd,#72b877);border:1px solid #e9ffe280;box-shadow:4px 8px 18px #002c2555}
 @media(max-width:650px){.manager-inbox-banner h1{font-size:25px}.manager-inbox-banner p{max-width:240px}.manager-inbox-art-back{width:75px;height:96px;left:22px;top:18px;border-radius:19px}.manager-inbox-banner{margin-bottom:22px}}
+
+/* Manager reports open from the entire card, including keyboard activation. */
+.recon-manager button.manager-inbox-card{width:100%;text-align:left;color:#f4f5f6;font-weight:400;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.recon-manager button.manager-inbox-card .manager-card-content{width:100%;margin:0;min-height:105px}.manager-inbox-card .manager-card-content>span:last-child{min-width:0}.manager-card-number{font-size:23px;line-height:1.25;letter-spacing:-.5px}.manager-inbox-card .manager-card-person,.manager-inbox-card .recon-history-meta{display:block}
+.recon-manager button.manager-inbox-card:hover{border-color:#ffda0370;box-shadow:inset 0 1px #ffffff25,0 14px 26px #0006}.recon-manager button.manager-inbox-card:active{transform:translateY(2px)}.recon-manager button.manager-inbox-card:focus-visible{outline:2px solid #ffda03;outline-offset:4px}
+@media(max-width:650px){.manager-card-number{font-size:19px}.recon-manager button.manager-inbox-card .manager-card-content{min-height:84px}}
