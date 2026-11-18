@@ -230,7 +230,9 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   if(data.fridge_audiovisual===true){
    const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
   }
-  if(data.fridge_limited===true){
+  const homeRole=data.home_role||(data.fridge_limited===true?'gestor_operativo_audiovisual':null);
+  const homeProfiles={manager_general:['Manager General','Dirección Operativa'],jefe_audiovisuales:['Jefe de Área','Departamento Audiovisual'],jefe_grafica:['Jefe de Área','Departamento de Gráfica'],gestor_comercial_grafica:['Gestor Operativo','Departamento de Gráfica'],gestor_operativo_audiovisual:['Gestor Operativo','Departamento Audiovisual']};
+  if(homeProfiles[homeRole]){
    const home=document.querySelector('.workspace .dashboard');home.classList.add('operational-home');
    if(!home.querySelector('.operational-welcome')){
     const banner=document.createElement('section');banner.className='operational-welcome';banner.setAttribute('aria-label','Gestor Operativo · Departamento Audiovisual');
@@ -243,6 +245,20 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
     const policy=rate.querySelector('.exchange-collection-note');policy.innerHTML='<span>Nuestros cobros: <b>tasa elTOQUE + 10 CUP</b></span>';intro.append(policy);
     home.querySelector('#exchange-mobile-trigger').after(quick);
     quick.querySelector('#operational-fridge').onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));
+    const [roleTitle,department]=homeProfiles[homeRole];banner.setAttribute('aria-label',roleTitle+' · '+department);banner.querySelector('h1').textContent=roleTitle;banner.querySelector('p:not(.home-brand-motto)').textContent=department;
+    const graphic=banner.querySelector('.operational-art-card svg');
+    if(homeRole==='manager_general')graphic.innerHTML='<circle cx="32" cy="18" r="9"/><path d="M16 55v-9a16 16 0 0 1 32 0v9M9 12l5 5 8-10M45 12h12M48 20h9"/>';
+    else if(homeRole.includes('grafica'))graphic.innerHTML='<path d="m13 48 5-17L43 6l15 15-25 25-20 5ZM18 31l15 15M36 13l15 15M9 57h46"/>';
+    if(homeRole!=='gestor_operativo_audiovisual'){
+     const grid=quick.querySelector('.operational-shortcut-grid');grid.replaceChildren();
+     const unique=new Map();for(const item of [...grouped.values()].flat())if(item.url&&!unique.has(item.url))unique.set(item.url,item);
+     for(const item of unique.values()){
+      const button=document.createElement('button');button.type='button';button.className='operational-shortcut is-enabled';button.innerHTML='<span class="operational-shortcut-icon" aria-hidden="true">'+(item.group==='Finanzas'?'▥':'▣')+'</span><span><strong></strong><small></small></span><span class="operational-open" aria-hidden="true">↗</span>';button.querySelector('strong').textContent=item.title;button.querySelector('small').textContent=item.group;button.onclick=()=>showModule(item.url,[...nav.querySelectorAll('a')].find(a=>a.getAttribute('href')===item.url)||null);grid.append(button);
+     }
+     const suggestions=homeRole==='manager_general'?['Proyectos del día','Resumen de las áreas','Agenda de dirección']:homeRole==='gestor_comercial_grafica'?['Pedidos de clientes','Seguimiento comercial','Agenda de entregas']:['Proyectos del día','Agenda de producción','Seguimiento del equipo'];
+     suggestions.forEach(title=>{const button=document.createElement('button');button.type='button';button.disabled=true;button.className='operational-shortcut';button.innerHTML='<span class="operational-shortcut-icon" aria-hidden="true">◷</span><span><strong></strong><span class="operational-coming">Próximamente</span></span>';button.querySelector('strong').textContent=title;grid.append(button);});
+    }
+
    }
   }
   const email=document.getElementById('cartel-account-email');if(email)email.textContent=user.email||'Cuenta conectada';
