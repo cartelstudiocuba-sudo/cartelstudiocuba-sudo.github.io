@@ -192,7 +192,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   const client=sb;
   const {data:{user}}=await client.auth.getUser();if(!user)return;
   const {data,error}=await CartelLoad.read('personal_navigation',()=>client.rpc('system_my_navigation'));if(error||!data)return;
-  window.cartelFridgeOperatorAccess=data.is_owner===true||data.fridge_audiovisual===true;
+  window.cartelFridgeOperatorAccess=data.is_owner===true||(data.fridge_audiovisual===true&&data.fridge_limited!==true);
   if(data.finance_cost_sheets===true){document.querySelector('[data-finance-cost-menu]')?.removeAttribute('hidden');const card=document.querySelector('.module.fin');if(card){card.style.removeProperty('display');card.onclick=()=>showModule('/fichas-costo.html',document.querySelector('.personal-nav-group a[href="/fichas-costo.html"]')||document.querySelector('[data-finance-cost-menu]'));}}
   if(data.is_owner){window.cartelPersonalNavigationReady=true;window.dispatchEvent(new Event('cartel-navigation-ready'));return;}
   const views=Array.isArray(data.views)?data.views:[];
@@ -227,6 +227,9 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
    parent.onclick=()=>sub.classList.toggle('open');
    wrap.append(parent,sub);nav.appendChild(wrap);
   });
+  if(data.fridge_audiovisual===true){
+   const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
+  }
   const email=document.getElementById('cartel-account-email');if(email)email.textContent=user.email||'Cuenta conectada';
   const profile=document.querySelector('.topbar .profile');if(profile)profile.style.display='none';
   // Assigned views populate the menu; opening the platform always keeps Inicio visible.

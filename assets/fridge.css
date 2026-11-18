@@ -232,3 +232,8 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 @media(prefers-reduced-motion:reduce){.fr-summary-motion>.fr-summary-hero,.fr-summary-motion>.fr-summary-metrics>div,.fr-summary-motion .fr-summary-columns>.fr-summary-section{animation:none}.fr-summary-stock-track i{transform:none!important}}
 
 .fr-stock-banner .fr-sale-banner-actions{flex-wrap:wrap}
+
+/* Three-section operational workspace on phones, tablets and desktop. */
+#fridge-app.fr-limited-workspace .fr-nav{display:flex;justify-content:space-evenly}
+#fridge-app.fr-limited-workspace .fr-nav [data-tab]:not([hidden]){display:flex;flex:1}
+#fridge-app.fr-limited-workspace .fr-nav [hidden],#fridge-app.fr-limited-workspace #fr-mobile-more{display:none!important}
