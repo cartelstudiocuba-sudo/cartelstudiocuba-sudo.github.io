@@ -9,8 +9,8 @@ function setup(){
  const el=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',setAttribute(k,v){this[k]=v}});return nodes.get(id)};
  class FixedDate extends Date{static now(){return now}}
  const ctx={Date:FixedDate,Intl,AbortSignal,rows:[{stock:2,unit_cost:10,currency:'USD'},{stock:3,unit_cost:0.27,currency:'USD'}],loaded:true,reportLoading:false,totalRateError:'',totalRate:null,totalRateLoading:false,totalRateRun:0,el,money:n=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}),num:n=>Number(n)||0,window:{inventorySupabaseClient:{auth:{getSession:async()=>({data:{session:{access_token:'test-session'}}})}}},fetch:(url,options)=>new Promise(resolve=>requests.push({url,options,resolve}))};
- vm.createContext(ctx);vm.runInContext(html.slice(a,b),ctx);
- const ready=async()=>{await Promise.resolve();await Promise.resolve()};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync('assets/exchange-rates.js','utf8'),ctx);ctx.CartelExchangeRates=ctx.window.CartelExchangeRates;vm.runInContext(html.slice(a,b),ctx);
+ const ready=async()=>{for(let i=0;i<8;i++)await Promise.resolve()};
  const rate=(value=910,extra={})=>({ok:true,json:async()=>({rates:{USD:value},fetched_at:new Date(now).toISOString(),stale:false,...extra})});
  return {ctx,nodes,requests,ready,rate};
 }
@@ -33,8 +33,8 @@ test('Stale or invalid rates show unavailable and never reuse a previous estimat
 });
 test('Reopening refreshes the reference and ignores an older response',async()=>{
  const h=setup(),older=h.ctx.refreshCupTotalRate();await h.ready();const newer=h.ctx.refreshCupTotalRate();await h.ready();
- h.requests[1].resolve(h.rate(920));await newer;h.requests[0].resolve(h.rate(800));await older;
+ assert.equal(h.requests.length,1,'Concurrent report openings share one verified lookup');h.requests[0].resolve(h.rate(920));await Promise.all([newer,older]);
  assert.equal(h.ctx.totalRate.value,920);assert.match(h.nodes.get('inventory-general-cup-rate').textContent,/920,00 CUP/);
 });
 
-test('Rate retry requests a new lookup and explains a provider refusal',async()=>{const h=setup(),work=h.ctx.refreshCupTotalRate(true);await h.ready();assert.match(h.requests[0].url,/refresh=1/);assert.equal(h.nodes.get('inventory-general-rate-refresh').disabled,true);h.requests[0].resolve(h.rate(910,{stale:true,error_code:'source_forbidden'}));await work;assert.match(h.nodes.get('inventory-general-cup-rate').textContent,/HTTP 403/);assert.equal(h.nodes.get('inventory-general-rate-refresh').disabled,false);assert.equal(h.ctx.totalRate,null);});
+test('Rate retry requests a new lookup and explains a provider refusal',async()=>{const h=setup(),work=h.ctx.refreshCupTotalRate(true);await h.ready();assert.match(h.requests[0].url,/refresh=1/);assert.equal(h.nodes.get('inventory-general-rate-refresh').disabled,true);h.requests[0].resolve(h.rate(910,{stale:true,error_code:'source_forbidden',error:'elTOQUE respondió HTTP 403.'}));await work;assert.match(h.nodes.get('inventory-general-cup-rate').textContent,/HTTP 403/);assert.equal(h.nodes.get('inventory-general-rate-refresh').disabled,false);assert.equal(h.ctx.totalRate,null);});

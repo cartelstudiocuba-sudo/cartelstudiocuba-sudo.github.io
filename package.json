@@ -14,7 +14,8 @@
     "test:finance-cost-sheets": "node tests/finance-cost-sheets.cjs && node tests/finance-cost-sheets-ui.cjs",
     "test:fridge:composite": "node tests/fridge-composite.cjs && node tests/fridge-composite-ui.cjs",
     "test:fridge:settlement": "node tests/fridge-cost-settlement.cjs && node tests/fridge-cost-settlement-ui.cjs",
-    "test:fridge:menu": "node tests/fridge-menu-sql.cjs && node tests/fridge-menu-render.cjs && node tests/fridge-menu-ui.cjs && node tests/fridge-menu-digital.cjs"
+    "test:fridge:menu": "node tests/fridge-menu-sql.cjs && node tests/fridge-menu-render.cjs && node tests/fridge-menu-ui.cjs && node tests/fridge-menu-digital.cjs",
+    "test:exchange-rates": "node --test tests/dashboard-rate-service.cjs tests/exchange-rates.cjs tests/inventory-usd-entry.test.mjs tests/inventory-general-cup-total.test.mjs && node tests/eltoque-permissions.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
