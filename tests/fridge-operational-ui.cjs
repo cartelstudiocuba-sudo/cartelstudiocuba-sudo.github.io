@@ -14,7 +14,7 @@ const tick=()=>new Promise(r=>setTimeout(r,15));
 
  assert.deepEqual([...d.querySelectorAll('.fr-nav [data-tab]')].filter(b=>!b.hidden).map(b=>b.textContent),['Venta','Cuentas','Inventario']);
  assert(d.querySelector('.fr-sale-layout'),'restricted default and reconciliation link open Venta');
- assert(d.querySelector('#fr-mobile-more').hidden);
+ assert(!d.querySelector('#fr-mobile-more').hidden);if(width<=900){d.querySelector('#fr-mobile-more').click();assert(d.querySelector('#fr-mobile-more-sheet').open);assert(!d.querySelector('[data-mobile-tab=menu]'));d.querySelector('[data-action=mobile-more-close]').click();}
  for(const name of ['summary','menu','reconciliation']){d.querySelector('[data-tab="'+name+'"]').click();await tick();assert(d.querySelector('.fr-sale-layout'),'excluded tab cannot be opened');}
  d.querySelector('[data-tab="accounts"]').click();await tick();assert(d.querySelector('.fr-account-board'),'Cuentas opens');
  d.querySelector('[data-tab="stock"]').click();await tick();assert.match(d.querySelector('#fr-content').textContent,/Inventario/);

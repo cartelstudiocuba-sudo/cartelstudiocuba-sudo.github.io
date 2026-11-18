@@ -236,4 +236,4 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 /* Three-section operational workspace on phones, tablets and desktop. */
 #fridge-app.fr-limited-workspace .fr-nav{display:flex;justify-content:space-evenly}
 #fridge-app.fr-limited-workspace .fr-nav [data-tab]:not([hidden]){display:flex;flex:1}
-#fridge-app.fr-limited-workspace .fr-nav [hidden],#fridge-app.fr-limited-workspace #fr-mobile-more{display:none!important}
+#fridge-app.fr-limited-workspace .fr-nav [hidden]{display:none!important}

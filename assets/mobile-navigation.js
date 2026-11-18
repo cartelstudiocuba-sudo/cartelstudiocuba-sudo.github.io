@@ -48,8 +48,10 @@ window.addEventListener('message',event=>{
   document.documentElement.classList.toggle('fridge-mobile-unified',unifiedFridge);
   const items=fridgeLinks().map(a=>({key:navigationKey(a),label:a.hasAttribute('data-home')?'Inicio':linkTitle(a),group:a.hasAttribute('data-home')?'General':moduleName(a),icon:a.hasAttribute('data-home')?'home':icon(linkTitle(a)),disabled:a.hasAttribute('data-soon')||a.classList.contains('personal-view-pending')}));
   if(document.getElementById('cartel-account'))items.splice(items[0]?.group==='General'?1:0,0,{key:'__account__',label:'Cuenta',group:'General',icon:'account'});
+  if(document.getElementById('cartel-sign-out'))items.push({key:'__logout__',label:'Cerrar sesión',group:'General',icon:'account'});
   moduleFrame.contentWindow.postMessage({type:'fridge-navigation-items',items},location.origin);
  }else if(event.data?.type==='fridge-navigation-go'&&unifiedFridge){
+  if(event.data.key==='__logout__'){document.getElementById('cartel-sign-out')?.click();return;}
   if(event.data.key==='__account__'){bar.querySelector('button[aria-label="Cuenta"]')?.click();return;}
   const link=fridgeLinks().find(a=>navigationKey(a)===event.data.key);
   if(link&&!link.hasAttribute('data-soon')&&!link.classList.contains('personal-view-pending'))go(link);
