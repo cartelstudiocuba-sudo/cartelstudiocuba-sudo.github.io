@@ -1,11 +1,11 @@
 export const SOURCE = 'https://tasas.eltoque.com/v1/trmi';
 export const CACHE_MS = 15 * 60 * 1000;
 const MAX_AGE = 24 * 60 * 60 * 1000;
-const codes = ['USD','EUR','MLC','CAD','MXN','ZELLE','CLA'];
 export function validRates(raw) {
   const rates = {};
-  for (const code of codes) {
-    const n = raw?.[code];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  for (const [code,n] of Object.entries(raw)) {
+    if (!/^[A-Z][A-Z0-9_]{1,31}$/.test(code)) continue;
     if (typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= 1000000) rates[code] = n;
   }
   return rates.USD ? rates : null;
