@@ -14,14 +14,15 @@ w.sb.storage={from:bucket=>({download:async path=>{
  downloads.push([bucket,path]);
  return bucket==='hr-candidate-files'?{data:new w.Blob(['photo'],{type:'image/jpeg'})}:{error:{message:'Object not found'}};
 }})};
-w.URL.createObjectURL=()=> 'blob:photo';w.URL.revokeObjectURL=()=>{};
-d.querySelector('#hiring-review-tab-documents').click();
-const portrait=[...d.querySelectorAll('button')].find(b=>b.textContent==='Ver fotografía del trabajador');
-await portrait.onclick();
-assert.deepEqual(downloads,[['hr-hiring-private','T/portrait'],['hr-candidate-files','interview-photos/A/photo.jpg']]);
-assert(d.querySelector('.hiring-document-preview img').alt.includes('Foto de la candidatura'));
-hasCandidatePhoto=false;await portrait.onclick();
-assert(d.querySelector('.hiring-document-preview').textContent.includes('Fotografía del expediente pendiente'));
+await d.querySelector('#hiring-review-tab-documents').onclick();
+assert.equal(d.querySelectorAll('.hiring-doc-card').length,3);
+assert(downloads.some(([bucket,path])=>bucket==='hr-candidate-files'&&path==='interview-photos/A/photo.jpg'));
+assert.equal(d.querySelectorAll('.hiring-doc-status.is-pending').length,3);
+const viewer=d.querySelector('.hiring-doc-viewer');viewer.showModal=()=>viewer.setAttribute('open','');
+d.querySelector('.hiring-doc-card.is-portrait button').click();
+assert.equal(viewer.open,true);
+assert.equal(viewer.querySelector('img').alt,'Foto de la candidatura');
+hasCandidatePhoto=false;
 assert.equal(d.querySelectorAll('.hiring-validation-step').length,4);
 assert.equal(d.querySelector('.hiring-management').open,false);
 const back=[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje');back.click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(editor.value,edited);assert.deepEqual([...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href),links);assert.equal(prepares,1);assert.equal(d.activeElement,review);
@@ -32,7 +33,7 @@ await open();d.querySelector('#hiring-review-tab-validation').click();const vali
 w.renderHiringContract=async root=>{
  root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
 };w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
-await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await [...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar y descargar contrato laboral').onclick();const reading=d.querySelector('.hiring-contract-reading');
+await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await [...d.querySelectorAll('button')].find(b=>b.textContent==='Ir al contrato →').onclick();const reading=d.querySelector('.hiring-contract-reading');
 assert.equal(reading.hidden,false);
 assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
 d.querySelector('#contractDownload').click();

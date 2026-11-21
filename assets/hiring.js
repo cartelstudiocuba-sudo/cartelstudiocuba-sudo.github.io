@@ -39,6 +39,7 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-candidate-review .hiring-data-card{margin:0 0 11px;padding:13px 14px;background:linear-gradient(145deg,#25292b,#1d2123);border-color:#40464a;border-radius:13px}
   .hiring-candidate-review .hiring-data-card h4{margin-bottom:7px}.hiring-candidate-review .hiring-data-card .hiring-review-grid{grid-template-columns:minmax(0,1fr);gap:0}.hiring-data-card .hiring-review-grid>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid #ffffff16;border-radius:0;background:none}.hiring-data-card .hiring-review-grid dt{margin:0;overflow-wrap:anywhere}.hiring-data-card .hiring-review-grid dd{text-align:right;font-size:13px}
   .hiring-data-card .hiring-review-grid>div.is-pending{padding-inline:8px;border-radius:6px;background:#ffbf4714}.hiring-data-card .hiring-review-grid>.is-pending dt{color:#f7dfaf}.hiring-data-card .hiring-review-grid dd.is-pending{color:#ffda03;font-weight:750;display:flex;align-items:center;justify-content:flex-end;gap:6px}.hiring-field-pending-dot{display:inline-block;flex:0 0 7px;height:7px;border-radius:50%;background:#ff5a62}
+  .hiring-doc-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hiring-doc-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #454c50;border-radius:12px;background:linear-gradient(145deg,#2b3033,#1b1e21)}.hiring-doc-card.is-portrait{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr);align-items:center;gap:12px}.hiring-doc-card h5{margin:0;font-size:13px;line-height:1.3}.hiring-notification-dialog .hiring-doc-thumb{position:relative;display:grid;place-items:center;width:100%;padding:4px;aspect-ratio:1.6;background:#111416;border-radius:8px;border:1px solid #4a5156;color:#c4cdd2}.hiring-doc-card.is-portrait .hiring-doc-thumb{aspect-ratio:1}.hiring-doc-thumb img{width:100%;height:100%;min-height:0;object-fit:contain;border-radius:5px}.hiring-doc-expand{position:absolute;top:5px;right:5px;padding:0 4px;border-radius:4px;background:#111e;color:#fff}.hiring-doc-status{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#c7d0d6}.hiring-doc-status.is-pending{color:#ffda03}.hiring-doc-status.is-ready{color:#bdffcf}.hiring-doc-contract{width:100%;margin-top:12px}.hiring-doc-viewer{border:1px solid #53575b;border-radius:16px;background:#16191b;color:white;width:min(94vw,860px);max-width:none;padding:14px;box-sizing:border-box}.hiring-doc-viewer::backdrop{background:#000c}.hiring-doc-viewer header{margin-bottom:12px}.hiring-doc-viewer img{display:block;max-width:100%;max-height:72dvh;object-fit:contain;margin:auto}
   @media screen{.hiring-candidate-review .is-reading .contract-viewport,.hiring-candidate-review .is-reading>#contractArticle{position:absolute;left:-10000px}.hiring-contract-reading[hidden]{display:none}}
   @media print{.hiring-contract-reading,.hiring-contract-review .hiring-review-back,.hiring-candidate-review .contract-tools,.hiring-contract-review #contractError{display:none!important}}
   .hiring-document-preview:empty{display:none}.hiring-document-preview{margin-top:14px;color:#c7cdd0}.hiring-document-preview p{margin:0 0 8px}.hiring-document-preview img{display:block;max-width:100%;max-height:55dvh;object-fit:contain;border-radius:10px}
@@ -315,6 +316,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
   dialog.scrollTop=0;
   const panel=tabs.get(key).panel;
   if(key==='contract'&&!panel.hasChildNodes())return loadHiringContractReview(panel,h);
+  if(key==='documents')return loadGallery();
  };
  for(const [label,key] of [['Datos','data'],['Documentos','documents'],['Contrato','contract'],['Validación','validation']]){
   const button=document.createElement('button');button.type='button';button.append(hiringReviewIcon(key),document.createTextNode(label));button.id='hiring-review-tab-'+key;
@@ -332,46 +334,67 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
  };
  const groups=[['Identificación','data'],['Contacto y emergencia','contact'],['Escolaridad','education']];
  hiringFields.forEach((fields,index)=>{const section=document.createElement('section');section.className='hiring-review-section hiring-data-card';const title=document.createElement('h4');const [group,icon]=groups[index];title.append(hiringReviewIcon(icon),document.createTextNode(group));const details=document.createElement('dl');details.className='hiring-review-grid';for(const [key,label] of fields){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),value=h.data?.[key];dt.textContent=label.replace(' (opcional)','');const empty=value===null||value===undefined||String(value).trim()==='';const optional=label.includes('(opcional)');dd.textContent=empty?(optional?'No declarado':'Pendiente'):String(value);if(empty)dd.classList.add(optional?'is-missing':'is-pending');if(empty&&!optional){row.classList.add('is-pending');const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');dd.prepend(dot);}if(['address','care_responsibilities','planned_absence','alternative_address'].includes(key))row.classList.add('is-wide');row.append(dt,dd);details.append(row);}section.append(title,details);tabs.get('data').panel.append(section);});
- const documents=document.createElement('section');documents.className='hiring-review-section';documents.dataset.reviewSection='documents';documents.innerHTML='<h4>Documentos del expediente</h4>';const documentActions=document.createElement('div');documentActions.className='hiring-review-actions';documents.append(documentActions);tabs.get('documents').panel.append(documents);
- const preview=document.createElement('div');preview.className='hiring-document-preview';preview.setAttribute('aria-live','polite');
- documents.append(preview);
+ const documents=document.createElement('section');documents.className='hiring-review-section';
+ documents.innerHTML='<h4>Documentos del expediente</h4>';
+ const gallery=document.createElement('div');gallery.className='hiring-doc-gallery';documents.append(gallery);
+ tabs.get('documents').panel.append(documents);
+ const viewer=document.createElement('dialog');viewer.className='hiring-doc-viewer';viewer.setAttribute('aria-labelledby','hiring-doc-viewer-title');
+ const viewerHeader=document.createElement('header'),viewerTitle=document.createElement('strong'),viewerClose=document.createElement('button'),viewerImage=document.createElement('img');
+ viewerTitle.id='hiring-doc-viewer-title';viewerClose.textContent='Cerrar';viewerClose.type='button';viewerClose.onclick=()=>viewer.close();
+ viewer.addEventListener('keydown',event=>event.stopPropagation());
+ viewer.addEventListener('close',()=>viewerImage.removeAttribute('src'));
+ viewerHeader.append(viewerTitle,viewerClose);viewer.append(viewerHeader,viewerImage);documents.append(viewer);
+ const loaders=[];
  for(const [file,title] of [['front','Anverso del CI'],['back','Reverso del CI'],['portrait','Fotografía del trabajador']]){
-  const button=document.createElement('button');button.textContent='Ver '+title.charAt(0).toLowerCase()+title.slice(1);
-  button.onclick=async()=>{
-   if(documentActions.getAttribute('aria-busy')==='true')return;
-   documentActions.setAttribute('aria-busy','true');
-   preview.textContent='Cargando documento…';
+  const card=document.createElement('article');card.className='hiring-doc-card'+(file==='portrait'?' is-portrait':'');
+  const thumbnail=document.createElement('button');thumbnail.className='hiring-doc-thumb';thumbnail.type='button';
+  const placeholder=hiringReviewIcon(file==='portrait'?'data':'documents');thumbnail.append(placeholder);
+  thumbnail.setAttribute('aria-label','Ver '+title.toLowerCase());thumbnail.disabled=true;
+  const details=document.createElement('div'),label=document.createElement('h5'),badge=document.createElement('div');
+  label.textContent=title;badge.className='hiring-doc-status';badge.setAttribute('aria-live','polite');details.append(label,badge);
+  card.append(thumbnail,details);gallery.append(card);
+  const load=async()=>{
+   thumbnail.disabled=true;thumbnail.replaceChildren(placeholder);badge.className='hiring-doc-status';badge.textContent='Cargando…';
    try{
     let {data,error}=await sb.storage.from('hr-hiring-private').download(t.id+'/'+file);
-    let caption=title;
+    let candidatePhoto=false;
     if(error&&h.inherited_documents?.[file])({data,error}=await sb.storage.from('hr-identity-private').download(h.inherited_documents[file]));
     const missing=()=>String(error?.statusCode||error?.status||'')==='404'||/object not found/i.test(error?.message||'');
     if(error&&missing()&&file==='portrait'){
      const {data:rows,error:lookupError}=await sb.from('hr_candidate_answers').select('answer').eq('candidate_id',id).eq('question_key','photo_path').limit(1);
      if(lookupError)throw lookupError;
      const path=String(rows?.[0]?.answer||'').trim();
-     if(path){
-      ({data,error}=await sb.storage.from('hr-candidate-files').download(path));
-      caption='Foto de la candidatura · Fotografía del expediente pendiente';
-     }
+     if(path){({data,error}=await sb.storage.from('hr-candidate-files').download(path));candidatePhoto=!!data&&!error;}
     }
     if(!overlay.isConnected)return;
-    if(error||!data){
-     preview.textContent=missing()?(file==='portrait'?'Fotografía del expediente pendiente. No se encontró una foto de la candidatura.':'Este documento todavía no está disponible en el expediente.'):'No se pudo cargar el documento. Intenta nuevamente.';
-     return;
+    if(error&&!missing())throw error;
+    if(!data||candidatePhoto){
+     const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');
+     badge.classList.add('is-pending');badge.replaceChildren(dot,document.createTextNode(candidatePhoto?'Pendiente · Foto de la candidatura':'Pendiente'));
     }
-    const url=URL.createObjectURL(data);
+    if(!data)return;
+    const source=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(data);});
+    if(!overlay.isConnected)return;
+    const caption=candidatePhoto?'Foto de la candidatura':title;
     const photo=document.createElement('img');photo.alt=caption;
-    photo.onload=()=>URL.revokeObjectURL(url);
-    photo.onerror=()=>{URL.revokeObjectURL(url);if(preview.contains(photo))preview.textContent='No se pudo mostrar la imagen.';};
-    const label=document.createElement('p');label.textContent=caption;
-    preview.replaceChildren(label,photo);photo.src=url;preview.scrollIntoView?.({block:'nearest'});
-   }catch(e){preview.textContent='No se pudo cargar el documento. Intenta nuevamente.';}
-   finally{documentActions.removeAttribute('aria-busy');}
+    photo.onerror=()=>showRetry();
+    const expand=document.createElement('span');expand.className='hiring-doc-expand';expand.textContent='⤢';expand.setAttribute('aria-hidden','true');
+    thumbnail.replaceChildren(photo,expand);photo.src=source;
+    if(!candidatePhoto){badge.classList.add('is-ready');badge.textContent='Disponible';}
+    thumbnail.disabled=false;
+    thumbnail.onclick=()=>{viewerTitle.textContent=caption;viewerImage.alt=caption;viewerImage.src=source;viewer.showModal();};
+   }catch(e){if(overlay.isConnected)showRetry();}
   };
-  documentActions.append(button);
+  const showRetry=()=>{
+   thumbnail.replaceChildren(placeholder);thumbnail.disabled=true;
+   const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar';retry.onclick=load;
+   badge.className='hiring-doc-status';badge.replaceChildren(document.createTextNode('No se pudo cargar la imagen. '),retry);
+  };
+  loaders.push(load);
  }
- const contractButton=document.createElement('button');contractButton.textContent='Revisar y descargar contrato laboral';contractButton.onclick=()=>{const loading=selectTab('contract');tabs.get('contract').button.focus();return loading;};documentActions.append(contractButton);
+ let galleryLoad;
+ const loadGallery=()=>galleryLoad??=Promise.all(loaders.map(load=>load()));
+ const contractButton=document.createElement('button');contractButton.className='hiring-doc-contract';contractButton.textContent='Ir al contrato →';contractButton.onclick=()=>{const loading=selectTab('contract');tabs.get('contract').button.focus();return loading;};documents.append(contractButton);
  const controls=document.createElement('section');controls.className='hiring-review-section hiring-checklist';controls.dataset.reviewSection='validation';const steps=document.createElement('ol');steps.className='hiring-validation-list';controls.append(steps);tabs.get('validation').panel.append(controls);
  const actions=document.createElement('div');actions.className='hiring-review-actions';
  let primaryAction;
