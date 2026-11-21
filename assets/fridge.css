@@ -237,3 +237,10 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 #fridge-app.fr-limited-workspace .fr-nav{display:flex;justify-content:space-evenly}
 #fridge-app.fr-limited-workspace .fr-nav [data-tab]:not([hidden]){display:flex;flex:1}
 #fridge-app.fr-limited-workspace .fr-nav [hidden]{display:none!important}
+
+/* Fill the desktop workspace; touch tablet and phone layouts keep their sizing. */
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+ .fridge-left-layout #fridge-app{width:100%;max-width:none}
+ .fridge-left-layout .fr-summary{max-width:none}
+ .fridge-left-layout .fr-nav{left:50%}
+}
