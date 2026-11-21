@@ -68,15 +68,42 @@ async function openHiringContractReview(h,returnTo=null){
 function hiringCandidateLabel(x,fallback){return x.status==='trial'&&hiringCases[String(x.id)]?.notified_at?'Contratación en trámite':fallback;}
 async function loadHiringCases(){const {data,error}=await sb.from('hr_hiring_cases').select('trial_id,candidate_id,notified_at,verified_at,signed_at,employee_id,revision,submitted_at,revoked_at,expires_at');if(error)throw Error('No se pudo comprobar la contratación. '+error.message);hiringCases=Object.fromEntries((data||[]).map(h=>[String(h.candidate_id),h]));}
 function hiringToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
+let hiringMessageDraft;
+function hiringAddReview(candidateId,overlay,dialog){
+ const review=document.createElement('button');
+ review.textContent='Revisar expediente y contrato';
+ review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,dialog,review));
+ dialog.append(review);
+}
 async function openHiringPreparationNotification(candidateId,renew=false){
- // Reopening is read-only. Only an explicit renewal may rotate existing links.
- if(!renew&&hiringCases[String(candidateId)])return openHiringReview(candidateId);
+ const existing=hiringCases[String(candidateId)];
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
+ if(!renew&&existing&&candidate){
+  const draft=hiringMessageDraft;
+  if(draft?.candidateId===candidateId&&draft.expiresAt===existing.expires_at&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()){
+   draft.restore();
+   return;
+  }
+  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
+  const status=document.createElement('p');
+  status.textContent=existing.employee_id?'Consulta el mensaje de contratación.':'Puedes revisar el mensaje. Para enviarlo con enlaces activos, prepara nuevos enlaces.';
+  dialog.append(status,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
+  if(!existing.employee_id){
+   const renewLinks=document.createElement('button');
+   renewLinks.textContent='Renovar enlaces y preparar mensaje';
+   renewLinks.onclick=()=>openHiringPreparationNotification(candidateId,true);
+   dialog.append(renewLinks);
+  }
+  hiringAddReview(candidateId,overlay,dialog);
+  hiringReturnToSheet(dialog,overlay);
+  return;
+ }
  if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue')return alert('Actualiza la ficha para comprobar la etapa.');
  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
  const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Preparando enlaces individuales protegidos…';dialog.append(status);
 
  try{
+  hiringMessageDraft=undefined;
   const token=hiringToken(),prepared=await hiringRpc('hr_prepare_hiring',{p_trial:trial.id,p_token:token});
   await loadHiringCases();
   const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
@@ -84,7 +111,7 @@ async function openHiringPreparationNotification(candidateId,renew=false){
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;dialog.append(editor);
   const links=hiringPersonalLinks(form,contract);dialog.append(links);
   const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;
-  confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
+  confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);hiringMessageDraft=undefined;overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
   const send=document.createElement('button');send.className='hiring-whatsapp';send.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg><span>Abrir WhatsApp</span>';let opened=false;
   send.onclick=async()=>{
    if(send.disabled)return;
@@ -108,8 +135,9 @@ async function openHiringPreparationNotification(candidateId,renew=false){
    }catch(e){status.textContent=e.message;send.textContent='Abrir WhatsApp';send.disabled=false;}
   };
   dialog.append(send,confirmSend);
-  const review=document.createElement('button');review.textContent='Revisar expediente y contrato';review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,dialog,review));dialog.append(review);
+  hiringAddReview(candidateId,overlay,dialog);
   hiringReturnToSheet(dialog,overlay);
+  hiringMessageDraft={candidateId,expiresAt:prepared.expires_at,restore:hiringRestorePanel(overlay,dialog,editor)};
  }catch(e){status.textContent=e.message;}
 }
 // Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
