@@ -28,8 +28,17 @@ w.open=()=>({location:{replace(url){assert(url.startsWith('https://wa.me/'))}},c
 await open();d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(d.querySelector('.hiring-confirm').hidden,false);
 await open();d.querySelector('#hiringNotificationOverlay').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
 await open();const validate=[...d.querySelectorAll('button')].find(b=>b.textContent==='Validar expediente revisado');await validate.onclick();await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('.hiring-review-progress>div:nth-child(2) strong').textContent,'Completada');[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);
-w.renderHiringContract=async root=>{root.textContent='Contrato simulado'};w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
-await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');await [...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar y descargar contrato laboral').onclick();[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al expediente').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),reviewPanel);d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
+w.renderHiringContract=async root=>{
+ root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
+};w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
+await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');await [...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar y descargar contrato laboral').onclick();const reading=d.querySelector('.hiring-contract-reading');
+assert.equal(reading.hidden,false);
+assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
+d.querySelector('#contractDownload').click();
+assert.equal(reading.hidden,true);
+d.querySelector('.contract-tools button').click();
+assert.equal(reading.hidden,false);
+[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al expediente').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),reviewPanel);d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
 fail=true;await open();assert(d.querySelector('[role=status]').textContent.includes('Lectura fallida'));[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);assert.equal(d.querySelectorAll('#hiringNotificationOverlay').length,1);
 // Reopen from Step 11 with a draft, then simulate a fresh page with saved links.
 fail=false;d.querySelector('.hiring-close').click();
