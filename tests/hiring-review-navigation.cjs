@@ -5,7 +5,7 @@ w.candidates=[{id:'A',full_name:'Persona simulada',status:'trial'}];w.trialPerio
 w.sb={from:()=>({select(){return this},eq(){return this},single:async()=>fail?{error:{message:'Lectura fallida'}}:{data:structuredClone(h)},then(resolve,reject){return Promise.resolve({data:[h]}).then(resolve,reject)}}),rpc:async(name,args)=>{if(name==='hr_prepare_hiring'){prepares++;return {data:{expires_at:h.expires_at}}}if(args.p_action==='verify')h.verified_at='now';return {data:null}}};
 w.eval(fs.readFileSync('assets/hiring.js','utf8')+';window.__reviewScripts=hiringReviewScripts;window.__clearDraft=()=>{hiringMessageDraft=undefined};');await w.openHiringPreparationNotification('A');const original=d.querySelector('#hiringNotificationOverlay'),editor=d.querySelector('textarea.hiring-message');editor.value+='\nTexto editado para conservar.';const edited=editor.value,links=[...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href);assert.equal(links.length,2);assert(!d.querySelector('.hiring-personal-links').textContent.includes('token'));const review=[...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato');
 async function open(){review.click();await new Promise(r=>setTimeout(r,0));}
-await open();assert.equal(d.querySelectorAll('.hiring-review-section').length,5);assert.equal(d.querySelectorAll('.hiring-validation-step').length,4);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
+await open();assert.equal(d.querySelector('#hiring-review-tab-data').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiring-review-panel-validation').hidden,true);assert.equal(d.querySelectorAll('.hiring-review-section').length,5);assert.equal(d.querySelectorAll('.hiring-validation-step').length,4);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
 const originalFrom=w.sb.from;
 const downloads=[];
 let hasCandidatePhoto=true;
@@ -15,6 +15,7 @@ w.sb.storage={from:bucket=>({download:async path=>{
  return bucket==='hr-candidate-files'?{data:new w.Blob(['photo'],{type:'image/jpeg'})}:{error:{message:'Object not found'}};
 }})};
 w.URL.createObjectURL=()=> 'blob:photo';w.URL.revokeObjectURL=()=>{};
+d.querySelector('#hiring-review-tab-documents').click();
 const portrait=[...d.querySelectorAll('button')].find(b=>b.textContent==='Ver fotografía del trabajador');
 await portrait.onclick();
 assert.deepEqual(downloads,[['hr-hiring-private','T/portrait'],['hr-candidate-files','interview-photos/A/photo.jpg']]);
@@ -27,18 +28,18 @@ const back=[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver
 w.open=()=>({location:{replace(url){assert(url.startsWith('https://wa.me/'))}},close(){}});await d.querySelector('.hiring-whatsapp').onclick();assert.equal(d.querySelector('.hiring-confirm').hidden,false);
 await open();d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(d.querySelector('.hiring-confirm').hidden,false);
 await open();d.querySelector('#hiringNotificationOverlay').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
-await open();const validate=[...d.querySelectorAll('button')].find(b=>b.textContent==='Validar expediente revisado');await validate.onclick();await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('.hiring-validation-step:nth-child(2) .hiring-validation-status').textContent,'Completado');[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);
+await open();d.querySelector('#hiring-review-tab-validation').click();const validate=[...d.querySelectorAll('button')].find(b=>b.textContent==='Validar expediente revisado');await validate.onclick();await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('.hiring-validation-step:nth-child(2) .hiring-validation-status').textContent,'Completado');[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);
 w.renderHiringContract=async root=>{
  root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
 };w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
-await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');await [...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar y descargar contrato laboral').onclick();const reading=d.querySelector('.hiring-contract-reading');
+await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await [...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar y descargar contrato laboral').onclick();const reading=d.querySelector('.hiring-contract-reading');
 assert.equal(reading.hidden,false);
 assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
 d.querySelector('#contractDownload').click();
 assert.equal(reading.hidden,true);
 d.querySelector('.contract-tools button').click();
 assert.equal(reading.hidden,false);
-[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al expediente').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),reviewPanel);d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
+d.querySelector('#hiring-review-tab-documents').click();assert.equal(d.querySelector('#hiring-review-panel-contract').hidden,true);assert.equal(d.querySelector('#hiring-review-panel-documents').hidden,false);d.querySelector('#hiring-review-tab-documents').dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.equal(d.querySelector('#hiring-review-tab-contract').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiringNotificationOverlay'),reviewPanel);d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
 fail=true;await open();assert(d.querySelector('[role=status]').textContent.includes('Lectura fallida'));[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);assert.equal(d.querySelectorAll('#hiringNotificationOverlay').length,1);
 // Reopen from Step 11 with a draft, then simulate a fresh page with saved links.
 fail=false;d.querySelector('.hiring-close').click();

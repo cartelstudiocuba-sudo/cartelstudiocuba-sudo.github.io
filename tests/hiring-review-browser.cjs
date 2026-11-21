@@ -12,14 +12,15 @@ const root=path.join(__dirname,'..'),out=path.join(root,'test-results/hiring-rev
   window.loadHiringCases=async()=>{};window.onboardingCall=async(id,action)=>calls.push({id,action});window.preserveCandidateSheet=()=>{};window.refreshCandidateAfterStatusChange=async()=>{};
  });
  // Enter through the same principal button, including already-formalized cases.
- const open=()=>page.evaluate(()=>openHiringReview('A'));
+ const tab=name=>page.getByRole('tab',{name,exact:true});
+ const open=async()=>{await page.evaluate(()=>openHiringReview('A'));await tab('Validación').click();};
  await open();await page.locator('.hiring-validation-step').last().waitFor();
  assert.equal(await page.getByRole('button',{name:'Formalizar contratación',exact:true}).count(),0);
- for(const name of ['Datos','Documentos','Validación'])await page.getByRole('button',{name,exact:true}).click();
+ for(const name of ['Datos','Documentos','Validación'])await tab(name).click();
  await page.locator('.hiring-close').click();
  await page.evaluate(()=>h.submitted_at='now');await open();await page.getByRole('button',{name:'Validar expediente revisado',exact:true}).click();await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).waitFor();assert(await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).isEnabled());await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).click();assert(await page.getByRole('button',{name:'Formalizar contratación',exact:true}).isEnabled());
  assert(await page.locator('.hiring-notification-dialog').evaluate(n=>n.scrollWidth<=n.clientWidth));await page.screenshot({path:path.join(out,'review-'+width+'.png')});
- await page.getByRole('button',{name:'Ver anverso del CI',exact:true}).click();await page.getByText('No se pudo mostrar la imagen.',{exact:true}).waitFor();assert(await page.evaluate(()=>calls.some(c=>c.bucket==='hr-identity-private'&&c.file==='old/front')));
+ await tab('Documentos').click();await page.getByRole('button',{name:'Ver anverso del CI',exact:true}).click();await page.getByText('No se pudo mostrar la imagen.',{exact:true}).waitFor();assert(await page.evaluate(()=>calls.some(c=>c.bucket==='hr-identity-private'&&c.file==='old/front')));
  await page.getByRole('button',{name:'Ver fotografía del trabajador',exact:true}).click();await page.getByText('No se pudo cargar el documento. Intenta nuevamente.',{exact:true}).waitFor();
  const before=await page.evaluate(()=>JSON.stringify(h));await page.getByRole('button',{name:'Revisar y descargar contrato laboral',exact:true}).click();await page.locator('#contractDownload:enabled').waitFor();await page.locator('.hiring-contract-reading').waitFor();assert(await page.locator('.hiring-contract-reading').evaluate(n=>n.scrollWidth<=n.clientWidth&&getComputedStyle(n.querySelector('p')).color==='rgb(34, 34, 34)'));assert((await page.locator('#contractArticle').innerText()).includes('Persona simulada <script>'));assert.equal(await page.locator('#contractArticle script').count(),0);
  assert(await page.locator('.hiring-contract-review').evaluate(n=>n.scrollWidth<=n.clientWidth));await page.screenshot({path:path.join(out,'contract-'+width+'.png')});const pending=page.waitForEvent('download');await page.locator('#contractDownload').click();const download=await pending;await download.saveAs(path.join(out,'contract-'+width+'.pdf'));assert(fs.statSync(path.join(out,'contract-'+width+'.pdf')).size>10000);assert.equal(await page.evaluate(()=>JSON.stringify(h)),before);
@@ -27,7 +28,7 @@ const root=path.join(__dirname,'..'),out=path.join(root,'test-results/hiring-rev
  assert(await page.locator('.hiring-contract-reading').isVisible());
  await page.evaluate(()=>{window.print=()=>{window.didPrint=true;};});await page.getByRole('button',{name:'Imprimir',exact:true}).click();assert(await page.evaluate(()=>didPrint));
  await page.pdf({path:path.join(out,'print-'+width+'.pdf'),preferCSSPageSize:true,printBackground:true});
- await page.getByRole('button',{name:'Volver al expediente',exact:false}).click();
+ await tab('Validación').click();
  await page.locator('.hiring-management summary').click();
  await page.getByRole('button',{name:'Permitir correcciones del expediente',exact:true}).click();
  await page.locator('.hiring-management summary').click();
