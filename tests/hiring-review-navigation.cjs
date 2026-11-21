@@ -33,7 +33,7 @@ await open();d.querySelector('#hiring-review-tab-validation').click();const vali
 w.renderHiringContract=async root=>{
  root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
 };w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
-await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await [...d.querySelectorAll('button')].find(b=>b.textContent==='Ir al contrato →').onclick();const reading=d.querySelector('.hiring-contract-reading');
+await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await d.querySelector('#hiring-review-tab-contract').onclick();const reading=d.querySelector('.hiring-contract-reading');
 assert.equal(reading.hidden,false);
 assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
 d.querySelector('#contractDownload').click();
