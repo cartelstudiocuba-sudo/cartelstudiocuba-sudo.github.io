@@ -6,6 +6,23 @@ w.sb={from:()=>({select(){return this},eq(){return this},single:async()=>fail?{e
 w.eval(fs.readFileSync('assets/hiring.js','utf8')+';window.__reviewScripts=hiringReviewScripts;window.__clearDraft=()=>{hiringMessageDraft=undefined};');await w.openHiringPreparationNotification('A');const original=d.querySelector('#hiringNotificationOverlay'),editor=d.querySelector('textarea.hiring-message');editor.value+='\nTexto editado para conservar.';const edited=editor.value,links=[...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href);assert.equal(links.length,2);assert(!d.querySelector('.hiring-personal-links').textContent.includes('token'));const review=[...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato');
 async function open(){review.click();await new Promise(r=>setTimeout(r,0));}
 await open();assert.equal(d.querySelectorAll('.hiring-review-section').length,5);assert.equal(d.querySelectorAll('.hiring-review-progress>div').length,3);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
+const originalFrom=w.sb.from;
+const downloads=[];
+let hasCandidatePhoto=true;
+w.sb.from=(table)=>table==='hr_candidate_answers'?{select(){return this},eq(){return this},limit:async()=>({data:hasCandidatePhoto?[{answer:'interview-photos/A/photo.jpg'}]:[]})}:originalFrom(table);
+w.sb.storage={from:bucket=>({download:async path=>{
+ downloads.push([bucket,path]);
+ return bucket==='hr-candidate-files'?{data:new w.Blob(['photo'],{type:'image/jpeg'})}:{error:{message:'Object not found'}};
+}})};
+w.URL.createObjectURL=()=> 'blob:photo';w.URL.revokeObjectURL=()=>{};
+const portrait=[...d.querySelectorAll('button')].find(b=>b.textContent==='Ver fotografía del trabajador');
+await portrait.onclick();
+assert.deepEqual(downloads,[['hr-hiring-private','T/portrait'],['hr-candidate-files','interview-photos/A/photo.jpg']]);
+assert(d.querySelector('.hiring-document-preview img').alt.includes('Foto de la candidatura'));
+hasCandidatePhoto=false;await portrait.onclick();
+assert(d.querySelector('.hiring-document-preview').textContent.includes('Fotografía del expediente pendiente'));
+assert.equal(d.querySelectorAll('.hiring-validation-step').length,3);
+assert.equal(d.querySelector('.hiring-management').open,false);
 const back=[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje');back.click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(editor.value,edited);assert.deepEqual([...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href),links);assert.equal(prepares,1);assert.equal(d.activeElement,review);
 w.open=()=>({location:{replace(url){assert(url.startsWith('https://wa.me/'))}},close(){}});await d.querySelector('.hiring-whatsapp').onclick();assert.equal(d.querySelector('.hiring-confirm').hidden,false);
 await open();d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(d.querySelector('.hiring-confirm').hidden,false);
