@@ -1,4 +1,8 @@
-<!doctype html><html lang="es"><head><script src="/assets/tutor-presentation.js?v=20261027fast"></script><script id="rrhh-desktop-shell-20261022">
+<!doctype html><html lang="es"><head><script>
+if(window.top===window&&(navigator.standalone||matchMedia('(display-mode: standalone)').matches)&&'serviceWorker' in navigator){
+ navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(()=>{});
+}
+</script><script src="/assets/tutor-presentation.js?v=20261027fast"></script><script id="rrhh-desktop-shell-20261022">
 (function(){
  const params=new URLSearchParams(location.search);
  // embedded=1 controls the module UI; only a real parent frame owns desktop navigation.
@@ -3708,7 +3712,7 @@ async function openCv(path){
 window.addEventListener('pagehide',()=>{if(managedCvUse&&!managedCvOpening)managedCvRequest({action:'release',use_id:managedCvUse},true).catch(()=>{});});
 
 
-if("serviceWorker" in navigator){window.addEventListener("load",async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)))}catch(e){}})}bindCvViewerClose();syncBackToAllRoles();CartelLoad.run("boot",boot);</script><script id="vacancy-management-carousel-controls-20261022">
+bindCvViewerClose();syncBackToAllRoles();CartelLoad.run("boot",boot);</script><script id="vacancy-management-carousel-controls-20261022">
 (function(){
 function init(){
  const wrap=document.querySelector('body.vacancy-management-mode .vacancy-management-grid-wrap');
