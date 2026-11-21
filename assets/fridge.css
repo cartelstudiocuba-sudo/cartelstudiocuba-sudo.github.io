@@ -240,7 +240,12 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
 
 /* Fill the desktop workspace; touch tablet and phone layouts keep their sizing. */
 @media (min-width:901px) and (hover:hover) and (pointer:fine){
- .fridge-left-layout #fridge-app{width:100%;max-width:none}
- .fridge-left-layout .fr-summary{max-width:none}
+ .fridge-left-layout #fridge-app,
+ .recon-guided #fridge-app,
+ .recon-manager.manager-report-open #fridge-app,
+ .recon-manager:not(.manager-report-open) #fridge-app{width:100%;max-width:none}
+ .fridge-left-layout .fr-summary,
+ .fridge-left-layout .fr-account-board,
+ .fridge-left-layout #fr-content>.fr-receipt{width:100%;max-width:none}
  .fridge-left-layout .fr-nav{left:50%}
 }
