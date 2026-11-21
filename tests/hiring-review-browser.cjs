@@ -25,7 +25,7 @@ const root=path.join(__dirname,'..'),out=path.join(root,'test-results/hiring-rev
  assert(await page.evaluate(()=>calls.some(c=>c.bucket==='hr-identity-private'&&c.file==='old/front')));
  const before=await page.evaluate(()=>JSON.stringify(h));await tab('Contrato').click();await page.locator('#contractDownload:enabled').waitFor();await page.locator('.hiring-contract-reading').waitFor();assert(await page.locator('.hiring-contract-reading').evaluate(n=>n.scrollWidth<=n.clientWidth&&getComputedStyle(n.querySelector('p')).color==='rgb(34, 34, 34)'));assert((await page.locator('#contractArticle').innerText()).includes('Persona simulada <script>'));assert.equal(await page.locator('#contractArticle script').count(),0);
  assert(await page.locator('.hiring-contract-review').evaluate(n=>n.scrollWidth<=n.clientWidth));await page.screenshot({path:path.join(out,'contract-'+width+'.png')});const pending=page.waitForEvent('download');await page.locator('#contractDownload').click();const download=await pending;await download.saveAs(path.join(out,'contract-'+width+'.pdf'));assert(fs.statSync(path.join(out,'contract-'+width+'.pdf')).size>10000);assert.equal(await page.evaluate(()=>JSON.stringify(h)),before);
- await page.getByRole('button',{name:'Lectura cómoda',exact:true}).click();
+ await page.getByRole('button',{name:'Lectura',exact:true}).click();
  assert(await page.locator('.hiring-contract-reading').isVisible());
  await page.evaluate(()=>{window.print=()=>{window.didPrint=true;};});await page.getByRole('button',{name:'Imprimir',exact:true}).click();assert(await page.evaluate(()=>didPrint));
  await page.pdf({path:path.join(out,'print-'+width+'.pdf'),preferCSSPageSize:true,printBackground:true});

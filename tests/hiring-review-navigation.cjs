@@ -35,6 +35,13 @@ w.renderHiringContract=async root=>{
 };w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js'])window.__reviewScripts.set(file,Promise.resolve())");
 await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await d.querySelector('#hiring-review-tab-contract').onclick();const reading=d.querySelector('.hiring-contract-reading');
 assert.equal(reading.hidden,false);
+const [readMode,letterMode]=d.querySelectorAll('.hiring-contract-modes button');
+assert.equal(readMode.getAttribute('aria-pressed'),'true');
+letterMode.click();
+assert.equal(reading.hidden,true);
+assert.equal(letterMode.getAttribute('aria-pressed'),'true');
+readMode.click();
+assert.equal(reading.hidden,false);
 assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
 d.querySelector('#contractDownload').click();
 assert.equal(reading.hidden,true);
