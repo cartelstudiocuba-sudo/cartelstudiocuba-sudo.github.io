@@ -16,7 +16,10 @@ ${contract}
 Una vez recibida y validada la documentación, podremos formalizar tu incorporación a nuestro equipo. Bienvenido a esta nueva etapa en El Cartel Studio.`;}
 
 // Strip only an explicit display-only test label; never change the stored identity.
-function hiringGreetingName(candidate){return String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—–-]\s*(?=\S)/i,'').trim();}
+function hiringCandidateDisplayName(candidate){return String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—–-]\s*(?=\S)/i,'').trim();}
+function hiringGreetingName(candidate){
+ return hiringCandidateDisplayName(candidate).split(/\s+/,1)[0]||'';
+}
 function hiringNotificationDialog(title,returnTo=null){
  document.getElementById('hiringNotificationOverlay')?.remove();
  if(!document.getElementById('hiringNotificationStyles')){
@@ -158,7 +161,7 @@ function hiringMessageActions(dialog){
 function hiringSendCards(overlay,dialog,candidate,trial,message){
  const recipient=document.createElement('div');recipient.className='hiring-send-recipient';
  const identity=document.createElement('div'),name=document.createElement('strong'),role=document.createElement('small');
- name.textContent=hiringGreetingName(candidate);role.textContent=dashboardCandidateRoleName(candidate);
+ name.textContent=hiringCandidateDisplayName(candidate);role.textContent=dashboardCandidateRoleName(candidate);
  identity.append(name,role);recipient.append(hiringReviewIcon('data'),identity);
  dialog.querySelector('header').after(recipient);
  const disclosure=document.createElement('details');disclosure.className='hiring-send-message';
