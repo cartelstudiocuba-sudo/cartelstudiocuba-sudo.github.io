@@ -16,7 +16,7 @@ create table studio_access_private.employee_access_snapshots (
  views jsonb not null, applied_at timestamptz not null default now()
 );
 create table studio_access_private.onboarding (
- candidate_id uuid primary key references public.hr_candidates(id),
+ candidate_id uuid primary key references public.hr_candidates(id) on delete cascade,
  employee_id uuid not null unique references public.hr_employees(id),
  role_id uuid not null references public.system_access_roles(id),
  configured_at timestamptz not null default now(),
