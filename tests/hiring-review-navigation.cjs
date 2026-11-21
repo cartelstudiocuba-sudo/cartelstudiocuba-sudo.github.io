@@ -20,7 +20,7 @@ await w.openHiringPreparationNotification('A');assert.equal(d.querySelector('tex
 w.__clearDraft();await w.openHiringPreparationNotification('A');
 const savedMessage=d.querySelector('#hiringNotificationOverlay');
 assert(savedMessage.querySelector('.hiring-message').textContent.includes('[Enlace al expediente laboral]'));
-assert.equal(savedMessage.querySelector('.hiring-whatsapp'),null);
+assert.equal(savedMessage.querySelector('.hiring-whatsapp').textContent,'Abrir WhatsApp');
 [...savedMessage.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato').click();
 await new Promise(r=>setTimeout(r,0));
 assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
@@ -30,4 +30,16 @@ assert.equal(d.querySelector('#hiringNotificationOverlay'),savedMessage);assert.
 fail=false;await w.openHiringReview('A');assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
 await d.querySelector('.hiring-review-back').onclick();
 assert.equal(d.querySelector('.hiring-notification-dialog h3').textContent,'Preparar contratación');
-assert.equal(prepares,1);dom.window.close();console.log('PASS: review navigation, saved and edited messages, direct entry and link preservation');})().catch(e=>{console.error(e);process.exit(1)});
+assert.equal(prepares,1);
+const outbound=[];
+w.open=()=>({location:{replace(url){outbound.push(url)}},close(){}});
+w.confirm=()=>false;
+await d.querySelector('.hiring-whatsapp').onclick();
+assert.equal(prepares,1);assert.equal(outbound.length,0);
+w.confirm=()=>true;
+await d.querySelector('.hiring-whatsapp').onclick();
+assert.equal(prepares,2);assert.equal(outbound.length,1);
+assert(decodeURIComponent(outbound[0]).includes('/expediente-contratacion.html#token='));
+assert(decodeURIComponent(outbound[0]).includes('/contrato-laboral.html#token='));
+assert.equal(d.querySelector('.hiring-confirm').hidden,false);
+dom.window.close();console.log('PASS: review navigation, saved and edited messages, direct entry and link preservation');})().catch(e=>{console.error(e);process.exit(1)});

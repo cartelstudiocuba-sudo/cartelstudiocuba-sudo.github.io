@@ -26,7 +26,8 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-notification-dialog *{box-sizing:border-box}.hiring-notification-dialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.hiring-notification-dialog h3{margin:0;color:#fff;font-size:25px;line-height:1.25}.hiring-notification-dialog small{display:block;color:#FFDA03;font-size:11px;letter-spacing:.12em;margin-bottom:8px;font-weight:800}
   .hiring-notification-dialog p{color:#c7cdd0;margin:18px 0}.hiring-notification-dialog button{font:600 14px/1.4 system-ui,sans-serif;border:1px solid #555a5d;border-radius:12px;padding:13px 18px;background:#262b2e;color:#fff;cursor:pointer;min-height:46px}.hiring-notification-dialog button:focus-visible{outline:3px solid #FFDA03;outline-offset:3px}.hiring-notification-dialog button:disabled{opacity:.55;cursor:wait}.hiring-notification-dialog button[hidden]{display:none}.hiring-notification-dialog .hiring-close{padding:4px;width:42px;min-height:42px;font-size:26px;flex-shrink:0;background:transparent}.hiring-notification-dialog .hiring-message{margin:20px 0;padding:22px;border:1px solid #373e42;border-radius:16px;background:#0d1012;white-space:pre-wrap;overflow-wrap:anywhere;max-height:48dvh;overflow:auto;user-select:text;line-height:1.75}.hiring-notification-dialog textarea.hiring-message{display:block;width:100%;height:40dvh;min-height:140px;resize:vertical;color:#edf0f2;font:inherit;line-height:1.75}.hiring-notification-dialog textarea.hiring-message:focus-visible{outline:2px solid #FFDA03;outline-offset:3px}.hiring-message a{color:#FFDA03;text-decoration:underline;overflow-wrap:anywhere}.hiring-notification-dialog .hiring-whatsapp{background:#218c52;border-color:#36b16e;display:inline-flex;gap:10px;align-items:center;justify-content:center}.hiring-whatsapp svg{width:22px;height:22px;flex-shrink:0}.hiring-notification-dialog .hiring-confirm{display:block;width:100%;margin-top:12px;color:#FFDA03;border-color:#817020;background:#292719}
   .hiring-notification-dialog.hiring-candidate-review{width:900px;line-height:1.5}.hiring-notification-dialog .hiring-review-back{position:sticky;top:0;z-index:2;margin:0 0 18px;display:inline-flex;align-items:center;color:#ffe566;border-color:#ffda0350;background:#28291d}.hiring-review-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:22px}.hiring-review-progress>div{min-width:0;border:1px solid #ffffff20;border-radius:14px;padding:14px;background:linear-gradient(145deg,#ffffff0b,#ffffff03)}.hiring-review-progress span{display:block;font-size:12px;color:#bec7cc}.hiring-review-progress strong{display:block;font-size:15px;margin-top:5px;color:#ffe17a}.hiring-review-progress .is-ready strong{color:#84e2b5}.hiring-review-section{margin:16px 0;padding:20px;border:1px solid #ffffff1c;border-radius:17px;background:#ffffff03}.hiring-notification-dialog .hiring-review-section h4{font-size:16px;line-height:1.4;margin:0 0 16px;color:#fff}.hiring-review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;margin:0}.hiring-review-grid>div{min-width:0}.hiring-review-grid .is-wide{grid-column:1/-1}.hiring-review-grid dt{font-size:12px;color:#aeb9c0;line-height:1.45;margin-bottom:5px}.hiring-review-grid dd{font-size:14px;color:#edf0f2;margin:0;overflow-wrap:anywhere;white-space:pre-wrap;font-weight:600}.hiring-review-grid dd.is-missing{font-weight:400;color:#8d9aa2}.hiring-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hiring-review-actions button{min-width:0;white-space:normal;text-align:left;font-size:13px}.hiring-notification-dialog .hiring-review-primary{background:linear-gradient(130deg,#ffe969,#ffda03);color:#191919;border-color:#ffe45b}.hiring-personal-links{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}.hiring-personal-links a{display:flex;align-items:center;padding:11px 14px;border:1px solid #ffda0340;border-radius:12px;color:#ffe566;background:#ffda0309;font-size:13px;text-decoration:none;overflow-wrap:anywhere}.hiring-personal-links a:focus-visible{outline:2px solid #ffda03;outline-offset:3px}
-  @media(max-width:600px){.hiring-review-grid{grid-template-columns:minmax(0,1fr)}.hiring-review-section{padding:15px}.hiring-review-actions{grid-template-columns:minmax(0,1fr)}.hiring-review-progress{gap:6px}.hiring-review-progress>div{padding:11px 8px}.hiring-review-progress span{font-size:10px}.hiring-review-progress strong{font-size:12px}.hiring-personal-links a{width:100%}}
+  .hiring-message-actions{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;padding-top:14px;border-top:1px solid #ffffff20}.hiring-message-actions .hiring-whatsapp,.hiring-message-actions .hiring-confirm{grid-column:1/-1;margin:0}.hiring-message-actions button{min-width:0;white-space:normal}.hiring-message-actions .hiring-whatsapp{font-weight:750;background:linear-gradient(150deg,#1c844a,#126338);box-shadow:0 3px 0 #0c4828}
+  @media(max-width:600px){.hiring-message-actions{grid-template-columns:minmax(0,1fr)}.hiring-review-grid{grid-template-columns:minmax(0,1fr)}.hiring-review-section{padding:15px}.hiring-review-actions{grid-template-columns:minmax(0,1fr)}.hiring-review-progress{gap:6px}.hiring-review-progress>div{padding:11px 8px}.hiring-review-progress span{font-size:10px}.hiring-review-progress strong{font-size:12px}.hiring-personal-links a{width:100%}}
   @media(max-width:600px){.hiring-notification-overlay{padding:10px}.hiring-notification-dialog{padding:20px 16px;max-height:calc(100dvh - 20px);border-radius:18px}.hiring-notification-dialog h3{font-size:22px}.hiring-notification-dialog .hiring-message{padding:16px;font-size:14px}.hiring-notification-dialog .hiring-whatsapp{width:100%}}
   `;document.head.append(style);
  }
@@ -68,14 +69,27 @@ async function openHiringContractReview(h,returnTo=null){
 function hiringCandidateLabel(x,fallback){return x.status==='trial'&&hiringCases[String(x.id)]?.notified_at?'Contratación en trámite':fallback;}
 async function loadHiringCases(){const {data,error}=await sb.from('hr_hiring_cases').select('trial_id,candidate_id,notified_at,verified_at,signed_at,employee_id,revision,submitted_at,revoked_at,expires_at');if(error)throw Error('No se pudo comprobar la contratación. '+error.message);hiringCases=Object.fromEntries((data||[]).map(h=>[String(h.candidate_id),h]));}
 function hiringToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
+const hiringWhatsAppIcon='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg>';
+function hiringWhatsAppButton(){
+ const button=document.createElement('button');
+ button.className='hiring-whatsapp';
+ button.innerHTML=hiringWhatsAppIcon+'<span>Abrir WhatsApp</span>';
+ return button;
+}
+function hiringMessageActions(dialog){
+ const actions=document.createElement('footer');
+ actions.className='hiring-message-actions';
+ dialog.append(actions);
+ return actions;
+}
 let hiringMessageDraft;
-function hiringAddReview(candidateId,overlay,dialog){
+function hiringAddReview(candidateId,overlay,container){
  const review=document.createElement('button');
  review.textContent='Revisar expediente y contrato';
- review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,dialog,review));
- dialog.append(review);
+ review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,overlay.firstElementChild,review));
+ container.append(review);
 }
-async function openHiringPreparationNotification(candidateId,renew=false,previewOnly=false){
+async function openHiringPreparationNotification(candidateId,renew=false,previewOnly=false,whatsappTab=null){
  const existing=hiringCases[String(candidateId)];
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
  if(!renew&&(existing||previewOnly)&&candidate){
@@ -86,19 +100,27 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   }
   const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
   const status=document.createElement('p');
-  status.textContent=existing?.employee_id?'Consulta el mensaje de contratación.':'Puedes revisar el mensaje. Para enviarlo con enlaces activos, prepara nuevos enlaces.';
+  status.setAttribute('role','status');
+  status.textContent=existing?.employee_id?'Contratación formalizada.':'Al abrir WhatsApp se prepararán los enlaces del expediente y del contrato.';
   dialog.append(status,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
+  const actions=hiringMessageActions(dialog);
   if(!existing?.employee_id){
-   const renewLinks=document.createElement('button');
-   renewLinks.textContent='Renovar enlaces y preparar mensaje';
-   renewLinks.onclick=()=>openHiringPreparationNotification(candidateId,true);
-   dialog.append(renewLinks);
+   const send=hiringWhatsAppButton();
+   send.onclick=()=>{
+    if(candidatePhone(candidate).length<8){status.textContent='Falta un WhatsApp válido.';return;}
+    if(existing&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()&&
+       !confirm('Se crearán enlaces nuevos. Los anteriores dejarán de funcionar. ¿Continuar?'))return;
+    const tab=window.open('about:blank','_blank');
+    if(!tab){status.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
+    return openHiringPreparationNotification(candidateId,true,false,tab);
+   };
+   actions.append(send);
   }
-  hiringAddReview(candidateId,overlay,dialog);
-  hiringReturnToSheet(dialog,overlay);
+  hiringAddReview(candidateId,overlay,actions);
+  hiringReturnToSheet(actions,overlay);
   return;
  }
- if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue')return alert('Actualiza la ficha para comprobar la etapa.');
+ if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue'){whatsappTab?.close();return alert('Actualiza la ficha para comprobar la etapa.');}
  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
  const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Preparando enlaces individuales protegidos…';dialog.append(status);
 
@@ -106,13 +128,14 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   hiringMessageDraft=undefined;
   const token=hiringToken(),prepared=await hiringRpc('hr_prepare_hiring',{p_trial:trial.id,p_token:token});
   await loadHiringCases();
+  if(!overlay.isConnected){whatsappTab?.close();return;}
   const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
   status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Abrir WhatsApp no confirma su envío.';
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;dialog.append(editor);
   const links=hiringPersonalLinks(form,contract);dialog.append(links);
   const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;
   confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);hiringMessageDraft=undefined;overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
-  const send=document.createElement('button');send.className='hiring-whatsapp';send.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z"/><path d="M8 7.5c.5 4 3 6.5 7 7l1-2-2.5-1-1 1c-1.5-.7-2.3-1.5-3-3l1-1-1-2.5Z"/></svg><span>Abrir WhatsApp</span>';let opened=false;
+  const send=hiringWhatsAppButton();let opened=false;
   send.onclick=async()=>{
    if(send.disabled)return;
    const phone=candidatePhone(candidate);
@@ -123,7 +146,8 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
    try{
     if(!opened){
      // Reserve synchronously so popup blocking never advances the route.
-     const tab=window.open('about:blank','_blank');
+     const tab=whatsappTab||window.open('about:blank','_blank');
+     whatsappTab=null;
      if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
      try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
      opened=true;
@@ -134,11 +158,21 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
     status.textContent='WhatsApp abierto. Si enviaste el mensaje, confirma la notificación para avanzar al paso 12.';send.disabled=false;
    }catch(e){status.textContent=e.message;send.textContent='Abrir WhatsApp';send.disabled=false;}
   };
-  dialog.append(send,confirmSend);
-  hiringAddReview(candidateId,overlay,dialog);
-  hiringReturnToSheet(dialog,overlay);
+  const actions=hiringMessageActions(dialog);
+  actions.append(send,confirmSend);
+  hiringAddReview(candidateId,overlay,actions);
+  hiringReturnToSheet(actions,overlay);
   hiringMessageDraft={candidateId,expiresAt:prepared.expires_at,restore:hiringRestorePanel(overlay,dialog,editor)};
- }catch(e){status.textContent=e.message;}
+  if(whatsappTab)await send.onclick();
+ }catch(e){
+  whatsappTab?.close();
+  status.textContent=e.message;
+  if(overlay.isConnected){
+   const actions=hiringMessageActions(dialog);
+   const retry=document.createElement('button');retry.textContent='Reintentar';retry.onclick=()=>openHiringPreparationNotification(candidateId);
+   actions.append(retry);hiringAddReview(candidateId,overlay,actions);hiringReturnToSheet(actions,overlay);
+  }
+ }
 }
 // Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
 const hiringNotificationSaves=new Map();
