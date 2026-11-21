@@ -2,7 +2,7 @@ const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert
 (async()=>{const dom=new JSDOM('<!doctype html><button id="entry">Contratar</button>',{url:'https://gestion.elcartelstudio.com/rrhh.html',runScripts:'outside-only'}),w=dom.window,d=w.document;w.alert=m=>{throw Error(m)};w.confirm=()=>true;w.structuredClone=structuredClone;
 const h={trial_id:'T',candidate_id:'A',expires_at:'2099-01-01T00:00:00Z',revision:1,data:{full_name:'Persona <script>alert(1)</script>',mobile:'12345678'},contract:{logos:{}},submitted_at:'now',verified_at:null,signed_at:null,employee_id:null};let prepares=0,fail=false;
 w.candidates=[{id:'A',full_name:'Persona simulada',status:'trial'}];w.trialPeriodsByCandidate={A:{id:'T',stage:'training'}};w.trainingNotificationByTrial={T:true};w.trainingDecisionByTrial={T:'continue'};w.dashboardCandidateRoleName=()=> 'Plaza simulada';w.candidatePhone=()=> '5312345678';w.preserveCandidateSheet=()=>{};w.refreshCandidateAfterStatusChange=async()=>{};
-w.sb={from:()=>({select(){return this},eq(){return this},single:async()=>fail?{error:{message:'Lectura fallida'}}:{data:structuredClone(h)},then(resolve,reject){return Promise.resolve({data:[h]}).then(resolve,reject)}}),rpc:async(name,args)=>{if(name==='hr_prepare_hiring'){prepares++;return {data:{expires_at:h.expires_at}}}if(args.p_action==='verify')h.verified_at='now';return {data:null}}};
+w.sb={from:()=>({select(){return this},eq(){return this},single:async()=>fail?{error:{message:'Lectura fallida'}}:{data:structuredClone(h)},then(resolve,reject){return Promise.resolve({data:[h]}).then(resolve,reject)}}),rpc:async(name,args)=>{if(name==='hr_prepare_hiring'){prepares++;return {data:{expires_at:h.expires_at}}}if(name==='hr_preview_hiring_form')return {data:{data:h.data,role_title:'Plaza simulada',front:true}};if(args.p_action==='verify')h.verified_at='now';return {data:null}}};
 w.eval(fs.readFileSync('assets/cuba-localities.js','utf8')+'\n'+fs.readFileSync('assets/hiring.js','utf8')+';window.__reviewScripts=hiringReviewScripts;window.__clearDraft=()=>{hiringMessageDraft=undefined};');await w.openHiringPreparationNotification('A');const original=d.querySelector('#hiringNotificationOverlay'),editor=d.querySelector('textarea.hiring-message');editor.value+='\nTexto editado para conservar.';const edited=editor.value,links=[...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href);assert.equal(links.length,2);assert(!d.querySelector('.hiring-personal-links').textContent.includes('token'));const review=[...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato');
 w.sb.from=((originalFrom)=>table=>{
  const query=originalFrom(table);
@@ -11,12 +11,16 @@ w.sb.from=((originalFrom)=>table=>{
 })(w.sb.from);
 const formPreview=d.querySelector('[aria-label="Previsualizar formulario de expediente"]');
 await formPreview.onclick();
-assert.equal(d.querySelector('#hiringForm [name=full_name]').disabled,true);
+assert.equal(d.querySelector('#hiringForm [name=full_name]').type,'hidden');
+assert.equal(d.querySelector('#hiringForm [name=front]'),null);
+assert.equal(d.querySelector('#hiringPrev'),null);
+assert.equal(original.querySelectorAll('.hiring-send-card').length,1);
 await d.querySelector('#hiringNext').onclick();
 assert.equal(d.querySelector('#hiringForm section:nth-of-type(2)').hidden,false);
 await d.querySelector('#hiringNext').onclick();
 await d.querySelector('#hiringNext').onclick();
-assert.equal(d.querySelector('#hiringSubmit').hidden,true);
+assert.equal(d.querySelector('#hiringSubmit').hidden,false);
+assert.equal(d.querySelector('#hiringSubmit').disabled,true);
 d.querySelector('.hiring-review-back').click();
 assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
 assert.equal(editor.value,edited);
