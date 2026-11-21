@@ -26,5 +26,8 @@ await new Promise(r=>setTimeout(r,0));
 assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
 d.querySelector('.hiring-review-back').click();
 assert.equal(d.querySelector('#hiringNotificationOverlay'),savedMessage);assert.equal(prepares,1);
-// Opening a case directly retains a route back to its candidate sheet.
-fail=false;await w.openHiringReview('A');assert([...d.querySelectorAll('button')].some(b=>b.textContent==='← Volver a la ficha'));d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),null);dom.window.close();console.log('PASS: grouped review, escaped data, optional blanks, friendly links; edited message/token preserved through back, close, Escape, validation, contract and error; direct sheet return');})().catch(e=>{console.error(e);process.exit(1)});
+// Direct review entries still return to the message, without rotating links.
+fail=false;await w.openHiringReview('A');assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
+await d.querySelector('.hiring-review-back').onclick();
+assert.equal(d.querySelector('.hiring-notification-dialog h3').textContent,'Preparar contratación');
+assert.equal(prepares,1);dom.window.close();console.log('PASS: review navigation, saved and edited messages, direct entry and link preservation');})().catch(e=>{console.error(e);process.exit(1)});

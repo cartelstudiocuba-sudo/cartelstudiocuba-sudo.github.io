@@ -75,20 +75,20 @@ function hiringAddReview(candidateId,overlay,dialog){
  review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,dialog,review));
  dialog.append(review);
 }
-async function openHiringPreparationNotification(candidateId,renew=false){
+async function openHiringPreparationNotification(candidateId,renew=false,previewOnly=false){
  const existing=hiringCases[String(candidateId)];
  const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
- if(!renew&&existing&&candidate){
+ if(!renew&&(existing||previewOnly)&&candidate){
   const draft=hiringMessageDraft;
-  if(draft?.candidateId===candidateId&&draft.expiresAt===existing.expires_at&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()){
+  if(existing&&draft?.candidateId===candidateId&&draft.expiresAt===existing.expires_at&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()){
    draft.restore();
    return;
   }
   const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
   const status=document.createElement('p');
-  status.textContent=existing.employee_id?'Consulta el mensaje de contratación.':'Puedes revisar el mensaje. Para enviarlo con enlaces activos, prepara nuevos enlaces.';
+  status.textContent=existing?.employee_id?'Consulta el mensaje de contratación.':'Puedes revisar el mensaje. Para enviarlo con enlaces activos, prepara nuevos enlaces.';
   dialog.append(status,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
-  if(!existing.employee_id){
+  if(!existing?.employee_id){
    const renewLinks=document.createElement('button');
    renewLinks.textContent='Renovar enlaces y preparar mensaje';
    renewLinks.onclick=()=>openHiringPreparationNotification(candidateId,true);
@@ -177,7 +177,10 @@ async function resumeHiringConfirmation(id){
 async function openHiringReview(id,returnTo=null){
  const {overlay,dialog}=hiringNotificationDialog('Revisar expediente y contrato',returnTo);dialog.classList.add('hiring-candidate-review');const t=trialPeriodsByCandidate[String(id)];
  const status=document.createElement('p');status.setAttribute('role','status');dialog.append(status);
- hiringReviewBack(dialog,()=>{overlay.remove();if(returnTo)returnTo();},returnTo?'Volver al mensaje':'Volver a la ficha');
+ hiringReviewBack(dialog,()=>{
+  overlay.remove();
+  return returnTo ? returnTo() : openHiringPreparationNotification(id,false,true);
+ },'Volver al mensaje');
  try{
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
  if(!overlay.isConnected)return;
