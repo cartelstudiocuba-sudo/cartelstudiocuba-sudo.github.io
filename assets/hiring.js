@@ -500,7 +500,7 @@ function showHiringCandidateForm(root,result,token,preview=false){
  if(result.locked){root.textContent='Tu expediente está validado. Solicita a RRHH cualquier corrección.';return;}
  renderHiringForm(root,result,token,preview);
 }
-function renderHiringForm(root,result,token,preview){
+function renderHiringForm(root,result,token,preview,onComplete){
  const saved=result.data||{},optional=new Set(['fixed_phone','alternative_address','civil_status','has_children','care_responsibilities','planned_absence']);
  root.innerHTML='<div class="brand">CARTEL <span>GESTIÓN</span></div><h1>Completar expediente laboral</h1><p>'+hiringEsc(result.role_title)+'</p><p>Completa los datos y documentos pendientes.</p><p class="privacy-note">Los datos de familia son voluntarios y se usan solo para coordinar horarios y permisos. No incluyas diagnósticos ni datos médicos aquí. Si necesitas una adaptación de salud, puedes solicitar voluntariamente a RRHH un canal confidencial: se tratará solo lo necesario para esa finalidad, con acceso restringido y separado del contrato.</p><form id="hiringForm"><nav aria-label="Secciones del expediente"></nav><section><h2>Datos personales</h2></section><section hidden><h2>Contacto y emergencia</h2></section><section hidden><h2>Documentación y escolaridad</h2></section><section hidden><h2>Revisión y confirmación</h2><div id="hiringSummary"></div><label><input name="truth_confirmed" type="checkbox" required> Confirmo que los datos y documentos son veraces y corresponden a mi identidad.</label></section><div class="buttons"><button type="button" id="hiringNext">Siguiente</button><button id="hiringSubmit" hidden>Completar expediente</button></div><p role="alert" id="hiringResult"></p></form>';
  const form=root.querySelector('#hiringForm'),groups=[...form.querySelectorAll('section')];
@@ -620,6 +620,6 @@ function renderHiringForm(root,result,token,preview){
   form.onsubmit=event=>event.preventDefault();
   return;
  }
- const send=hiringSubmission(root,form,token,result,pending);let validating=false;
+ const send=onComplete||hiringSubmission(root,form,token,result,pending);let validating=false;
  form.noValidate=true;form.onsubmit=async e=>{e.preventDefault();if(validating||step!==finalStep)return;validating=true;try{await Promise.all(Object.values(processing));for(let i=0;i<sections.length;i++)for(const el of sections[i].querySelectorAll('input,select'))if(!el.checkValidity()){step=i;show();el.reportValidity();return;}await send();}finally{validating=false;}};
 }
