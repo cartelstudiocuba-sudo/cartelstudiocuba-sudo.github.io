@@ -17,7 +17,7 @@ Cuando termines el formulario, abre tu contrato y revísalo. Descarga el PDF, im
 
 ${contract}
 
-Cuando recibamos tu expediente y tu contrato firmado, los revisaremos para formalizar tu incorporación. Si tienes alguna duda durante el proceso, escríbenos por aquí y te ayudamos.`;}
+Cuando recibamos tu expediente y tu contrato firmado, los revisaremos para formalizar tu incorporación.`;}
 
 // Strip only an explicit display-only test label; never change the stored identity.
 function hiringCandidateDisplayName(candidate){return String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—–-]\s*(?=\S)/i,'').trim();}
