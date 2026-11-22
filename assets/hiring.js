@@ -48,6 +48,7 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-doc-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hiring-doc-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #454c50;border-radius:12px;background:linear-gradient(145deg,#2b3033,#1b1e21)}.hiring-doc-card.is-portrait{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr);align-items:center;gap:12px}.hiring-doc-card h5{margin:0;font-size:13px;line-height:1.3}.hiring-notification-dialog .hiring-doc-thumb{position:relative;display:grid;place-items:center;width:100%;padding:4px;aspect-ratio:1.6;background:#111416;border-radius:8px;border:1px solid #4a5156;color:#c4cdd2}.hiring-doc-card.is-portrait .hiring-doc-thumb{aspect-ratio:1}.hiring-doc-thumb img{width:100%;height:100%;min-height:0;object-fit:contain;border-radius:5px}.hiring-doc-expand{position:absolute;top:5px;right:5px;padding:0 4px;border-radius:4px;background:#111e;color:#fff}.hiring-doc-status{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#c7d0d6}.hiring-doc-status.is-pending{color:#ffda03}.hiring-doc-status.is-ready{color:#bdffcf}.hiring-doc-viewer{border:1px solid #53575b;border-radius:16px;background:#16191b;color:white;width:min(94vw,860px);max-width:none;padding:14px;box-sizing:border-box}.hiring-doc-viewer::backdrop{background:#000c}.hiring-doc-viewer header{margin-bottom:12px}.hiring-doc-viewer img{display:block;max-width:100%;max-height:72dvh;object-fit:contain;margin:auto}
   .hiring-send-recipient,.hiring-send-message,.hiring-send-card{border:1px solid #485055;border-radius:12px;background:linear-gradient(140deg,#292e31,#1b1e21)}.hiring-send-recipient{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:14px}.hiring-send-recipient .hiring-review-icon,.hiring-send-card .hiring-review-icon{color:#ffda03}.hiring-send-recipient strong,.hiring-send-recipient small{display:block;overflow-wrap:anywhere}.hiring-notification-dialog .hiring-send-recipient small{margin:0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-send-message{padding:10px 12px;margin-bottom:12px}.hiring-send-message summary{cursor:pointer;font-weight:700}.hiring-send-excerpt{font-size:13px;font-weight:400;color:#e2e8ec;line-height:1.45;overflow-wrap:anywhere}.hiring-send-message[open] .hiring-send-excerpt,.hiring-send-excerpt:empty{display:none}.hiring-send-message summary small{margin:3px 0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-notification-dialog .hiring-send-message .hiring-message{margin:10px 0 0;padding:12px}.hiring-send-card{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;margin-bottom:8px}.hiring-send-card .hiring-send-preview-text{font-size:11px;color:#ffe474}.hiring-notification-dialog .hiring-send-card{border-color:#485055;background:linear-gradient(140deg,#292e31,#1b1e21);font-size:13px;padding:9px 10px}.hiring-preview-form label{display:block;margin:10px 0}.hiring-preview-form input:not([type="checkbox"]),.hiring-preview-form select{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #4d565d;border-radius:6px;background:#20262b;color:#fff;opacity:1}.hiring-preview-form small{letter-spacing:normal}.hiring-preview-form [hidden]{display:none!important}
   .hiring-notification-dialog .hiring-return-to-sheet{background:#56242b;border-color:#a14853;color:#ffe4e7}
+  .hiring-notification-dialog .hiring-prepare-links{grid-column:1/-1;border-color:#8b742e;color:#ffe68b}
   @media screen{.hiring-candidate-review .is-reading .contract-viewport,.hiring-candidate-review .is-reading>#contractArticle{position:absolute;left:-10000px}.hiring-contract-reading[hidden]{display:none}}
   @media print{.hiring-contract-reading,.hiring-contract-review .hiring-review-back,.hiring-candidate-review .contract-tools,.hiring-contract-review #contractError{display:none!important}}
   .hiring-document-preview:empty{display:none}.hiring-document-preview{margin-top:14px;color:#c7cdd0}.hiring-document-preview p{margin:0 0 8px}.hiring-document-preview img{display:block;max-width:100%;max-height:55dvh;object-fit:contain;border-radius:10px}
@@ -213,21 +214,25 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
   const status=document.createElement('p');
   status.setAttribute('role','status');
-  status.textContent=existing?.employee_id?'Contratación formalizada.':'Al abrir WhatsApp se prepararán los enlaces del expediente y del contrato.';
+  status.textContent=existing?.employee_id?'Contratación formalizada.':'Prepara los enlaces para revisar o copiar el mensaje completo antes de enviarlo.';
   dialog.append(status);
   hiringSendCards(overlay,dialog,candidate,trial,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
   const actions=hiringMessageActions(dialog);
   if(!existing?.employee_id){
+   const confirmLinks=()=>!existing||existing.revoked_at||Date.parse(existing.expires_at)<=Date.now()||
+    confirm('Se crearán enlaces nuevos. Los anteriores dejarán de funcionar. ¿Continuar?');
+   const prepareLinks=document.createElement('button');
+   prepareLinks.type='button';prepareLinks.className='hiring-prepare-links';prepareLinks.textContent='Preparar enlaces del expediente y contrato';
+   prepareLinks.onclick=()=>{if(confirmLinks())return openHiringPreparationNotification(candidateId,true);};
    const send=hiringWhatsAppButton();
    send.onclick=()=>{
     if(candidatePhone(candidate).length<8){status.textContent='Falta un WhatsApp válido.';return;}
-    if(existing&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()&&
-       !confirm('Se crearán enlaces nuevos. Los anteriores dejarán de funcionar. ¿Continuar?'))return;
+    if(!confirmLinks())return;
     const tab=window.open('about:blank','_blank');
     if(!tab){status.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
     return openHiringPreparationNotification(candidateId,true,false,tab);
    };
-   actions.append(send);
+   actions.append(prepareLinks,send);
   }
   hiringAddReview(candidateId,overlay,actions);
   hiringReturnToSheet(actions,overlay);
@@ -246,6 +251,7 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Abrir WhatsApp no confirma su envío.';
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;hiringSendCards(overlay,dialog,candidate,trial,editor);
   const links=hiringPersonalLinks(form,contract);dialog.append(links);
+  dialog.querySelector('.hiring-send-message').open=true;
   const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;
   confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);hiringMessageDraft=undefined;overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
   const send=hiringWhatsAppButton();let opened=false;
@@ -254,6 +260,10 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
    const phone=candidatePhone(candidate);
    if(phone.length<8)return alert('Falta un WhatsApp válido.');
    if(!editor.value.trim())return alert('Escribe un mensaje.');
+   if(!opened&&(!editor.value.includes(form)||!editor.value.includes(contract))){
+    status.textContent='Incluye los enlaces del expediente y del contrato antes de abrir WhatsApp.';
+    whatsappTab?.close();whatsappTab=null;return;
+   }
    if(Date.parse(prepared.expires_at)<=Date.now())return status.textContent='Los enlaces han caducado. Cierra y vuelve a preparar la contratación.';
    send.disabled=true;
    try{
