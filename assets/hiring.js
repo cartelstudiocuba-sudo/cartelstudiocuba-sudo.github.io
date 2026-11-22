@@ -3,17 +3,21 @@ function hiringSelectOptions(el,options,value){el.replaceChildren(new Option('Se
 'use strict';
 const hiringEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function hiringRpc(name,args){const r=await sb.rpc(name,args);if(r.error)throw Error(r.error.message);return r.data;}
-function hiringMessage(name,plaza,form,contract){return `Felicidades, ${name}, has completado satisfactoriamente tu período de capacitación para la plaza de ${plaza}. Nos complace informarte que avanzas a la etapa de contratación oficial en El Cartel Studio. Para continuar, necesitamos que completes los siguientes pasos:
+function hiringMessage(name,plaza,form,contract){return `¡Felicidades, ${name}! Ya completaste tu capacitación para la plaza de ${plaza} y pasas a la etapa de contratación en El Cartel Studio.
 
-1. Completar tu expediente laboral: Accede al siguiente formulario para confirmar tus datos personales y proporcionar la información y documentación pendiente que necesitamos para conformar tu expediente laboral.
+*Paso 1 · Completa tu expediente laboral*
+
+Abre el formulario, completa los datos que te faltan y adjunta los documentos que te pide. Al terminar, pulsa «Completar expediente».
 
 ${form}
 
-2. Revisar y descargar tu contrato: Accede al siguiente enlace para consultar tu contrato laboral, descargarlo o imprimirlo. Deberás entregarlo firmado a tu tutor para completar el proceso de contratación.
+*Paso 2 · Prepara tu contrato para entregarlo*
+
+Cuando termines el formulario, abre tu contrato y revísalo. Descarga el PDF, imprímelo, fírmalo y entrégaselo a tu tutor.
 
 ${contract}
 
-Una vez recibida y validada la documentación, podremos formalizar tu incorporación a nuestro equipo. Bienvenido a esta nueva etapa en El Cartel Studio.`;}
+Cuando recibamos tu expediente y tu contrato firmado, los revisaremos para formalizar tu incorporación. Si tienes alguna duda durante el proceso, escríbenos por aquí y te ayudamos.`;}
 
 // Strip only an explicit display-only test label; never change the stored identity.
 function hiringCandidateDisplayName(candidate){return String(candidate.full_name||'').trim().replace(/^CANDIDATO DE PRUEBA\s*[—–-]\s*(?=\S)/i,'').trim();}
