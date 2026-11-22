@@ -566,7 +566,6 @@ function renderHiringForm(root,result,token,preview,onComplete){
    <p>Los datos de familia son voluntarios y se usan solo para coordinar horarios y permisos. Evita incluir diagnósticos o datos médicos en el expediente. Si necesitas una adaptación de salud, puedes solicitar voluntariamente a RRHH un canal confidencial. Se tratará solo lo necesario para esa finalidad, con acceso restringido y separado del contrato.</p>
   </details>`;
  const form=root.querySelector('#hiringForm'),groups=[...form.querySelectorAll('section')];
- const requestedFields=[];
  const matchingName=(names,value)=>names.find(name=>name.localeCompare(String(value??'').trim(),'es',{sensitivity:'base'})===0);
  const provinces=Object.keys(hiringLocalities);
  const savedProvince=matchingName(provinces,saved.province);
@@ -606,7 +605,6 @@ function renderHiringForm(root,result,token,preview,onComplete){
    const hidden=document.createElement('input');hidden.type='hidden';hidden.name=key;hidden.value=accepted;
    form.append(hidden);return;
   }
-  requestedFields.push([key,label]);
   const field=document.createElement('label');field.textContent=label;field.append(input);
   const note=document.createElement('small');note.setAttribute('aria-live','polite');
   const update=()=>{
@@ -629,15 +627,17 @@ function renderHiringForm(root,result,token,preview,onComplete){
   };
   province.addEventListener('change',updateMunicipality);updateMunicipality();
  }
- const pending={},processing={},requestedDocuments=[];
- for(const [key,label] of [['front','Anverso del CI'],['back','Reverso del CI'],['portrait','Fotografía del trabajador para el expediente: de los hombros hacia arriba, fondo blanco, mirando a cámara y sin sonreír']]){
+ const pending={},processing={},documentPreviews=new Map();
+ const documents=[['front','Anverso del CI'],['back','Reverso del CI'],['portrait','Fotografía']];
+ for(const [key,title] of documents){
   if(result[key])continue;
-  requestedDocuments.push([key,label]);
-  const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.type='file';input.name=key;input.accept='image/jpeg,image/png';input.required=!result[key];l.append(input);const preview=document.createElement('img');preview.alt='Vista previa de '+label;preview.hidden=true;preview.style.cssText='max-width:100%;max-height:200px';l.append(preview);let previewUrl;
-  input.onchange=()=>{processing[key]=(async()=>{input.disabled=true;try{delete pending[key];if(previewUrl)URL.revokeObjectURL(previewUrl);preview.hidden=true;const f=input.files[0];if(!f)return;pending[key]=await prepareIdentityPhoto(f);previewUrl=URL.createObjectURL(pending[key]);preview.src=previewUrl;preview.hidden=false;input.setCustomValidity('');}catch(e){input.setCustomValidity(e.message);input.reportValidity();}finally{input.disabled=false;}})();};groups[2].append(l);
+  const label=key==='portrait'?'Fotografía del trabajador para el expediente: de los hombros hacia arriba, fondo blanco, mirando a cámara y sin sonreír':title;
+  const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.type='file';input.name=key;input.accept='image/jpeg,image/png';input.required=true;l.append(input);const preview=document.createElement('img');preview.alt='Vista previa de '+title;preview.hidden=true;preview.style.cssText='max-width:100%;max-height:200px';l.append(preview);let previewUrl;
+  documentPreviews.set(key,preview);
+  input.onchange=()=>{processing[key]=(async()=>{input.disabled=true;try{delete pending[key];input.setCustomValidity('');if(previewUrl)URL.revokeObjectURL(previewUrl);preview.hidden=true;const f=input.files[0];if(!f)return;pending[key]=await prepareIdentityPhoto(f);previewUrl=URL.createObjectURL(pending[key]);preview.src=previewUrl;preview.hidden=false;}catch(e){input.setCustomValidity(e.message);input.reportValidity();}finally{input.disabled=false;}})();};groups[2].append(l);
  }
  const sections=groups.filter(group=>group.querySelector('input,select'));
- if(requestedDocuments.length){
+ if(documentPreviews.size){
   const instructions=document.createElement('p');instructions.textContent='Adjunta las imágenes pendientes, nítidas y completas.';
   groups[2].querySelector('h2').after(instructions);
  }
@@ -673,6 +673,24 @@ function renderHiringForm(root,result,token,preview,onComplete){
    .hiring-candidate-form-surface #hiringForm .buttons{display:flex;margin:14px 0}
    .hiring-candidate-form-surface #hiringForm .buttons button{flex:1;min-height:48px;background:linear-gradient(#ffe34d,#ffda03);border:1px solid #ffda03;box-shadow:0 2px 0 #a58a00;color:#111518;border-radius:11px;font:750 15px system-ui}
    .hiring-candidate-form-surface #hiringForm .buttons button span{margin-left:5px}
+   .hiring-candidate-form-surface #hiringForm .hiring-review-final{padding-bottom:12px}
+   .hiring-review-cards{display:grid;gap:9px}
+   .hiring-summary-card{min-width:0;padding:11px;border:1px solid #3f474b;border-radius:12px;background:linear-gradient(140deg,#272d30,#202528)}
+   .hiring-summary-header{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:7px}
+   .hiring-summary-header h3{display:flex;align-items:center;gap:7px;min-width:0;margin:0;color:#f3f5f6;font-size:14px;line-height:1.25}
+   .hiring-summary-card svg{display:block;width:19px;height:19px;color:#ffda03}
+   .hiring-summary-header .hiring-review-icon{flex:none}
+   .hiring-candidate-form-surface #hiringForm .hiring-summary-edit{flex:none;min-height:44px;margin:-8px -5px -8px 0;padding:5px;border:0;background:none;color:#ffdf55;font:700 13px system-ui;cursor:pointer}
+   .hiring-summary-card dl{margin:0}
+   .hiring-summary-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;padding:5px 0;border-top:1px solid #ffffff12;font-size:13px;overflow-wrap:anywhere}
+   .hiring-summary-pair dt{color:#b9c2c8}
+   .hiring-summary-pair dd{margin:0;color:#f0f2f4;font-weight:650;text-align:right}
+   .hiring-summary-documents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+   .hiring-summary-document{min-width:0;margin:0;text-align:center;overflow-wrap:anywhere}
+   .hiring-summary-thumbnail{display:grid;place-items:center;aspect-ratio:4/3;border:1px solid #465055;border-radius:8px;background:#141819;overflow:hidden}
+   .hiring-summary-thumbnail img{display:block;width:100%;height:100%;min-height:0;margin:0;border-radius:0;object-fit:contain}
+   .hiring-summary-document figcaption{margin-top:4px;color:#e5e9eb;font-size:11px;font-weight:650}
+   .hiring-candidate-form-surface #hiringForm .hiring-summary-document small{margin:1px 0;font-size:10px;color:#aeb9c0}
    .hiring-candidate-form-surface .hiring-form-result:empty{display:none}
    .hiring-candidate-form-surface #hiringForm [hidden],.hiring-candidate-form-surface #hiringForm input[type="hidden"]{display:none!important}
    .hiring-form-privacy{margin-top:17px;padding-top:9px;border-top:1px solid #42484b}
@@ -688,26 +706,70 @@ function renderHiringForm(root,result,token,preview,onComplete){
  progress.querySelector('.hiring-form-segments').replaceChildren(...segments);
  const finalStep=sections.length-1;
  const next=form.querySelector('#hiringNext'),submit=form.querySelector('#hiringSubmit');
- let step=0;
+ let step=0,editing=false;
+ const showStep=index=>{
+  step=index;show();sections[step].querySelector('h2').focus({preventScroll:true});
+  progress.scrollIntoView?.({block:'start',behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+ };
+ const summary=form.querySelector('#hiringSummary');
+ summary.className='hiring-review-cards';
+ groups.at(-1).classList.add('hiring-review-final');
+ const dateFormat=new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+ const renderSummary=()=>{
+  const cards=['Datos personales','Contacto de emergencia','Documentos'].map((title,index)=>{
+   const card=document.createElement('article'),header=document.createElement('header'),heading=document.createElement('h3');
+   card.className='hiring-summary-card';header.className='hiring-summary-header';
+   heading.append(hiringReviewIcon(['data','contact','documents'][index]),title);
+   header.append(heading);card.append(header);
+   const target=sections.indexOf(groups[index]);
+   if(target!==-1&&!preview){
+    const edit=document.createElement('button');
+    edit.type='button';edit.className='hiring-summary-edit';edit.textContent='Editar';
+    edit.setAttribute('aria-label','Editar '+title.toLocaleLowerCase('es'));
+    edit.onclick=()=>{form.elements.truth_confirmed.checked=false;editing=true;showStep(target);};
+    header.append(edit);
+   }
+   const details=document.createElement('dl');
+   for(const [key,label] of fieldsBySection[index]){
+    const value=form.elements[key].value.trim();
+    if(!value)continue;
+    const pair=document.createElement('div'),term=document.createElement('dt'),description=document.createElement('dd');
+    const date=key==='birth_date'?new Date(value):null;
+    pair.className='hiring-summary-pair';term.textContent=label.replace(/ \(opcional\)$/,'');
+    description.textContent=date&&Number.isFinite(+date)?dateFormat.format(date):value;
+    pair.append(term,description);details.append(pair);
+   }
+   if(details.childElementCount)card.append(details);
+   return card;
+  });
+  const gallery=document.createElement('div');gallery.className='hiring-summary-documents';
+  for(const [key,title] of documents){
+   const figure=document.createElement('figure'),thumbnail=document.createElement('div'),caption=document.createElement('figcaption');
+   figure.className='hiring-summary-document';thumbnail.className='hiring-summary-thumbnail';
+   const image=documentPreviews.get(key);
+   if(pending[key]&&image){
+    const photo=document.createElement('img');photo.src=image.src;photo.alt='';thumbnail.append(photo);
+   }else thumbnail.append(hiringReviewIcon(key==='portrait'?'data':'documents'));
+   const status=document.createElement('small');status.textContent=pending[key]?'Adjuntado':result[key]?'En expediente':'Pendiente';
+   caption.append(title,status);figure.append(thumbnail,caption);gallery.append(figure);
+  }
+  cards[2].append(gallery);summary.replaceChildren(...cards);
+ };
  const show=()=>{
   groups.forEach(group=>group.hidden=group!==sections[step]);
   const final=step===finalStep;
   next.hidden=final;submit.hidden=!final;submit.disabled=preview;
+  next.firstChild.nodeValue=editing?'Volver al resumen ':'Continuar ';
   progress.querySelector('.hiring-form-step').textContent='Paso '+(step+1)+' de '+sections.length;
   segments.forEach((segment,index)=>segment.classList.toggle('is-filled',index<=step));
-  if(final){
-   form.querySelector('#hiringSummary').innerHTML=requestedFields.map(([key,label])=>{
-    const value=form.elements[key].value;
-    return value?'<p><b>'+hiringEsc(label)+':</b> '+hiringEsc(value)+'</p>':'';
-   }).join('')+requestedDocuments.map(([key,label])=>'<p><b>'+hiringEsc(label)+':</b> '+(pending[key]?'Preparado':'Pendiente')+'</p>').join('');
-  }
+  if(final)renderSummary();
  };
  next.onclick=async()=>{
   await Promise.all(Object.values(processing));
   if(step>=finalStep)return;
   if(!preview)for(const input of sections[step].querySelectorAll('input,select'))if(!input.reportValidity())return;
-  step++;show();sections[step].querySelector('h2').focus({preventScroll:true});
-  progress.scrollIntoView?.({block:'start',behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  const target=editing?finalStep:step+1;
+  editing=false;showStep(target);
  };
  show();
  if(preview){
