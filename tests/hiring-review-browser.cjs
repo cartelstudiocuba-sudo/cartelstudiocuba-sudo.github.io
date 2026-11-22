@@ -13,12 +13,10 @@ const root=path.join(__dirname,'..'),out=path.join(root,'test-results/hiring-rev
  });
  // Enter through the same principal button, including already-formalized cases.
  const tab=name=>page.getByRole('tab',{name,exact:true});
- const open=async()=>{await page.evaluate(()=>openHiringReview('A'));await tab('Validación').click();};
- await open();await page.locator('.hiring-validation-step').last().waitFor();
- assert.equal(await page.getByRole('button',{name:'Formalizar contratación',exact:true}).count(),0);
- for(const name of ['Datos','Documentos','Validación'])await tab(name).click();
- await page.locator('.hiring-close').click();
- await page.evaluate(()=>h.submitted_at='now');await open();await page.getByRole('button',{name:'Validar expediente revisado',exact:true}).click();await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).waitFor();assert(await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).isEnabled());await page.getByRole('button',{name:'Confirmar contrato firmado recibido y validado',exact:true}).click();assert(await page.getByRole('button',{name:'Formalizar contratación',exact:true}).isEnabled());
+ const open=async()=>{await page.evaluate(()=>openHiringReview('A'));await tab('Datos').waitFor();};
+ await open();
+ assert.deepEqual(await page.getByRole('tab').allTextContents(),['Datos','Documentos','Contrato']);
+ assert.equal(await page.getByRole('button',{name:/Validar expediente|Confirmar contrato firmado|Formalizar contratación/}).count(),0);
  assert(await page.locator('.hiring-notification-dialog').evaluate(n=>n.scrollWidth<=n.clientWidth));await page.screenshot({path:path.join(out,'review-'+width+'.png')});
  await tab('Documentos').click();
  await page.locator('.hiring-doc-card').first().getByRole('button',{name:'Reintentar'}).waitFor();
@@ -29,15 +27,12 @@ const root=path.join(__dirname,'..'),out=path.join(root,'test-results/hiring-rev
  assert(await page.locator('.hiring-contract-reading').isVisible());
  await page.evaluate(()=>{window.print=()=>{window.didPrint=true;};});await page.getByRole('button',{name:'Imprimir',exact:true}).click();assert(await page.evaluate(()=>didPrint));
  await page.pdf({path:path.join(out,'print-'+width+'.pdf'),preferCSSPageSize:true,printBackground:true});
- await tab('Validación').click();
- await page.locator('.hiring-management summary').click();
- await page.getByRole('button',{name:'Permitir correcciones del expediente',exact:true}).click();
+ await tab('Datos').click();
  await page.locator('.hiring-management summary').click();
  await page.getByRole('button',{name:'Revocar enlaces',exact:true}).click();
- await page.getByRole('button',{name:'Continuar a inserción en sistema',exact:false}).click();
- assert(await page.evaluate(()=>calls.some(c=>c.action==='hiring_continue')));
- await open();await page.getByRole('button',{name:'Formalizar contratación',exact:true}).click();
- assert(await page.evaluate(()=>calls.some(c=>c.name==='hr_finalize_hiring')));
- await page.evaluate(()=>h.employee_id='E');await open();await page.locator('.hiring-validation-step').last().waitFor();
+ await tab('Datos').waitFor();
+ assert(await page.evaluate(()=>calls.some(c=>c.args?.p_action==='revoke')));
+ assert(!await page.evaluate(()=>calls.some(c=>['verify','signed'].includes(c.args?.p_action)||c.name==='hr_finalize_hiring')));
+ await page.evaluate(()=>h.employee_id='E');await open();
  assert.equal(await page.locator('.hiring-management').count(),0);assert.deepEqual(errors,[]);await page.close();
  }console.log('PASS: hiring review browser workflow, responsive reading, letter PDF and print controls');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});

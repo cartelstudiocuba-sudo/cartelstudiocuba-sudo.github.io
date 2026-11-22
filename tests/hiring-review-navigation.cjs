@@ -31,7 +31,7 @@ assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
 assert.equal(editor.value,edited);
 assert.equal(prepares,1);
 async function open(){review.click();await new Promise(r=>setTimeout(r,0));}
-await open();assert.equal(d.querySelector('#hiring-review-tab-data').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiring-review-panel-validation').hidden,true);assert.equal(d.querySelectorAll('.hiring-review-section').length,5);assert.equal(d.querySelectorAll('.hiring-validation-step').length,4);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
+await open();assert.equal(d.querySelector('#hiring-review-tab-data').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiring-review-panel-validation'),null);assert.equal(d.querySelectorAll('.hiring-review-section').length,4);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
 const originalFrom=w.sb.from;
 const downloads=[];
 let hasCandidatePhoto=true;
@@ -49,13 +49,11 @@ d.querySelector('.hiring-doc-card.is-portrait button').click();
 assert.equal(viewer.open,true);
 assert.equal(viewer.querySelector('img').alt,'Foto de la candidatura');
 hasCandidatePhoto=false;
-assert.equal(d.querySelectorAll('.hiring-validation-step').length,4);
 assert.equal(d.querySelector('.hiring-management').open,false);
 const back=[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje');back.click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(editor.value,edited);assert.deepEqual([...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href),links);assert.equal(prepares,1);assert.equal(d.activeElement,review);
 w.open=()=>({location:{replace(url){assert(url.startsWith('https://wa.me/'))}},close(){}});await d.querySelector('.hiring-whatsapp').onclick();assert.equal(d.querySelector('.hiring-confirm').hidden,false);assert.match(d.querySelector('.hiring-confirm').textContent,/Reintentar avance/);
 await open();d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(d.querySelector('.hiring-confirm').hidden,false);assert.match(d.querySelector('.hiring-confirm').textContent,/Reintentar avance/);
 await open();d.querySelector('#hiringNotificationOverlay').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
-await open();d.querySelector('#hiring-review-tab-validation').click();const validate=[...d.querySelectorAll('button')].find(b=>b.textContent==='Validar expediente revisado');w.confirm=()=>{throw Error('La validación debe ejecutarse sin confirmación intermedia');};await validate.onclick();w.confirm=()=>true;await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('.hiring-validation-step:nth-child(2) .hiring-validation-status').textContent,'Completado');[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);
 w.renderHiringContract=async root=>{
  root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
 };w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js','contract-paper-v3.js','hiring-contract-paper-v3.js'])window.__reviewScripts.set(file,Promise.resolve())");
