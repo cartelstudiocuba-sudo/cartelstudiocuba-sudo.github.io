@@ -544,13 +544,11 @@ function renderHiringForm(root,result,token,preview,onComplete){
  const provinces=Object.keys(hiringLocalities);
  const savedProvince=matchingName(provinces,saved.province);
  const savedMunicipality=String(saved.municipality??'').trim().replace(/^La Habana Vieja$/i,'Habana Vieja');
- const possibleProvinces=provinces.filter(name=>matchingName(hiringLocalities[name],savedMunicipality));
- const acceptedMunicipality=matchingName(savedProvince?hiringLocalities[savedProvince]:possibleProvinces.flatMap(name=>hiringLocalities[name]),savedMunicipality);
- const provinceChoices=!savedProvince&&acceptedMunicipality?possibleProvinces:provinces;
+ const acceptedMunicipality=savedProvince?matchingName(hiringLocalities[savedProvince],savedMunicipality):'';
  const fieldsBySection=hiringFields.map(fields=>[...fields]);
  if(result.requires_emergency_address)fieldsBySection[1].push(['emergency_address','Dirección del contacto de emergencia']);
  fieldsBySection.forEach((fields,index)=>fields.forEach(([key,label])=>{
-  const choices=key==='province'?provinceChoices:key==='municipality'?(savedProvince?hiringLocalities[savedProvince]:[]):hiringChoices[key];
+  const choices=key==='province'?provinces:key==='municipality'?(hiringLocalities[savedProvince]||[]):hiringChoices[key];
   const input=document.createElement(choices?'select':'input');
   input.name=key;input.required=!optional.has(key);input.maxLength=1000;
   if(choices){
@@ -597,7 +595,8 @@ function renderHiringForm(root,result,token,preview,onComplete){
  if(municipality.tagName==='SELECT'){
   const updateMunicipality=()=>{
    const options=hiringLocalities[province.value]||[];
-   hiringSelectOptions(municipality,options,options.includes(municipality.value)?municipality.value:'');
+   const value=options.includes(municipality.value)?municipality.value:matchingName(options,savedMunicipality);
+   hiringSelectOptions(municipality,options,value);
    municipality.disabled=!province.value;
    municipality.dispatchEvent(new Event('change'));
   };
