@@ -15,7 +15,7 @@ try{for(const width of [390,1440]){
  // No Playwright network interception of POST bodies: retain real upload events.
  await page.unroute('**/*');page.on('request',r=>assert.equal(new URL(r.url()).hostname,'127.0.0.1'));
  await page.goto('http://127.0.0.1:'+server.address().port+'/expediente-contratacion.html#token='+'a'.repeat(64));
- for(let i=0;i<3;i++)await page.getByRole('button',{name:'Siguiente',exact:true}).click();await page.locator('[name=truth_confirmed]').check();await page.getByRole('button',{name:'Guardar y enviar expediente'}).click();
+ for(let i=0;i<3;i++)await page.getByRole('button',{name:'Continuar',exact:true}).click();await page.locator('[name=truth_confirmed]').check();await page.getByRole('button',{name:'Guardar y enviar expediente'}).click();
  await page.getByText('Datos del expediente · 100 % · esperando confirmación del servidor…',{exact:true}).waitFor();assert(await page.locator('#hiringSendFinish').isDisabled());assert(await page.locator('#hiring').evaluate(e=>e.inert));
  await page.screenshot({path:path.join(output,'progress-'+width+'.png')});release();
  await page.getByRole('heading',{name:'Expediente enviado correctamente',exact:true}).waitFor();await page.screenshot({path:path.join(output,'success-'+width+'.png')});

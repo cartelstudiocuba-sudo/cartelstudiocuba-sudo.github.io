@@ -56,11 +56,11 @@ for(const width of [320,390,1440])for(const scenario of (process.env.SCENARIOS||
  await page.goto('https://test.local/expediente-contratacion.html#token='+(scenario==='invalid'?'bad':'a'.repeat(64)));
  if(scenario==='locked'||scenario==='invalid'){await page.getByText(scenario==='locked'?'Tu expediente está validado.':'Enlace no válido,',{exact:false}).waitFor();assert.equal(await page.locator('form').count(),0);}
  else {
-  await page.locator('[name=full_name]').waitFor();await page.locator('[name=full_name]').fill('Persona corregida');await page.getByRole('button',{name:'Siguiente',exact:true}).click();
-  await page.locator('[name=email]').fill('');await page.getByRole('button',{name:'Siguiente',exact:true}).click();assert.equal(await page.locator('[name=email]').isVisible(),true);await page.locator('[name=email]').fill(fields.email);await page.getByRole('button',{name:'Siguiente',exact:true}).click();
+  await page.locator('[name=full_name]').waitFor();await page.locator('[name=full_name]').fill('Persona corregida');await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  await page.locator('[name=email]').fill('');await page.getByRole('button',{name:'Continuar',exact:true}).click();assert.equal(await page.locator('[name=email]').isVisible(),true);await page.locator('[name=email]').fill(fields.email);await page.getByRole('button',{name:'Continuar',exact:true}).click();
   const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=2400;c.height=1400;const x=c.getContext('2d');x.fillStyle='white';x.fillRect(0,0,c.width,c.height);x.fillStyle='black';x.font='90px sans-serif';x.fillText('DOCUMENTO SIMULADO',50,300);return c.toDataURL('image/png').split(',')[1]});
   for(const key of ['front','back','portrait']){await page.locator('[name='+key+']').setInputFiles({name:'simulado.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await page.locator('[name='+key+']').locator('..').locator('img').waitFor({state:'visible'});}
-  await page.getByRole('button',{name:'Siguiente',exact:true}).click();await page.locator('[name=truth_confirmed]').check();
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();await page.locator('[name=truth_confirmed]').check();
   await page.evaluate(()=>{document.getElementById('hiringForm').requestSubmit();document.getElementById('hiringForm').requestSubmit();});await page.locator('[role=dialog]').waitFor();assert(await page.locator('#hiringSendFinish').isDisabled());assert(await page.locator('#hiring').evaluate(e=>e.inert));
   if(scenario==='conflict'){await page.getByText('No se ha confirmado el envío',{exact:true}).waitFor();assert.equal(uploads,0);assert.equal(submits,0);assert(await page.locator('#hiringSendFinish').isDisabled());}
   else {

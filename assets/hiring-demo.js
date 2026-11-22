@@ -73,5 +73,8 @@ export function openHiringDemo(root,renderForm){
   root.querySelector('h1').focus();
  };
  renderForm(root,{data:demoData,role_title:demoRole,requires_emergency_address:true,front:false,back:false,portrait:false},null,false,finish);
- root.querySelector('h1').after(demoNotice());
+ const mode=document.createElement('span');
+ mode.className='hiring-form-demo';mode.textContent='Modo demostración';
+ root.querySelector('.hiring-form-brandline').after(mode);
+ root.querySelector('.hiring-form-privacy').append(demoNotice());
 }

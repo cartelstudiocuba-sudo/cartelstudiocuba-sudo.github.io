@@ -537,7 +537,34 @@ function showHiringCandidateForm(root,result,token,preview=false){
 }
 function renderHiringForm(root,result,token,preview,onComplete){
  const saved=result.data||{},optional=new Set(['fixed_phone','alternative_address','civil_status','has_children','care_responsibilities','planned_absence']);
- root.innerHTML='<div class="brand">CARTEL <span>GESTIÓN</span></div><h1>Completar expediente laboral</h1><p>'+hiringEsc(result.role_title)+'</p><p>Completa los datos y documentos pendientes.</p><p class="privacy-note">Los datos de familia son voluntarios y se usan solo para coordinar horarios y permisos. No incluyas diagnósticos ni datos médicos aquí. Si necesitas una adaptación de salud, puedes solicitar voluntariamente a RRHH un canal confidencial: se tratará solo lo necesario para esa finalidad, con acceso restringido y separado del contrato.</p><form id="hiringForm"><nav aria-label="Secciones del expediente"></nav><section><h2>Datos personales</h2></section><section hidden><h2>Contacto y emergencia</h2></section><section hidden><h2>Documentación y escolaridad</h2></section><section hidden><h2>Revisión y confirmación</h2><div id="hiringSummary"></div><label><input name="truth_confirmed" type="checkbox" required> Confirmo que los datos y documentos son veraces y corresponden a mi identidad.</label></section><div class="buttons"><button type="button" id="hiringNext">Siguiente</button><button id="hiringSubmit" hidden>Completar expediente</button></div><p role="alert" id="hiringResult"></p></form>';
+ root.innerHTML=`
+  <header class="hiring-form-header">
+   <div class="hiring-form-brandline">
+    <span class="brand">CARTEL <span>GESTIÓN</span></span>
+    ${result.role_title?'<span class="hiring-form-role">'+hiringEsc(result.role_title)+'</span>':''}
+   </div>
+   <h1>Expediente laboral</h1>
+   <p>Completa los datos y adjunta los documentos que faltan para preparar tu contrato laboral.</p>
+  </header>
+  <form id="hiringForm">
+   <div class="hiring-form-progress">
+    <p role="status" class="hiring-form-step"></p>
+    <div class="hiring-form-segments" aria-hidden="true"></div>
+   </div>
+   <section><h2 tabindex="-1">Datos personales</h2></section>
+   <section hidden><h2 tabindex="-1">Contacto y emergencia</h2></section>
+   <section hidden><h2 tabindex="-1">Documentación y escolaridad</h2></section>
+   <section hidden><h2 tabindex="-1">Revisión y confirmación</h2><div id="hiringSummary"></div><label class="hiring-form-confirmation"><input name="truth_confirmed" type="checkbox" required> Confirmo que los datos y documentos son veraces y corresponden a mi identidad.</label></section>
+   <div class="buttons">
+    <button type="button" id="hiringNext">Continuar <span aria-hidden="true">→</span></button>
+    <button id="hiringSubmit" hidden>Completar expediente</button>
+   </div>
+   <p role="alert" id="hiringResult" class="hiring-form-result"></p>
+  </form>
+  <details class="hiring-form-privacy">
+   <summary>Privacidad de tus datos</summary>
+   <p>Los datos de familia son voluntarios y se usan solo para coordinar horarios y permisos. Evita incluir diagnósticos o datos médicos en el expediente. Si necesitas una adaptación de salud, puedes solicitar voluntariamente a RRHH un canal confidencial. Se tratará solo lo necesario para esa finalidad, con acceso restringido y separado del contrato.</p>
+  </details>`;
  const form=root.querySelector('#hiringForm'),groups=[...form.querySelectorAll('section')];
  const requestedFields=[];
  const matchingName=(names,value)=>names.find(name=>name.localeCompare(String(value??'').trim(),'es',{sensitivity:'base'})===0);
@@ -618,17 +645,47 @@ function renderHiringForm(root,result,token,preview,onComplete){
  if(!document.getElementById('hiringCandidateFormStyle')){
   const style=document.createElement('style');style.id='hiringCandidateFormStyle';
   style.textContent=`
-   .hiring-candidate-form-surface{color:#edf0f2;font:16px/1.6 system-ui,sans-serif}
-   .hiring-candidate-form-surface .brand{font-size:13px;font-weight:900;letter-spacing:.14em;color:#ffda03}.hiring-candidate-form-surface .brand span{color:#edf0f2}
-   .hiring-candidate-form-surface h1{font-size:clamp(26px,5vw,40px);line-height:1.18;margin:14px 0;color:#edf0f2}.hiring-candidate-form-surface h2{font-size:20px;margin:0 0 12px;color:#ffda03}
-   .hiring-candidate-form-surface .privacy-note{border:1px solid #394146;border-radius:13px;background:#202528;padding:12px;font-size:13px}.hiring-candidate-form-surface #hiringForm nav{margin:16px 0 10px;border:1px solid #665c22;background:#292719;color:#ffda03;border-radius:10px;padding:9px 13px;font-weight:700;font-size:14px}
-   .hiring-candidate-form-surface #hiringForm>section{background:#111518;border:1px solid #30383d;border-radius:14px;padding:14px}.hiring-candidate-form-surface #hiringForm label{display:block;margin:13px 0;font-size:14px;color:#e2e7e9;font-weight:600}
-   .hiring-candidate-form-surface #hiringForm input:not([type="checkbox"]),.hiring-candidate-form-surface #hiringForm select{width:100%;max-width:100%;min-width:0;min-height:46px;margin-top:5px;padding:8px 10px;color:#f2f4f5;background:#22282c;border:1px solid #4e585f;border-radius:9px;font:16px system-ui;opacity:1}
-   .hiring-candidate-form-surface #hiringForm small{margin:4px 0 0;font-size:12px;font-weight:500;letter-spacing:normal}.hiring-candidate-form-surface .field-pending{color:#dcc975}.hiring-candidate-form-surface .field-ready{color:#91c9ab}
-   .hiring-candidate-form-surface #hiringForm .buttons{display:flex;margin:14px 0}.hiring-candidate-form-surface #hiringForm .buttons button{flex:1;background:#ffda03;border-color:#ffda03;color:#111518;border-radius:10px}.hiring-candidate-form-surface #hiringForm [hidden],.hiring-candidate-form-surface #hiringForm input[type="hidden"]{display:none!important}
+   .hiring-candidate-form-surface{color:#edf0f2;font:16px/1.5 system-ui,sans-serif;color-scheme:dark}
+   main.hiring-candidate-form-surface{max-width:640px;padding:clamp(16px,4vw,30px)}
+   .hiring-candidate-form-surface *{box-sizing:border-box}
+   .hiring-form-brandline{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+   .hiring-candidate-form-surface .brand{font-size:13px;font-weight:900;letter-spacing:.11em;color:#ffda03}
+   .hiring-candidate-form-surface .brand span{color:#edf0f2}
+   .hiring-form-role{margin-inline-start:auto;border:1px solid #786829;border-radius:999px;padding:4px 10px;color:#ffdf55;font-size:12px;font-weight:700;overflow-wrap:anywhere}
+   .hiring-form-demo{display:inline-block;margin-top:9px;color:#d3bf75;font-size:12px}
+   .hiring-candidate-form-surface .hiring-form-header h1{font-size:clamp(24px,7vw,36px);line-height:1.14;letter-spacing:-.035em;margin:14px 0 6px;color:#f6f7f8}
+   .hiring-candidate-form-surface .hiring-form-header p{margin:0;color:#bdc6ca;font-size:14px;line-height:1.5;max-width:44ch}
+   .hiring-form-progress{margin:19px 0 14px;scroll-margin-top:14px}
+   .hiring-candidate-form-surface .hiring-form-step{margin:0 0 6px;color:#e9ecee;font-size:13px;font-weight:750}
+   .hiring-form-segments{display:flex;gap:5px}
+   .hiring-form-segments span{height:6px;flex:1;border-radius:99px;background:#3a4043}
+   .hiring-form-segments .is-filled{background:#ffda03}
+   .hiring-candidate-form-surface #hiringForm>section{background:#15191b;border:1px solid #373e42;border-radius:14px;padding:0 14px 4px;min-width:0}
+   .hiring-candidate-form-surface #hiringForm h2{display:flex;gap:10px;align-items:center;margin:0 -14px 12px;padding:12px 14px;border-radius:13px 13px 0 0;background:#252a2d;color:#f4f6f7;font-size:17px;line-height:1.3}
+   .hiring-candidate-form-surface #hiringForm h2 svg{width:22px;height:22px;display:block;color:#ffda03}
+   .hiring-candidate-form-surface #hiringForm label{display:block;margin:12px 0;color:#e2e7e9;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+   .hiring-candidate-form-surface #hiringForm .hiring-form-confirmation{display:flex;align-items:flex-start;gap:8px}
+   .hiring-form-confirmation input{flex:none;margin-top:3px;accent-color:#ffda03}
+   .hiring-candidate-form-surface #hiringForm input:not([type="checkbox"]),.hiring-candidate-form-surface #hiringForm select{display:block;width:100%;max-width:100%;min-width:0;min-height:46px;margin-top:5px;padding:8px 10px;color:#f2f4f5;background:#22282c;border:1px solid #565e62;border-radius:9px;font:16px system-ui}
+   .hiring-candidate-form-surface #hiringForm input[type="date"]::-webkit-date-and-time-value{text-align:left}
+   .hiring-candidate-form-surface #hiringForm small{display:block;margin:4px 0 0;font-size:12px;font-weight:500}
+   .hiring-candidate-form-surface .field-pending{color:#dcc975}.hiring-candidate-form-surface .field-ready{color:#91c9ab}
+   .hiring-candidate-form-surface #hiringForm .buttons{display:flex;margin:14px 0}
+   .hiring-candidate-form-surface #hiringForm .buttons button{flex:1;min-height:48px;background:linear-gradient(#ffe34d,#ffda03);border:1px solid #ffda03;box-shadow:0 2px 0 #a58a00;color:#111518;border-radius:11px;font:750 15px system-ui}
+   .hiring-candidate-form-surface #hiringForm .buttons button span{margin-left:5px}
+   .hiring-candidate-form-surface .hiring-form-result:empty{display:none}
+   .hiring-candidate-form-surface #hiringForm [hidden],.hiring-candidate-form-surface #hiringForm input[type="hidden"]{display:none!important}
+   .hiring-form-privacy{margin-top:17px;padding-top:9px;border-top:1px solid #42484b}
+   .hiring-form-privacy summary{padding:5px 0;color:#e4e8ea;font-size:13px;cursor:pointer}
+   .hiring-candidate-form-surface .hiring-form-privacy p{margin:8px 0;color:#bdc6ca;font-size:13px}
+   .hiring-candidate-form-surface :focus-visible{outline:2px solid #ffda03;outline-offset:3px}
   `;
   document.head.append(style);
  }
+ groups.forEach((group,index)=>group.querySelector('h2').prepend(hiringReviewIcon(['data','contact','documents','validation'][index])));
+ const progress=form.querySelector('.hiring-form-progress');
+ const segments=sections.map(()=>document.createElement('span'));
+ progress.querySelector('.hiring-form-segments').replaceChildren(...segments);
  const finalStep=sections.length-1;
  const next=form.querySelector('#hiringNext'),submit=form.querySelector('#hiringSubmit');
  let step=0;
@@ -636,7 +693,8 @@ function renderHiringForm(root,result,token,preview,onComplete){
   groups.forEach(group=>group.hidden=group!==sections[step]);
   const final=step===finalStep;
   next.hidden=final;submit.hidden=!final;submit.disabled=preview;
-  form.querySelector('nav').textContent='Sección '+(step+1)+' de '+sections.length;
+  progress.querySelector('.hiring-form-step').textContent='Paso '+(step+1)+' de '+sections.length;
+  segments.forEach((segment,index)=>segment.classList.toggle('is-filled',index<=step));
   if(final){
    form.querySelector('#hiringSummary').innerHTML=requestedFields.map(([key,label])=>{
     const value=form.elements[key].value;
@@ -648,7 +706,8 @@ function renderHiringForm(root,result,token,preview,onComplete){
   await Promise.all(Object.values(processing));
   if(step>=finalStep)return;
   if(!preview)for(const input of sections[step].querySelectorAll('input,select'))if(!input.reportValidity())return;
-  step++;show();sections[step].scrollIntoView?.({block:'start',behavior:'smooth'});
+  step++;show();sections[step].querySelector('h2').focus({preventScroll:true});
+  progress.scrollIntoView?.({block:'start',behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  };
  show();
  if(preview){
