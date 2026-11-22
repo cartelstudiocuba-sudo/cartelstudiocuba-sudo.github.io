@@ -58,12 +58,33 @@ async function openSystemOnboarding(id){
  const content=document.createElement('div');dialog.append(content);
  let state,activation='',opened=false,editingConfiguration=false,configuredHere=false;
  const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/rrhh.html?employee='+encodeURIComponent(state.employee_id||'')+'&person-tab=access';a.onclick=e=>{if(window.CartelEvolution){e.preventDefault();overlay.remove();CartelEvolution.open('access');}};a.textContent='Gestionar acceso';return a;};
+ const showStatus=()=>{info.textContent='Estado laboral: '+(state.labor_status==='hired'?'Contratados':'Contratación en trámite')+' · Expediente: '+(state.document_verified?'Validado':'Pendiente')+' · Contrato firmado: '+(state.contract_signed?'Validado':'Pendiente')+' · Formalización documental: '+(state.formalized?'Completada':'Pendiente')+'.';};
  const update=async()=>{
   state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
   const rolesResult=await sb.from('system_access_roles').select('id,title,code,is_active,is_catalog_role').eq('is_active',true).order('title');if(rolesResult.error)throw rolesResult.error;
   const roleList=rolesResult.data||[];
   content.replaceChildren();
-  info.textContent='Estado laboral: '+(state.labor_status==='hired'?'Contratados':'Contratación en trámite')+' · Expediente: '+(state.document_verified?'Validado':'Pendiente')+' · Contrato firmado: '+(state.contract_signed?'Validado':'Pendiente')+' · Formalización documental: '+(state.formalized?'Completada':'Pendiente')+'.';
+  showStatus();
+  if(trialPeriodsByCandidate[String(id)]?.id){
+   const review=document.createElement('button');
+   review.type='button';
+   review.className='hiring-review-back';
+   review.textContent=state.document_verified?'Revisar expediente':'Validar expediente';
+   review.onclick=()=>{
+    const restore=hiringRestorePanel(overlay,dialog,review);
+    return openHiringReview(id,async()=>{
+     restore();
+     try{
+      const latest=await onboardingCall(id,'read');
+      if(!overlay.isConnected)return;
+      state=latest;
+      showStatus();
+      review.textContent=state.document_verified?'Revisar expediente':'Validar expediente';
+     }catch(e){info.textContent=e.message;}
+    },'data','Volver a inserción en sistema');
+   };
+   content.append(review);
+  }
   if(state.labor_status&&state.labor_status!=='hired'){const resume=document.createElement('button');resume.textContent='Abrir WhatsApp del paso 11 para continuar';resume.onclick=()=>{overlay.remove();openHiringPreparationNotification(id);};content.append(resume);return;}
   const stages=document.createElement('ol');stages.className='onboarding-stages';stages.setAttribute('aria-label','Tres subpasos del acceso');
   // Entry always starts a clean local form; persisted account data stays untouched.

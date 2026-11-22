@@ -414,14 +414,16 @@ function hiringReviewProfile(h){
  state.textContent=h.verified_at?'Expediente validado':h.submitted_at?'Expediente recibido':'Expediente pendiente';
  details.append(state);profile.append(initials,details);return profile;
 }
-async function openHiringReview(id,returnTo=null,activeTab='data'){
+async function openHiringReview(id,returnTo=null,activeTab='data',backLabel='Volver al mensaje'){
  const {overlay,dialog}=hiringNotificationDialog('Revisar expediente y contrato',returnTo);dialog.classList.add('hiring-candidate-review');const t=trialPeriodsByCandidate[String(id)];
  const status=document.createElement('p');status.setAttribute('role','status');dialog.append(status);
  hiringReviewBack(dialog,()=>{
   overlay.remove();
   return returnTo ? returnTo() : openHiringPreparationNotification(id,false,true);
- },'Volver al mensaje');
+ },backLabel);
+ status.textContent='Cargando el expediente…';
  try{
+ if(!t?.id)throw Error('El candidato no tiene un período de prueba asociado.');
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
  if(!overlay.isConnected)return;
  status.textContent='';
@@ -531,7 +533,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
   if(available){button.classList.add('hiring-review-primary');primaryAction=button;}
   steps.append(row);
  };
- const act=(label,action,disabled=false)=>{const b=document.createElement('button');b.textContent=label;b.disabled=disabled||!!h.employee_id;b.onclick=async()=>{if(b.disabled)return;if(action!=='verify'&&!confirm(label+' para la versión '+h.revision+' del expediente?'))return;b.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:action,p_revision:h.revision});overlay.remove();await loadHiringCases();window.CartelEvolution?.refresh();openHiringReview(id,returnTo,activeTab);}catch(e){status.textContent=e.message;b.disabled=false;}};return b;};
+ const act=(label,action,disabled=false)=>{const b=document.createElement('button');b.textContent=label;b.disabled=disabled||!!h.employee_id;b.onclick=async()=>{if(b.disabled)return;if(action!=='verify'&&!confirm(label+' para la versión '+h.revision+' del expediente?'))return;b.disabled=true;try{await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:action,p_revision:h.revision});overlay.remove();await loadHiringCases();window.CartelEvolution?.refresh();openHiringReview(id,returnTo,activeTab,backLabel);}catch(e){status.textContent=e.message;b.disabled=false;}};return b;};
  step('Expediente recibido',!!(h.submitted_at||h.verified_at||h.employee_id),'Esperando el envío del candidato.');
  step('Validar expediente',!!h.verified_at,'Disponible al recibir el expediente.',act('Validar expediente revisado','verify',!h.submitted_at||!!h.verified_at));
  step('Contrato firmado',!!h.signed_at,'Valida el expediente para poder confirmar el contrato firmado.',act('Confirmar contrato firmado recibido y validado','signed',!h.verified_at||!!h.signed_at));
