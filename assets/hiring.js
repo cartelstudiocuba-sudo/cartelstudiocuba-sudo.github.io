@@ -657,6 +657,6 @@ function renderHiringForm(root,result,token,preview,onComplete){
   form.onsubmit=event=>event.preventDefault();
   return;
  }
- const send=onComplete||hiringSubmission(root,form,token,result,pending);let validating=false;
+ const send=onComplete?()=>onComplete(form,pending):hiringSubmission(root,form,token,result,pending);let validating=false;
  form.noValidate=true;form.onsubmit=async e=>{e.preventDefault();if(validating||step!==finalStep)return;validating=true;try{await Promise.all(Object.values(processing));for(let i=0;i<sections.length;i++)for(const el of sections[i].querySelectorAll('input,select'))if(!el.checkValidity()){step=i;show();el.reportValidity();return;}await send();}finally{validating=false;}};
 }

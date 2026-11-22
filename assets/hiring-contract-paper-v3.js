@@ -67,7 +67,7 @@ function hiringContractPending(root,missing,configuration,result){
   panel.append(text,list);
   if(!result.locked){
    const link=document.createElement('a');link.className='hiring-next-link';
-   link.href='/expediente-contratacion.html#token='+result.publicToken;link.textContent='Completar mi expediente';
+   link.href=result.demo?'/expediente-contratacion.html?prueba=1':'/expediente-contratacion.html#token='+result.publicToken;link.textContent='Completar mi expediente';
    panel.append(link);
   }
  }
@@ -84,7 +84,7 @@ async function appendHiringIdentityImages(article,images,client){
  const figures=await Promise.all(Object.entries(hiringContractIdentitySides).map(async ([key,label])=>{
   const documentInfo=images?.[key];
   if(!documentInfo)return null;
-  let {data,error}=await client.storage.from(documentInfo.bucket).download(documentInfo.path);
+  let {data,error}=documentInfo instanceof Blob?{data:documentInfo}:await client.storage.from(documentInfo.bucket).download(documentInfo.path);
   if(error&&documentInfo.inherited){
    ({data,error}=await client.storage.from('hr-identity-private').download(documentInfo.inherited));
   }
@@ -108,11 +108,11 @@ async function appendHiringIdentityImages(article,images,client){
  }
 }
 async function renderHiringContractPaperV3(root,result){
- await Promise.all(['contract-paper.css','hiring-contract-paper-v3.css'].map(file=>new Promise((resolve,reject)=>{if([...document.styleSheets].some(s=>s.href?.includes('/assets/'+file)))return resolve();const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/'+file+'?v=20261122-contract-annexes';link.onload=resolve;link.onerror=()=>reject(Error('No se pudo cargar el formato contractual.'));document.head.append(link);})));
+ await Promise.all(['contract-paper.css','hiring-contract-paper-v3.css'].map(file=>new Promise((resolve,reject)=>{if([...document.styleSheets].some(s=>s.href?.includes('/assets/'+file)))return resolve();const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/'+file+'?v=20261122-contract-demo';link.onload=resolve;link.onerror=()=>reject(Error('No se pudo cargar el formato contractual.'));document.head.append(link);})));
  const snapshot=result.contract,doc=structuredClone(snapshot.template),d=result.data||{};
  if(!Array.isArray(doc?.blocks)||!doc.blocks.length)throw Error('No está disponible la plantilla contractual de esta plaza.');
  const logos={...(snapshot.logos||{})};
- const client=result.publicToken?CartelLoad.createClient(sb.supabaseUrl,sb.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'x-hiring-token':result.publicToken}}}):sb;
+ const client=result.demo?null:result.publicToken?CartelLoad.createClient(sb.supabaseUrl,sb.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'x-hiring-token':result.publicToken}}}):sb;
  // Resolve private presentation assets through token-scoped server responses only.
  for(const key of ['logo_path','watermark_path']){
   const path=doc.presentation?.[key];
@@ -136,9 +136,9 @@ async function renderHiringContractPaperV3(root,result){
  }
  root.innerHTML='<div class="buttons contract-tools"><button id="contractPrint" disabled>Imprimir</button><button id="contractDownload" disabled>Descargar</button></div><div class="contract-viewport"><article id="contractArticle"></article></div><p id="contractError" role="alert"></p>';
  const article=root.querySelector('#contractArticle');
- const check=result.publicToken&&!result.signed?hiringContractCheck(doc,paper,result):null;
+ const check=result.demo||result.publicToken&&!result.signed?hiringContractCheck(doc,paper,result):null;
  const blocked=check&&(check.missing.length||check.configuration.length);
- if(result.publicToken&&!result.signed)root.classList.add('hiring-contract-preview-only');
+ if(check)root.classList.add('hiring-contract-preview-only');
  if(blocked)hiringContractPending(root,check.missing,check.configuration,result);
  // Load images and fonts before measuring so every viewport uses the same canvas.
  await document.fonts.ready;
