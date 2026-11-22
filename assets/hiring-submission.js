@@ -1,7 +1,12 @@
 /* Public hiring submission only. No tokens or personal data are persisted. */
 'use strict';
-function hiringCompletedScreen(root){
+function hiringCompletedScreen(root,token){
  root.innerHTML='<div class="brand">CARTEL <span>GESTIÓN</span></div><h1 tabindex="-1">Proceso completado. Ya puedes cerrar esta ventana</h1><p>Expediente enviado correctamente.</p><p>Recuerda entregar tu contrato firmado a tu tutor para continuar con el proceso de contratación.</p>';
+ if(token){
+  const link=document.createElement('a');link.className='hiring-next-link';
+  link.href='/contrato-laboral.html#token='+token;link.textContent='Ver y descargar mi contrato';
+  root.append(link);
+ }
  root.querySelector('h1').focus();
 }
 function hiringProgressFetch(update){
@@ -20,12 +25,14 @@ function hiringProgressFetch(update){
 }
 function hiringSubmission(root,form,token,result,pending){
  let busy=false,complete=false,uncertain=null,overlay=null;
+ const keys=hiringFields.flat().map(([key])=>key);
+ if(result.requires_emergency_address)keys.push('emergency_address');
  const canonical=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));
  const sameData=(a,b)=>canonical(a)===canonical(b);
  const read=()=>hiringRpc('hr_read_hiring',{p_token:token,p_document:false});
  const labels={front:'Anverso del CI',back:'Reverso del CI',portrait:'Fotografía del trabajador'};
  const client=update=>CartelLoad.wrap(supabase.createClient(sb.supabaseUrl,sb.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'x-hiring-token':token,'x-hiring-revision':String(result.revision)},fetch:hiringProgressFetch(update)}}));
- const final=()=>{overlay?.remove();root.inert=false;hiringCompletedScreen(root);};
+ const final=()=>{overlay?.remove();root.inert=false;hiringCompletedScreen(root,token);};
  const markComplete=()=>history.replaceState({...history.state,cartelHiringComplete:true},'',location.pathname+location.search);
  const protect=()=>{if(complete){markComplete();final();}};
  window.addEventListener('pageshow',protect);window.addEventListener('popstate',protect);window.addEventListener('hashchange',protect);
@@ -37,7 +44,7 @@ function hiringSubmission(root,form,token,result,pending){
   if(current.revision===u.revision&&!current.locked&&sameData(current.data,result.data)){uncertain=null;return false;}
   if(current.revision!==u.revision+1)throw Error('No se pudo confirmar este envío porque el expediente cambió. Conservamos tus datos; solicita revisión a RRHH.');
   if(u.type==='submit'){
-   if(!current.submitted||!hiringFields.flat().every(([k])=>String(current.data[k]??'')===u.values[k]))throw Error('El servidor no confirmó estos datos. Conservamos el formulario para revisar el envío.');
+   if(!current.submitted||!keys.every(key=>String(current.data[key]??'')===u.values[key]))throw Error('El servidor no confirmó estos datos. Conservamos el formulario para revisar el envío.');
    result.revision=current.revision;result.data=current.data;uncertain=null;return true;
   }
   if(current.locked||!sameData(current.data,result.data))throw Error('El expediente cambió durante la subida. Conservamos tus datos; solicita revisión a RRHH.');
@@ -68,11 +75,11 @@ function hiringSubmission(root,form,token,result,pending){
      const {error}=await client(update).storage.from('hr-hiring-private').upload(result.trial_id+'/'+key,file,{contentType:file.type,upsert:true});if(error){if(Number(error.statusCode)>=400&&Number(error.statusCode)<500&&Number(error.statusCode)!==408)uncertain=null;throw Error(error.message);}
      result[key]=true;result.revision++;delete pending[key];uncertain=null;
     }
-    const values=Object.fromEntries(hiringFields.flat().map(([k])=>[k,form.elements[k].value.trim()]));values.truth_confirmed=form.elements.truth_confirmed.checked;values._baseline=result.data;
+    const values=Object.fromEntries(keys.map(key=>[key,form.elements[key].value.trim()]));values.truth_confirmed=form.elements.truth_confirmed.checked;values._baseline=result.data;
     const update=progress('Datos del expediente');update(0);uncertain={type:'submit',values,revision:result.revision};
     const {data,error,status:code}=await client(update).rpc('hr_submit_hiring',{p_token:token,p_data:values,p_revision:result.revision}).retry(false);if(error){if(code>=400&&code<500&&code!==408)uncertain=null;throw Error(error.message);}
     if(!Number.isInteger(data)||data!==result.revision+1)throw Error('Respuesta de guardado incompleta. Reintenta para comprobar el resultado.');
-    result.revision=data;result.data=Object.fromEntries(hiringFields.flat().map(([k])=>[k,values[k]]));uncertain=null;
+    result.revision=data;result.data=Object.fromEntries(keys.map(key=>[key,values[key]]));uncertain=null;
    }
    complete=true;markComplete();
    bar.value=1;title.textContent='Expediente enviado correctamente';status.textContent='El servidor confirmó el guardado completo de tus datos y fotografías.';detail.textContent='Recuerda entregar tu contrato firmado a tu tutor para continuar con el proceso de contratación.';finish.disabled=false;finish.focus();

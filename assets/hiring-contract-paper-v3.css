@@ -1,0 +1,11 @@
+.contract-viewport{width:100%;overflow:hidden}#contractArticle{width:816px}#hiring:has(.contract-viewport){max-width:880px;padding:24px}.contract-pages{padding:0}.contract-paper-page section{margin:0 0 25px}.contract-annex-table td{overflow-wrap:anywhere}
+.hiring-contract-pending{border:1px solid #d9bd5d;background:#fff9dc;border-radius:16px;padding:16px 20px;margin-bottom:16px}
+.hiring-contract-pending h1{margin:0;font-size:clamp(20px,5vw,26px)}
+.hiring-contract-pending ul{padding-left:22px}
+.hiring-contract-pending .hiring-next-link{display:inline-block;padding:10px 16px;border-radius:10px;background:#ffda03;color:#171b1e;font-weight:750;text-decoration:none}
+.contract-annex-id-space.hiring-identity-images{display:grid;grid-auto-rows:minmax(0,1fr);justify-content:stretch;align-items:stretch;gap:16px;padding:16px;color:#222}
+.hiring-identity-images figure{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;margin:0;min-height:0}
+.hiring-identity-images figcaption{font-weight:700}
+.hiring-identity-images img{display:block;width:100%;height:100%;min-height:0;object-fit:contain}
+@media print{@page{size:letter;margin:0}html,body{margin:0!important;padding:0!important}#hiring:has(.contract-viewport){width:816px;max-width:none;margin:0;padding:0;border:0;border-radius:0}.contract-viewport{overflow:visible}#contractArticle{zoom:1!important}.contract-pages{display:block;overflow:visible;padding:0}.contract-paper-page{margin:0;box-shadow:none;break-after:page;page-break-after:always}.contract-paper-page:last-child{break-after:auto;page-break-after:auto}.contract-tools,#contractError{display:none!important}}
+@media print{#hiring.hiring-contract-preview-only .contract-viewport{display:none!important}.hiring-contract-pending a{display:none!important}}

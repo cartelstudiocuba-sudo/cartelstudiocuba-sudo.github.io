@@ -5738,12 +5738,12 @@ function addContractAnnexField(type){
  const id='custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),field={id,label:type==='section'?'Nueva sección':'Nuevo campo',type:type==='section'?'section':'field'};
  const tmp=document.createElement('div');tmp.innerHTML=contractAnnexFieldRowHtml(field);list.appendChild(tmp.firstElementChild);list.lastElementChild?.querySelector('input')?.focus();refreshContractInlinePreview()
 }
-function contractAnnexPreviewHtml(doc,annex,index){
+function contractAnnexPreviewHtml(doc,annex,index,valueForField){
  const label='Anexo '+(index+1),title=e(annex.title||'Anexo');
  if(annex.type==='identity_copy')return '<div class="contract-annex-page contract-annex-identity"><div class="contract-annex-label">'+e(label)+'</div><div class="contract-annex-box"><div class="contract-annex-box-title">FOTOCOPIA DEL CARNÉ DE IDENTIDAD</div><div class="contract-annex-id-space">ESPACIO PARA FOTOCOPIA DEL CARNÉ DE IDENTIDAD</div></div></div>';
  const fields=contractAnnexFields(annex);
  if(annex.type==='transport_photos')return '<div class="contract-annex-page contract-transport-photos"><div class="contract-annex-label">'+e(label)+'</div><h3>'+title+'</h3><div class="transport-photo-grid">'+fields.filter(f=>f.type!=='section').map(f=>'<div class="transport-photo-slot"><b>'+e(f.label)+'</b><span>ESPACIO PARA FOTOGRAFÍA</span></div>').join('')+'</div></div>';
- return '<div class="contract-annex-page"><div class="contract-annex-label">'+e(label)+'</div><table class="contract-annex-table"><thead><tr><th colspan="2">'+title+'</th></tr></thead><tbody>'+fields.map(f=>f.type==='section'?'<tr class="section"><th colspan="2">'+e(f.label)+'</th></tr>':'<tr><th>'+e(f.label)+'</th><td>&nbsp;</td></tr>').join('')+'</tbody></table></div>'
+ return '<div class="contract-annex-page"><div class="contract-annex-label">'+e(label)+'</div><table class="contract-annex-table"><thead><tr><th colspan="2">'+title+'</th></tr></thead><tbody>'+fields.map(f=>f.type==='section'?'<tr class="section"><th colspan="2">'+e(f.label)+'</th></tr>':'<tr><th>'+e(f.label)+'</th><td>'+(valueForField?e(valueForField(f)||'\u00a0'):'&nbsp;')+'</td></tr>').join('')+'</tbody></table></div>'
 }
 function renderContractAnnexEditor(doc,annex){
  const order=contractAnnexOrder(doc,annex.id),count=contractAnnexes(doc).length,label=contractAnnexLabel(doc,annex);
@@ -5989,7 +5989,7 @@ function contractPreviewUnits(doc){
  body.forEach(b=>units.push('<section class="contract-paper-clause"><h3>'+e(contractEffectiveHeading(doc,b))+'</h3>'+contractPreviewTextHtml(contractPreviewSourceText(b))+'</section>'));
  return units
 }
-function buildContractPreviewPages(doc,box){
+function buildContractPreviewPages(doc,box,valueForWorkerField){
  const company=contractDataValue('denominacion_oficial')||'El Cartel Studio',pages=document.createElement('div');
  pages.className='contract-pages';pages.id='contractPages';box.appendChild(pages);
  let pageNo=1,content=null;
@@ -6093,8 +6093,28 @@ function buildContractPreviewPages(doc,box){
      return
    }
    newPage();
-   const tmp=document.createElement('div');tmp.innerHTML=contractAnnexPreviewHtml(doc,annex,index);
-   const node=tmp.firstElementChild;if(node)content.appendChild(node)
+   const makeAnnex=(part,valueForField)=>{
+     const tmp=document.createElement('div');tmp.innerHTML=contractAnnexPreviewHtml(doc,part,index,valueForField);
+     return tmp.firstElementChild;
+   };
+   const valueForField=annex.type==='worker_data'?valueForWorkerField:null;
+   const node=makeAnnex(annex,valueForField);
+   content.appendChild(node);
+   if(!valueForField)return;
+   let table=node.querySelector('tbody');
+   const rows=[...table.rows];
+   table.replaceChildren();
+   for(const row of rows){
+     // Measure each populated row on its actual page.
+     table.append(row);
+     if(content.scrollHeight<=content.clientHeight+1||table.rows.length===1)continue;
+     row.remove();
+     newPage();
+     const continuation=makeAnnex({...annex,fields:[],title:(annex.title||'Anexo')+' · continuación'},valueForField);
+     content.appendChild(continuation);
+     table=continuation.querySelector('tbody');
+     table.append(row);
+   }
  });
 }
 async function previewContractDocument(){const doc=contractWorkspaceDraftDoc()||activeContractState().doc,box=document.getElementById('contractPreviewBox');if(!doc||!box)return;await ensureContractPresentationLogo(doc);await ensureContractWatermarkLogo(doc);box.innerHTML='<div class="contract-preview-toolbar"><div><b>Vista previa del documento</b><small>Formato Carta · Representación de las páginas que se utilizarán para generar el PDF.</small></div><div class="contract-preview-toolbar-actions"><button class="btn primary" onclick="exportContractPdf()">Exportar PDF</button><button class="contract-preview-close" onclick="this.closest(\'.contract-preview-box\').classList.remove(\'open\')">×</button></div></div>';box.classList.add('open');buildContractPreviewPages(doc,box);box.scrollIntoView({behavior:'smooth',block:'start'})}

@@ -92,12 +92,27 @@ async function loadHiringContractReview(root,h){
   style.textContent='@media print{body:has(.hiring-contract-review)>:not(#hiringNotificationOverlay){display:none!important}body:has(.hiring-contract-review) #hiringNotificationOverlay{position:static;display:block;padding:0;background:white;backdrop-filter:none}.hiring-notification-dialog.hiring-contract-review{width:100%;max-width:none;max-height:none;overflow:visible;border:0;padding:0;background:white;box-shadow:none}.hiring-contract-review>:not(#hiring-review-panel-contract){display:none!important}}';
   document.head.append(style);
  }
- try{for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js']){
-  if(!hiringReviewScripts.has(file))hiringReviewScripts.set(file,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='/assets/'+file+'?v=20261111-hiring-restored';s.onload=resolve;s.onerror=()=>{hiringReviewScripts.delete(file);reject(Error('No se pudo cargar el visor. Cierra y reintenta.'));};document.head.append(s);}));await hiringReviewScripts.get(file);
+ try{for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js','contract-paper-v3.js','hiring-contract-paper-v3.js']){
+  if(!hiringReviewScripts.has(file))hiringReviewScripts.set(file,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='/assets/'+file+'?v=20261122-contract-annexes';s.onload=resolve;s.onerror=()=>{hiringReviewScripts.delete(file);reject(Error('No se pudo cargar el visor. Cierra y reintenta.'));};document.head.append(s);}));await hiringReviewScripts.get(file);
  }const snapshot=structuredClone(h);snapshot.contract.logos={...(snapshot.contract.logos||{})};
  for(const key of ['logo_path','watermark_path']){const path=snapshot.contract.template?.presentation?.[key];if(path&&!snapshot.contract.logos[path]){const {data,error}=await sb.storage.from('hr-role-documents').download(path);if(error||!data)throw Error('No se pudo leer la presentación del contrato guardado.');snapshot.contract.logos[path]=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(data);});}}
+ if(!h.signed_at&&h.contract.template?.annexes?.some(annex=>annex.type==='identity_copy'&&annex.included!==false)){
+  const form=await hiringRpc('hr_preview_hiring_form',{p_trial:h.trial_id});
+  if(form&&Object.hasOwn(form,'requires_emergency_address')){
+   snapshot.contract.renderer_version=3;
+   snapshot.data=form.data;
+   snapshot.identity_images={};
+   for(const side of ['front','back'])if(form[side]){
+    snapshot.identity_images[side]={bucket:'hr-hiring-private',path:h.trial_id+'/'+side,inherited:h.inherited_documents?.[side]};
+   }
+  }
+ }else if(h.signed_at){
+  snapshot.signed=true;
+  snapshot.data=h.contract.signed_data||h.data;
+  snapshot.identity_images=h.contract.signed_identity_images;
+ }
  if(!root.isConnected)return;
- await renderHiringContract(root,snapshot);
+ await renderHiringContractDocument(root,snapshot);
  if(root.isConnected)hiringContractReadingView(root);
  }catch(e){
   const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar';
@@ -500,13 +515,20 @@ const hiringFields=[
  [['mobile','Teléfono móvil'],['fixed_phone','Teléfono fijo (opcional)'],['email','Correo electrónico'],['alternative_address','Dirección alternativa (opcional)'],['emergency_name','Nombre del contacto de emergencia'],['emergency_relation','Parentesco con el contacto de emergencia'],['emergency_phone','Teléfono de emergencia']],
  [['education_level','Nivel de escolaridad']]
 ];
+function renderHiringContractDocument(root,result){
+ if(result.contract.renderer_version===3||result.publicToken&&!result.signed&&Object.hasOwn(result,'identity_images'))return renderHiringContractPaperV3(root,result);
+ return renderHiringContract(root,result);
+}
 async function initHiringPublic(documentMode){
  const root=document.getElementById('hiring');
  if(!documentMode&&history.state?.cartelHiringComplete){hiringCompletedScreen(root);return;}
  const token=new URLSearchParams(location.hash.slice(1)).get('token');
  if(!/^[a-f0-9]{64}$/.test(token||''))throw Error('Enlace no válido, caducado o revocado. Solicita uno nuevo a RRHH.');
  const result=await hiringRpc('hr_read_hiring',{p_token:token,p_document:documentMode});
- if(documentMode)return renderHiringContract(root,result);
+ if(documentMode){
+  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
+  return renderHiringContractDocument(root,{...result,publicToken:token});
+ }
  showHiringCandidateForm(root,result,token);
 }
 function showHiringCandidateForm(root,result,token,preview=false){
@@ -525,7 +547,9 @@ function renderHiringForm(root,result,token,preview,onComplete){
  const possibleProvinces=provinces.filter(name=>matchingName(hiringLocalities[name],savedMunicipality));
  const acceptedMunicipality=matchingName(savedProvince?hiringLocalities[savedProvince]:possibleProvinces.flatMap(name=>hiringLocalities[name]),savedMunicipality);
  const provinceChoices=!savedProvince&&acceptedMunicipality?possibleProvinces:provinces;
- hiringFields.forEach((fields,index)=>fields.forEach(([key,label])=>{
+ const fieldsBySection=hiringFields.map(fields=>[...fields]);
+ if(result.requires_emergency_address)fieldsBySection[1].push(['emergency_address','Dirección del contacto de emergencia']);
+ fieldsBySection.forEach((fields,index)=>fields.forEach(([key,label])=>{
   const choices=key==='province'?provinceChoices:key==='municipality'?(savedProvince?hiringLocalities[savedProvince]:[]):hiringChoices[key];
   const input=document.createElement(choices?'select':'input');
   input.name=key;input.required=!optional.has(key);input.maxLength=1000;
