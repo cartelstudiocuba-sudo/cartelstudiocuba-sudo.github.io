@@ -1,0 +1,588 @@
+{
+  "role": {
+    "title": "Gestor Técnico",
+    "area": "Departamento Audiovisual",
+    "description": "Responsable de la gestión integral de la tecnología, equipamiento y logística técnica del estudio, asegurando su funcionamiento, mantenimiento preventivo, disponibilidad para proyectos y protección del patrimonio tecnológico.",
+    "direct_manager": "Jefe de Área Audiovisual",
+    "employment_type": "Tiempo completo",
+    "modality": "Presencial",
+    "work_days": "Lunes a sábado",
+    "schedule": "9:00 a.m. – 6:00 p.m.",
+    "work_content": {
+      "custom": null,
+      "standard": null,
+      "policy_ids": null,
+      "content_order": null,
+      "discipline_ids": null,
+      "standard_titles": null,
+      "hidden_standard_keys": null
+    },
+    "location": "La Habana",
+    "compensation": "[importe de demostración]",
+    "currency": "CUP",
+    "payment_method": "Según disponibilidad"
+  },
+  "template": {
+    "key": "employment_contract",
+    "title": "Contrato de trabajo · Demostración",
+    "blocks": [
+      {
+        "id": "ec1",
+        "text": "",
+        "title": "Encabezado e identificación de El Cartel Studio",
+        "source": "company",
+        "included": true
+      },
+      {
+        "id": "ec2",
+        "text": "",
+        "title": "Identificación del trabajador",
+        "source": "candidate",
+        "included": true
+      },
+      {
+        "id": "ec3",
+        "text": "",
+        "title": "Objeto del contrato",
+        "source": "role:description",
+        "included": true
+      },
+      {
+        "id": "ec4",
+        "text": "",
+        "title": "Plaza, área y subordinación",
+        "source": "role:identity",
+        "included": true
+      },
+      {
+        "id": "ec5",
+        "text": "",
+        "title": "Inicio, duración y tipo de vinculación",
+        "source": "role:employment_terms",
+        "included": true
+      },
+      {
+        "id": "ec6",
+        "text": "",
+        "title": "Jornada, horario y lugar de trabajo",
+        "source": "role:schedule_location",
+        "included": true
+      },
+      {
+        "id": "ec7",
+        "text": "",
+        "title": "Funciones y responsabilidades",
+        "source": "specific",
+        "included": true
+      },
+      {
+        "id": "ec8",
+        "text": "",
+        "title": "Remuneración y forma de pago",
+        "source": "role:compensation",
+        "included": true
+      },
+      {
+        "id": "ec9",
+        "text": "",
+        "title": "Acuerdo de no divulgación y confidencialidad",
+        "source": "policy:91d127cd-838d-48d9-b6c8-66021a41292f",
+        "included": true
+      },
+      {
+        "id": "ec10",
+        "text": "",
+        "title": "Medios y recursos para el desempeño del trabajo",
+        "source": "policy:ade7b936-164f-4a5a-bf51-5b36671815e3",
+        "included": true
+      },
+      {
+        "id": "policyblock:87022d40-a547-41f4-ae11-03a7089917dc",
+        "text": "",
+        "title": "Uso de este documento",
+        "source": "policy:87022d40-a547-41f4-ae11-03a7089917dc",
+        "included": true
+      },
+      {
+        "id": "policyblock:34094bcd-5f49-404d-8494-72b94735f83f",
+        "text": "",
+        "title": "Capacitación inicial y auto-preparación",
+        "source": "policy:34094bcd-5f49-404d-8494-72b94735f83f",
+        "included": true
+      },
+      {
+        "id": "policyblock:5cd6044a-aa13-4ef0-b3a8-40170ed4fcc6",
+        "text": "",
+        "title": "Comportamiento",
+        "source": "policy:5cd6044a-aa13-4ef0-b3a8-40170ed4fcc6",
+        "included": true
+      },
+      {
+        "id": "policyblock:70d76bab-dccf-4106-9dcc-4356bf0b210b",
+        "text": "",
+        "title": "Puntualidad, asistencia y llamados",
+        "source": "policy:70d76bab-dccf-4106-9dcc-4356bf0b210b",
+        "included": true
+      },
+      {
+        "id": "policyblock:6f3eca68-f679-47f2-8fe7-b494aaa82052",
+        "text": "",
+        "title": "Presencia",
+        "source": "policy:6f3eca68-f679-47f2-8fe7-b494aaa82052",
+        "included": true
+      },
+      {
+        "id": "policyblock:0b632abe-8a6a-4b32-9c93-9987d51e0347",
+        "text": "",
+        "title": "Uso y cuidado del uniforme",
+        "source": "policy:0b632abe-8a6a-4b32-9c93-9987d51e0347",
+        "included": true
+      },
+      {
+        "id": "policyblock:dd979e17-9f52-48af-a6d6-7d2050a331b1",
+        "text": "",
+        "title": "Horario de almuerzo y continuidad operativa",
+        "source": "policy:dd979e17-9f52-48af-a6d6-7d2050a331b1",
+        "included": true
+      },
+      {
+        "id": "policyblock:7aad0868-586f-4eae-b4fc-8724e3c33eee",
+        "text": "",
+        "title": "Accesos y credenciales",
+        "source": "policy:7aad0868-586f-4eae-b4fc-8724e3c33eee",
+        "included": true
+      },
+      {
+        "id": "policyblock:03f21224-ffd2-44b0-b212-4880bc0ec2fa",
+        "text": "",
+        "title": "Responsabilidad material sobre medios y recursos",
+        "source": "policy:03f21224-ffd2-44b0-b212-4880bc0ec2fa",
+        "included": true
+      },
+      {
+        "id": "policyblock:199e6a3f-9c69-4f0d-9e97-d0ad2a5231ab",
+        "text": "",
+        "title": "Orden, limpieza y cuidado del puesto de trabajo",
+        "source": "policy:199e6a3f-9c69-4f0d-9e97-d0ad2a5231ab",
+        "included": true
+      },
+      {
+        "id": "policyblock:a051df7f-4218-4a7f-a00e-1b0326d989eb",
+        "text": "",
+        "title": "Derecho de imagen y créditos",
+        "source": "policy:a051df7f-4218-4a7f-a00e-1b0326d989eb",
+        "included": true
+      },
+      {
+        "id": "policyblock:9930abac-fe48-46fa-8e88-2564c41023ca",
+        "text": "",
+        "title": "Política de pluriempleo",
+        "source": "policy:9930abac-fe48-46fa-8e88-2564c41023ca",
+        "included": true
+      },
+      {
+        "id": "policyblock:e2ddb63d-184b-4576-bab6-907b08281d1d",
+        "text": "",
+        "title": "Propiedad intelectual y titularidad de desarrollos",
+        "source": "policy:e2ddb63d-184b-4576-bab6-907b08281d1d",
+        "included": true
+      },
+      {
+        "id": "ec12",
+        "text": "",
+        "title": "Régimen disciplinario aplicable",
+        "source": "discipline",
+        "included": true
+      },
+      {
+        "id": "ec13",
+        "text": "",
+        "title": "Término de la relación laboral",
+        "source": "policy:66f51a7a-7b04-42b8-93ae-9aefdc920ca9",
+        "included": true
+      },
+      {
+        "id": "ec14",
+        "text": "",
+        "title": "Disposiciones finales y firmas",
+        "source": "candidate",
+        "included": true
+      }
+    ],
+    "annexes": [
+      {
+        "id": "annex_worker_data",
+        "type": "worker_data",
+        "title": "Datos del trabajador contratado",
+        "fields": [
+          {
+            "id": "full_name",
+            "type": "field",
+            "label": "Nombre y Apellidos"
+          },
+          {
+            "id": "ci",
+            "type": "field",
+            "label": "CI"
+          },
+          {
+            "id": "birth_date",
+            "type": "field",
+            "label": "Fecha de nacimiento"
+          },
+          {
+            "id": "address",
+            "type": "field",
+            "label": "Dirección actual"
+          },
+          {
+            "id": "municipality",
+            "type": "field",
+            "label": "Municipio de Residencia"
+          },
+          {
+            "id": "phone_fixed",
+            "type": "field",
+            "label": "Teléfono Fijo"
+          },
+          {
+            "id": "cell",
+            "type": "field",
+            "label": "Celular"
+          },
+          {
+            "id": "email",
+            "type": "field",
+            "label": "Correo Electrónico"
+          },
+          {
+            "id": "emergency_name",
+            "type": "field",
+            "label": "Nombre contacto emergencia"
+          },
+          {
+            "id": "emergency_relation",
+            "type": "field",
+            "label": "Relación con el trabajador"
+          },
+          {
+            "id": "emergency_phone",
+            "type": "field",
+            "label": "Teléfono de contacto"
+          },
+          {
+            "id": "emergency_address",
+            "type": "field",
+            "label": "Dirección"
+          },
+          {
+            "id": "banking_section",
+            "type": "section",
+            "label": "Datos bancarios (si aplica para pago por transferencia)"
+          },
+          {
+            "id": "bank_name",
+            "type": "field",
+            "label": "Nombre del Banco"
+          },
+          {
+            "id": "bank_account",
+            "type": "field",
+            "label": "Número de cuenta"
+          },
+          {
+            "id": "bank_holder",
+            "type": "field",
+            "label": "Titular de Cuenta"
+          },
+          {
+            "id": "allergies",
+            "type": "field",
+            "label": "Alergias"
+          },
+          {
+            "id": "observations",
+            "type": "field",
+            "label": "Observaciones"
+          }
+        ],
+        "included": true
+      },
+      {
+        "id": "annex_identity_copy",
+        "type": "identity_copy",
+        "title": "Fotocopia del carné de identidad",
+        "included": true
+      }
+    ],
+    "subtitle": "Plantilla maestra de contratación de esta plaza",
+    "presentation": {
+      "title": "Contrato de trabajo · Demostración",
+      "date_line": "En La Habana, a ____ de __________ de ______.",
+      "logo_size": 100,
+      "logo_align": "right",
+      "plaza_line": "PLAZA: GESTOR TÉCNICO",
+      "watermark_size": 100,
+      "watermark_use_same": true
+    }
+  },
+  "nomenclators": [
+    {
+      "id": "03f21224-ffd2-44b0-b212-4880bc0ec2fa",
+      "category": "normas_politicas",
+      "key": "uso_cuidado_equipamiento",
+      "label": "Responsabilidad material sobre medios y recursos",
+      "value": "El trabajador asume responsabilidad sobre los medios técnicos, equipos, herramientas, insumos y demás recursos que El Cartel Studio le asigne para el desempeño de sus funciones. Deberá garantizar su cuidado, uso adecuado, conservación y devolución en las condiciones correspondientes, salvo el desgaste normal derivado de un uso correcto. Cualquier pérdida, daño, rotura o deterioro deberá reportarse de inmediato. Cuando se determine que el daño fue consecuencia directa de negligencia, mala manipulación, uso indebido o incumplimiento de los procedimientos establecidos, se evaluará la responsabilidad correspondiente y las opciones de reparación, reposición o compensación conforme al procedimiento interno y la normativa aplicable.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "06e77e7d-6e44-484a-a474-8ee3c18bfe4a",
+      "category": "regimen_disciplinario",
+      "key": "confidencialidad_manejo_informacion",
+      "label": "Confidencialidad y manejo de información",
+      "value": "La divulgación, reproducción, envío, publicación o utilización no autorizada de información interna, datos de clientes, artistas, proveedores, proyectos, presupuestos, documentos, conversaciones, archivos, contraseñas, material audiovisual o cualquier otra información conocida por razón del trabajo será considerada una falta disciplinaria. También se considerará incumplimiento compartir material de una producción, proyecto o cliente antes de contar con autorización para hacerlo. Para valorar la medida se tendrá en cuenta la naturaleza de la información, el alcance de la divulgación, el perjuicio causado, la intención, la posibilidad de corrección y la reincidencia. Los hechos graves que comprometan la confianza, la privacidad de terceros o los intereses de El Cartel Studio podrán dar lugar a medidas de mayor severidad.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "0b632abe-8a6a-4b32-9c93-9987d51e0347",
+      "category": "normas_politicas",
+      "key": "uso_cuidado_uniforme",
+      "label": "Uso y cuidado del uniforme",
+      "value": "Cuando El Cartel Studio asigne uniforme a una plaza, su uso será obligatorio durante la jornada laboral, producciones, servicios, eventos o actividades en las que la empresa así lo determine. El trabajador deberá mantenerlo limpio, completo y en buen estado, utilizarlo de forma adecuada y cuidar su presentación. No deberá modificarlo, prestarlo, intercambiarlo ni utilizarlo para fines ajenos al trabajo sin autorización. Cualquier pérdida, daño o deterioro fuera del desgaste normal deberá ser informado. Al finalizar la relación laboral o cuando la empresa lo solicite, los elementos de uniforme que correspondan deberán ser devueltos conforme al procedimiento establecido.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "199e6a3f-9c69-4f0d-9e97-d0ad2a5231ab",
+      "category": "normas_politicas",
+      "key": "orden_limpieza_puesto_trabajo",
+      "label": "Orden, limpieza y cuidado del puesto de trabajo",
+      "value": "Cada trabajador debe mantener su puesto y área de trabajo organizados, limpios y en condiciones adecuadas durante la jornada. Al finalizar el día deberá dejar recogidos y ordenados el buró, documentos, equipos, herramientas, materiales, insumos y demás recursos utilizados, retirando residuos y evitando dejar objetos fuera de lugar. El orden y la limpieza son una responsabilidad compartida y forman parte del cuidado de los espacios de El Cartel Studio, del sentido de pertenencia y de una operación profesional. Cuando un puesto o área tenga requisitos específicos de organización, almacenamiento o cierre, deberán cumplirse además los procedimientos establecidos para esa plaza.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "2978b613-f439-4f90-ab81-b65db165a0b3",
+      "category": "regimen_disciplinario",
+      "key": "accesos_credenciales_seguridad_digital",
+      "label": "Accesos, credenciales y seguridad digital",
+      "value": "Todo trabajador que reciba acceso a cuentas, aplicaciones, sistemas, dispositivos, redes, servidor, nube, correos, plataformas o credenciales de El Cartel Studio deberá utilizarlos únicamente para las funciones autorizadas. Constituyen faltas compartir contraseñas o códigos sin autorización, facilitar accesos a terceros, dejar sesiones expuestas de manera negligente, modificar configuraciones sin permiso, instalar herramientas no autorizadas, eliminar información de forma indebida o realizar acciones que comprometan la seguridad digital de la empresa. Ante cualquier sospecha de acceso no autorizado, pérdida de credenciales o incidencia de seguridad, deberá informarse de inmediato. La gravedad de la medida dependerá del riesgo generado, el daño ocasionado, la intencionalidad y la reincidencia.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "34094bcd-5f49-404d-8494-72b94735f83f",
+      "category": "normas_politicas",
+      "key": "capacitacion_inicial_autopreparacion",
+      "label": "Capacitación inicial y auto-preparación",
+      "value": "Toda persona que se incorpore a El Cartel Studio deberá completar el proceso de capacitación correspondiente a su plaza como parte fundamental de su preparación para asumir correctamente sus funciones. La capacitación comprenderá tanto las orientaciones y sesiones impartidas por la empresa como la auto-preparación individual del trabajador. Será responsabilidad de la persona prestar atención, participar activamente, estudiar y revisar los materiales, documentos, protocolos, procedimientos, herramientas, sistemas y recursos que se le indiquen; conocer las funciones, responsabilidades y límites de su plaza; revisar y comprender su contrato y demás documentos vinculados a su relación de trabajo; y solicitar oportunamente cualquier aclaración, documento o información que necesite para desempeñar correctamente sus funciones. No deberá asumirse que una indicación ha sido comprendida cuando existan dudas: corresponde al trabajador plantearlas y procurar la información necesaria antes de ejecutar una tarea. La finalización satisfactoria de la capacitación, el conocimiento de la documentación aplicable y la demostración de una preparación suficiente serán requisitos para considerar completada adecuadamente la etapa de incorporación y continuar el proceso de contratación o integración definitiva a la plaza. Los contenidos, duración, responsables y comprobaciones específicas de la capacitación se establecerán en el plan correspondiente a cada plaza.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "5cd6044a-aa13-4ef0-b3a8-40170ed4fcc6",
+      "category": "normas_politicas",
+      "key": "comportamiento_profesional",
+      "label": "Comportamiento",
+      "value": "Todo trabajador deberá mantener un trato respetuoso, una actitud profesional, disposición para colaborar, discreción y una comunicación adecuada con compañeros, clientes, artistas, proveedores, colaboradores y visitantes. Se espera un comportamiento cordial y responsable, utilizando un tono de voz apropiado y evitando gritos, discusiones innecesarias, comentarios ofensivos, burlas, expresiones vulgares, rumores, conversaciones indiscretas o acciones que puedan generar tensión, incomodidad o afectar el ambiente de trabajo. Los asuntos internos, personales o relacionados con clientes y proyectos deberán tratarse con la debida discreción y únicamente con las personas que corresponda. En presencia de clientes, artistas o terceros deberá cuidarse especialmente el lenguaje, el volumen de las conversaciones, la actitud y la forma de relacionarse. También se espera disposición para recibir indicaciones, resolver diferencias de manera respetuosa y contribuir a un entorno organizado, colaborativo y profesional. Cualquier conducta que afecte la convivencia, el funcionamiento del equipo o la imagen de El Cartel Studio podrá ser evaluada conforme a las normas internas y al régimen disciplinario aplicable.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "66f51a7a-7b04-42b8-93ae-9aefdc920ca9",
+      "category": "normas_politicas",
+      "key": "termino_relacion_laboral",
+      "label": "Término de la relación laboral",
+      "value": "Cualquiera de las partes que decida finalizar la relación laboral deberá comunicar su decisión a la otra con al menos 30 días de antelación. Posterior a la notificación se coordinará el cierre de las responsabilidades pendientes y el procedimiento de entrega de los medios técnicos, equipos, herramientas, documentos, accesos, llaves, uniformes y demás recursos que hayan sido asignados al trabajador, dejando constancia de su devolución y del estado en que se entregan. También deberán cerrarse los pendientes de información y cualquier otra obligación asociada a la plaza antes de concluir formalmente la relación laboral.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "6e166849-5da9-44c5-9460-64f7ee0a07fb",
+      "category": "regimen_disciplinario",
+      "key": "incumplimiento_protocolos_rutinas",
+      "label": "Incumplimiento de protocolos o rutinas",
+      "value": "El incumplimiento de protocolos, procedimientos, rutinas de trabajo, controles o instrucciones operativas será tenido en cuenta directamente en la evaluación de desempeño del trabajador. Cuando la remuneración, incentivos, bonificaciones o cualquier componente variable de los ingresos esté vinculado al resultado de dicha evaluación, este incumplimiento podrá repercutir en los ingresos correspondientes. Para determinar su impacto se tendrá en cuenta la gravedad del incumplimiento, la claridad de la instrucción, la capacitación recibida, el nivel de responsabilidad de la plaza, la afectación generada y la reincidencia. Los incumplimientos reiterados, negligentes o conscientes podrán dar lugar además a otras medidas disciplinarias según corresponda.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "6f3eca68-f679-47f2-8fe7-b494aaa82052",
+      "category": "normas_politicas",
+      "key": "presencia_personal",
+      "label": "Presencia",
+      "value": "Todo trabajador de El Cartel Studio deberá mantener una imagen personal limpia, ordenada y profesional, acorde con el entorno de trabajo y con la representación de la empresa frente a clientes, artistas, proveedores, colaboradores y visitantes. La higiene personal, el aseo, el cuidado general de la apariencia y la presentación deberán mantenerse durante toda la jornada. Se espera una presencia cuidada, discreta y coherente con una agencia creativa y de producción profesional, evitando descuido evidente, falta de higiene o cualquier condición de presentación que pueda afectar la percepción del servicio, la convivencia o la imagen de El Cartel Studio. La expresión personal será respetada siempre que sea compatible con las condiciones de seguridad, higiene, profesionalidad y funciones de la plaza.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "70d76bab-dccf-4106-9dcc-4356bf0b210b",
+      "category": "normas_politicas",
+      "key": "puntualidad_asistencia_llamados",
+      "label": "Puntualidad, asistencia y llamados",
+      "value": "Todo trabajador debe cumplir los horarios, llamados y tiempos de presentación establecidos para su plaza o proyecto. Las llegadas tardías, ausencias o imposibilidades de asistir deben informarse, siempre que sea posible, desde el día anterior y por los canales definidos. Cuando una ausencia o tardanza no haya sido comunicada y justificada conforme al procedimiento interno, el tiempo o día no trabajado podrá ser descontado del acumulado semanal, de acuerdo con la modalidad de pago y la normativa aplicable.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "7aad0868-586f-4eae-b4fc-8724e3c33eee",
+      "category": "normas_politicas",
+      "key": "accesos_credenciales",
+      "label": "Accesos y credenciales",
+      "value": "Los accesos a plataformas, aplicaciones, carpetas, servidores, cuentas y demás recursos de la empresa son de uso restringido. No deben compartirse sin autorización y deben utilizarse exclusivamente para las funciones asociadas al trabajo.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "845de702-171e-4b10-87ce-e74ef72f0650",
+      "category": "regimen_disciplinario",
+      "key": "seguridad_prevencion_riesgos",
+      "label": "Seguridad y prevención de riesgos",
+      "value": "Todos los trabajadores deberán cumplir las normas de seguridad, prevención y cuidado aplicables a su actividad. Se considerarán faltas realizar manipulaciones para las que no se tenga autorización o preparación, ignorar riesgos conocidos, dejar equipos o instalaciones en condiciones inseguras, incumplir medidas de protección, realizar conexiones o intervenciones técnicas no autorizadas o actuar de forma que pueda poner en riesgo a personas, equipos, instalaciones o producciones. Para determinar la medida se valorará el nivel de riesgo generado, la capacitación recibida, la intencionalidad, las consecuencias y la reincidencia.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "87022d40-a547-41f4-ae11-03a7089917dc",
+      "category": "normas_politicas",
+      "key": "uso_documento",
+      "label": "Uso de este documento",
+      "value": "Este documento es propiedad de El Cartel Studio y su uso está limitado exclusivamente a fines informativos dentro del proceso de selección de personal. Queda prohibida su reproducción, distribución, difusión o modificación total o parcial sin autorización previa de El Cartel Studio. El uso indebido del documento o la divulgación no autorizada de su contenido podrá dar lugar a las medidas que correspondan conforme a los acuerdos suscritos y la normativa aplicable.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "881f8e8b-f854-45b7-a66b-f2a9b0ac7160",
+      "category": "regimen_disciplinario",
+      "key": "aplicacion_progresiva_medidas_disciplinarias",
+      "label": "Aplicación progresiva de las medidas disciplinarias",
+      "value": "El régimen disciplinario de El Cartel Studio se aplicará de forma proporcional, documentada y atendiendo a la gravedad de cada hecho, sus consecuencias, los antecedentes y la reincidencia. Como criterio general: 1. Primera falta: advertencia verbal o escrita, explicación de la norma incumplida y orientación sobre la conducta esperada. 2. Segunda falta o reincidencia: advertencia escrita y aplicación de una medida correctiva superior, de acuerdo con la naturaleza y gravedad del incumplimiento. 3. Tercera falta o reincidencia reiterada: revisión por la dirección y posible aplicación de una medida disciplinaria superior, incluida una suspensión temporal cuando corresponda. 4. Reincidencia continua o falta grave: evaluación por la dirección para determinar medidas de mayor severidad, que pueden incluir la terminación de la relación laboral cuando proceda. La progresión no será automática: una falta grave podrá requerir una medida superior desde el primer hecho, mientras que circunstancias justificadas, ausencia de responsabilidad o causas ajenas al trabajador deberán ser consideradas antes de aplicar cualquier medida.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "91d127cd-838d-48d9-b6c8-66021a41292f",
+      "category": "normas_politicas",
+      "key": "confidencialidad_manejo_informacion",
+      "label": "Acuerdo de no divulgación y confidencialidad",
+      "value": "El trabajador no podrá divulgar ni utilizar sin autorización información confidencial relacionada con El Cartel Studio, sus clientes, proyectos, métodos de trabajo, tecnología, diseños, estrategias comerciales, documentos, bases de datos, acuerdos, precios, costos, credenciales, archivos ni cualquier otra información sensible o exclusiva a la que tenga acceso. Esta información no podrá utilizarse para beneficio personal ni de terceros y deberá protegerse frente a cualquier divulgación, acceso o uso no autorizado. El incumplimiento de esta obligación podrá dar lugar a la reclamación de los daños y perjuicios que correspondan y a las demás medidas previstas en los acuerdos suscritos y la normativa aplicable.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "9930abac-fe48-46fa-8e88-2564c41023ca",
+      "category": "normas_politicas",
+      "key": "politica_pluriempleo",
+      "label": "Política de pluriempleo",
+      "value": "El Cartel Studio reconoce que algunos colaboradores pueden desarrollar actividades laborales externas, siempre que estas no afecten sus responsabilidades dentro de la agencia. Dicha definicion puede ser aclarada con su jefe directo ya que todas las plazas no tienen esa opcion. El pluriempleo deberá cumplir las siguientes condiciones: 1. Compatibilidad de horarios: las actividades externas no podrán interferir con los horarios, capacitaciones, reuniones, llamados ni proyectos asignados. 2. Conflicto de intereses: no se permitirán actividades que compitan directamente con los servicios o proyectos de El Cartel Studio, comprometan información confidencial o generen un conflicto con los intereses de la agencia. 3. Rendimiento laboral: los compromisos externos no deberán afectar la productividad, calidad del trabajo, disponibilidad ni cumplimiento de las responsabilidades asociadas a la plaza. 4. Transparencia: cualquier actividad externa significativa que pueda afectar el desempeño deberá comunicarse al jefe inmediato o a la persona responsable de Recursos Humanos. 5. Evaluación de impacto: El Cartel Studio podrá evaluar la incidencia del pluriempleo sobre el desempeño y, cuando afecte la calidad, disponibilidad o resultados esperados, podrá adoptar las medidas organizativas o contractuales que correspondan. Esta política busca preservar la calidad del trabajo y mantener relaciones laborales basadas en la confianza, la responsabilidad y la transparencia.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "a02416ae-87ff-43f3-9a61-6904a361aa6f",
+      "category": "regimen_disciplinario",
+      "key": "uso_indebido_recursos_empresa",
+      "label": "Uso indebido de recursos de la empresa",
+      "value": "Los equipos, herramientas, instalaciones, materiales, vehículos, cuentas, servicios, aplicaciones y demás recursos de El Cartel Studio deberán utilizarse para los fines de trabajo autorizados. Su utilización para actividades personales, de terceros o ajenas a la empresa sin autorización se considerará una falta, aun cuando no se produzca daño material. Para aplicar una medida se tendrá en cuenta el recurso utilizado, el tiempo o consumo generado, el riesgo creado, la existencia de beneficio personal, la reiteración y cualquier afectación a la operación.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "a051df7f-4218-4a7f-a00e-1b0326d989eb",
+      "category": "normas_politicas",
+      "key": "derecho_imagen_creditos",
+      "label": "Derecho de imagen y créditos",
+      "value": "Como parte de la dinámica de comunicación, promoción y producción de El Cartel Studio, los trabajadores podrán ser convocados a participar en fotografías, reels, videos, contenidos institucionales, making of, piezas para redes sociales y otros materiales relacionados con la actividad de la empresa. Su imagen, voz o presencia podrá formar parte de estos contenidos cuando exista la autorización correspondiente y siempre dentro de un uso vinculado a El Cartel Studio, sus servicios, proyectos, actividades o comunicación corporativa. Cuando la participación implique una utilización especial de la imagen, una campaña específica, una pieza publicitaria para terceros o un uso que exceda la comunicación habitual de la empresa, deberá definirse y autorizarse de forma expresa según corresponda. La participación de un trabajador frente a cámara no implica por sí sola la adquisición de derechos de autor sobre la pieza final. Cuando exista una contribución profesional, creativa o técnica que corresponda acreditar, El Cartel Studio podrá incluir el nombre y función del trabajador en los créditos del proyecto de acuerdo con la naturaleza de su participación, los acuerdos establecidos con el cliente y el formato de publicación. En todos los casos deberá respetarse el uso profesional de la imagen, la dignidad de la persona y los límites previamente acordados.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "a90737b1-b801-4439-bf53-df6638357c02",
+      "category": "regimen_disciplinario",
+      "key": "trato_clientes_artistas_proveedores_colaboradores",
+      "label": "Trato a clientes, artistas, proveedores y colaboradores",
+      "value": "Toda interacción con clientes, artistas, proveedores, colaboradores y otras personas vinculadas a El Cartel Studio deberá mantenerse dentro de un trato respetuoso, profesional y acorde con la imagen de la empresa. Se considerarán faltas las expresiones ofensivas, discusiones inapropiadas, comportamientos irrespetuosos, divulgar asuntos internos frente a terceros, comentar información de otros clientes, asumir compromisos no autorizados o actuar de forma que pueda perjudicar la confianza o reputación de El Cartel Studio. La medida se determinará según la gravedad del comportamiento, sus consecuencias, la posibilidad de reparación y la reincidencia.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "ad906ae8-3a1c-4c29-a36d-df8f58a350cc",
+      "category": "regimen_disciplinario",
+      "key": "conducta_disciplina_general",
+      "label": "Conducta y disciplina general",
+      "value": "Las conductas irrespetuosas, desobediencia injustificada, incumplimientos graves de las normas internas, actos que afecten el ambiente de trabajo, la seguridad, la imagen de El Cartel Studio o la confianza necesaria para el desempeño de una plaza serán evaluados de acuerdo con su gravedad, contexto, consecuencias y antecedentes. Antes de adoptar una medida deberán analizarse los hechos y escucharse la explicación del trabajador. Las faltas graves o la reincidencia podrán dar lugar a medidas de mayor severidad conforme al régimen disciplinario general.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "ad9fc237-de3b-49c4-b910-a3e9798442ce",
+      "category": "regimen_disciplinario",
+      "key": "falsificacion_ocultamiento_alteracion_informacion",
+      "label": "Falsificación, ocultamiento o alteración de información",
+      "value": "La alteración intencional de inventarios, horarios, gastos, comprobantes, reportes, documentos, estados de tareas, registros de entrada y salida, entregas, incidencias o cualquier información utilizada por El Cartel Studio será considerada una falta grave. También se considerará falta ocultar deliberadamente errores, pérdidas, daños, incumplimientos o incidencias que deban ser informados. Antes de aplicar una medida se investigarán los hechos y las evidencias disponibles. Cuando se compruebe una actuación deliberada que afecte la confianza, el control interno o los intereses de la empresa, podrá aplicarse una medida disciplinaria de alta severidad.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "ade7b936-164f-4a5a-bf51-5b36671815e3",
+      "category": "normas_politicas",
+      "key": "medios_recursos_desempeno_trabajo",
+      "label": "Medios y recursos para el desempeño del trabajo",
+      "value": "El Cartel Studio proporcionará, de acuerdo con las características de cada plaza, los medios básicos necesarios para el correcto desempeño de las funciones asignadas. Estos podrán incluir puesto y espacio de trabajo, mobiliario, herramientas, equipos, medios técnicos, materiales, insumos, accesos, aplicaciones, recursos tecnológicos y demás elementos necesarios para desarrollar la actividad. Los medios y recursos entregados o asignados al trabajador serán registrados bajo su responsabilidad, quien deberá garantizar su uso adecuado, cuidado y conservación, e informar oportunamente cualquier carencia, avería, pérdida o necesidad que pueda afectar el desarrollo de su trabajo. Al finalizar la relación laboral, o cuando El Cartel Studio lo solicite, el trabajador deberá hacer entrega de los medios, equipos, herramientas, accesos y demás recursos que tenga asignados, dejando constancia de su devolución y del estado en que se entregan.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "bc995b13-c694-4e35-8801-2464ca922831",
+      "category": "regimen_disciplinario",
+      "key": "uso_imagen_representacion_empresa",
+      "label": "Uso de la imagen y representación de El Cartel Studio",
+      "value": "La marca, identidad, nombre, instalaciones, proyectos y representación pública de El Cartel Studio no podrán utilizarse para fines personales, comerciales o de terceros sin autorización. Se considerarán faltas publicar contenido interno o material no autorizado, realizar declaraciones públicas en nombre de la empresa sin estar facultado, utilizar la marca para gestiones personales, divulgar imágenes o información de clientes y proyectos sin autorización o presentarse frente a terceros con atribuciones que no correspondan a la plaza. La medida se determinará según el alcance público de la acción, el perjuicio causado, la posibilidad de corrección y la reincidencia.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "bd78f270-5f2f-452b-b4b8-a647957355b0",
+      "category": "regimen_disciplinario",
+      "key": "abandono_incumplimiento_responsabilidades",
+      "label": "Abandono o incumplimiento injustificado de responsabilidades",
+      "value": "Se considerará falta abandonar sin autorización el puesto, una producción, una gestión, una responsabilidad asignada o una tarea crítica antes de garantizar su continuidad o entrega adecuada. También constituye incumplimiento no informar oportunamente que una tarea no fue realizada, quedó incompleta o presenta un problema que pueda afectar el resultado. Para valorar la medida se tendrá en cuenta la responsabilidad de la plaza, la urgencia de la tarea, la afectación causada, si existió posibilidad de aviso y la reincidencia. Los casos que provoquen una afectación grave a una producción, cliente, servicio o funcionamiento de la empresa podrán recibir medidas de mayor severidad.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "be7dc078-15ce-4a67-b0ac-5165a0163d8c",
+      "category": "regimen_disciplinario",
+      "key": "equipamiento_medios_asignados",
+      "label": "Faltas relacionadas con equipamiento y medios asignados",
+      "value": "Ante una pérdida, daño, avería o deterioro de equipos, herramientas, mobiliario, materiales u otros medios asignados, no se presumirá automáticamente la responsabilidad del trabajador. Primero deberá realizarse una revisión de los hechos para determinar la causa y el grado real de responsabilidad. Esta revisión deberá considerar: el estado anterior del medio; su vida útil y desgaste normal; mantenimientos o fallas previamente reportadas; si el trabajador informó oportunamente algún defecto, riesgo o incidencia; quién tenía la custodia o utilizó el medio; las condiciones en que ocurrió el hecho; y cualquier otra evidencia disponible. Si el daño corresponde a desgaste normal, defecto previo, falla técnica, caso fortuito, fuerza mayor o responsabilidad de un tercero, no deberá atribuirse responsabilidad material al trabajador. Si se determina, con elementos suficientes, que existió negligencia, uso indebido, incumplimiento de instrucciones, ocultamiento de una incidencia o actuación directamente imputable al trabajador, la empresa documentará la conclusión y determinará la responsabilidad material que corresponda de manera proporcional al daño efectivamente causado y conforme a las reglas aplicables. Esta responsabilidad podrá contemplar reparación, reposición, compensación u otra medida procedente, sin perjuicio de la medida disciplinaria que corresponda cuando exista además una falta de conducta. La responsabilidad material nunca deberá aplicarse de forma automática sin investigación y determinación previa de responsabilidad.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "c3df43cc-5440-4e28-9a1d-ee7f2eae3ecf",
+      "category": "regimen_disciplinario",
+      "key": "puntualidad_asistencia",
+      "label": "Puntualidad y asistencia",
+      "value": "Todo trabajador debe cumplir los horarios, llamados y tiempos de presentación establecidos para su plaza, jornada o proyecto. Cualquier tardanza, ausencia o imposibilidad de asistir deberá informarse tan pronto como sea posible por los canales definidos. Para valorar cada caso se tendrá en cuenta si existió aviso previo, la justificación presentada, la duración de la tardanza o ausencia, el impacto causado en la operación y los antecedentes del trabajador. 1. Ausencia sin aviso ni justificación: cuando el trabajador no se presente a su jornada y no haya realizado una notificación previa o posterior debidamente justificada, el día no trabajado podrá ser descontado, además de quedar sujeto a la medida disciplinaria que corresponda según sus antecedentes y la afectación ocasionada. 2. Tardanza inferior a dos horas: será evaluada por el jefe inmediato atendiendo a la causa, frecuencia y afectación generada. Según el caso podrá resolverse mediante advertencia, recuperación del tiempo, ajuste correspondiente al tiempo no trabajado u otra medida proporcional. 3. Tardanza grave o reincidente: cuando la tardanza provoque una afectación significativa a la operación, se repita de forma injustificada o se aproxime a una parte sustancial de la jornada, podrá dar lugar, previa valoración del jefe inmediato y de la dirección cuando corresponda, a una medida equivalente de hasta media jornada de trabajo, además de la aplicación progresiva del régimen disciplinario. 4. Ausencias o tardanzas justificadas: cuando existan causas debidamente acreditadas o circunstancias excepcionales, estas deberán ser valoradas antes de aplicar cualquier medida. Toda medida económica o disciplinaria deberá quedar documentada y aplicarse conforme a la normativa laboral vigente y a las disposiciones internas de El Cartel Studio.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "dd979e17-9f52-48af-a6d6-7d2050a331b1",
+      "category": "normas_politicas",
+      "key": "horario_almuerzo_continuidad_operativa",
+      "label": "Horario de almuerzo y continuidad operativa",
+      "value": "En días de carga normal, el horario de almuerzo será de 30 minutos y en jornadas de alta carga de trabajo, el almuerzo se organizará de forma escalonada entre los trabajadores para mantener la continuidad de la producción sin afectar su tiempo y disfrute del mismo.",
+      "applies_to_all_roles": true
+    },
+    {
+      "id": "e2ddb63d-184b-4576-bab6-907b08281d1d",
+      "category": "normas_politicas",
+      "key": "propiedad_intelectual_titularidad_desarrollos",
+      "label": "Propiedad intelectual y titularidad de desarrollos",
+      "value": "Los documentos, procedimientos, diseños, conceptos, textos, fotografías, videos, piezas gráficas, reportes, sistemas de organización, bases de datos, plantillas, métodos, mejoras técnicas, materiales y demás contenidos o desarrollos que el trabajador cree o produzca como parte de sus funciones para El Cartel Studio, utilizando información, recursos o medios de la empresa, deberán ser entregados y conservados como parte de la documentación y los activos de trabajo correspondientes. La titularidad y los derechos de uso, reproducción, modificación, distribución, explotación o entrega a clientes que correspondan sobre dichos resultados se regirán por los acuerdos suscritos, la naturaleza de la relación de trabajo y la normativa aplicable. Los materiales, obras o desarrollos preexistentes que pertenezcan al trabajador y no hayan sido creados para El Cartel Studio conservarán su condición original, salvo acuerdo expreso en contrario. El trabajador no deberá incorporar materiales de terceros sin la autorización, licencia o permiso correspondiente, ni conservar, reutilizar, divulgar o entregar a terceros archivos, proyectos, documentos o desarrollos de El Cartel Studio fuera de los usos autorizados. Al finalizar la relación laboral deberá entregar los archivos, fuentes, documentos y demás materiales de trabajo que correspondan y eliminar cualquier copia cuya conservación no haya sido autorizada.",
+      "applies_to_all_roles": true
+    },
+    {
+      "category": "datos_contractuales_empresa",
+      "key": "denominacion_oficial",
+      "value": "El Cartel Studio"
+    },
+    {
+      "category": "datos_contractuales_empresa",
+      "key": "titular_representante",
+      "value": "Representante de demostración"
+    },
+    {
+      "category": "datos_contractuales_empresa",
+      "key": "identidad_representante",
+      "value": "00000000000"
+    },
+    {
+      "category": "datos_contractuales_empresa",
+      "key": "caracter_representante",
+      "value": "representante del empleador"
+    },
+    {
+      "category": "datos_contractuales_empresa",
+      "key": "domicilio_legal",
+      "value": "domicilio de demostración, La Habana"
+    }
+  ]
+}

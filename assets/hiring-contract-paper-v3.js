@@ -108,7 +108,7 @@ async function appendHiringIdentityImages(article,images,client){
  }
 }
 async function renderHiringContractPaperV3(root,result){
- await Promise.all(['contract-paper.css','hiring-contract-paper-v3.css'].map(file=>new Promise((resolve,reject)=>{if([...document.styleSheets].some(s=>s.href?.includes('/assets/'+file)))return resolve();const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/'+file+'?v=20261122-contract-demo';link.onload=resolve;link.onerror=()=>reject(Error('No se pudo cargar el formato contractual.'));document.head.append(link);})));
+ await Promise.all(['contract-paper.css','hiring-contract-paper-v3.css'].map(file=>new Promise((resolve,reject)=>{if([...document.styleSheets].some(s=>s.href?.includes('/assets/'+file)))return resolve();const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/'+file+'?v=20261122-contract-demo-completo';link.onload=resolve;link.onerror=()=>reject(Error('No se pudo cargar el formato contractual.'));document.head.append(link);})));
  const snapshot=result.contract,doc=structuredClone(snapshot.template),d=result.data||{};
  if(!Array.isArray(doc?.blocks)||!doc.blocks.length)throw Error('No está disponible la plantilla contractual de esta plaza.');
  const logos={...(snapshot.logos||{})};

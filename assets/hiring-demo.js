@@ -15,21 +15,6 @@ const demoData={
  planned_absence:'No declarado'
 };
 const demoRole='Gestor Técnico';
-const demoContract={
- role:{title:demoRole,payment_method:'Según disponibilidad'},
- template:{
-  title:'Contrato de trabajo · Demostración',
-  blocks:[
-   {id:'demo-intro',title:'Ejemplo de contratación',source:'custom',text:'Este documento es un ejemplo para verificar el recorrido, el anexo de datos y la incorporación de las imágenes en el PDF.'},
-   {id:'demo-worker',title:'Identificación del trabajador',source:'candidate'},
-   {id:'demo-signatures',title:'Conformidad y firmas',source:'candidate'}
-  ],
-  annexes:[
-   {type:'worker_data',title:'Datos del trabajador contratado'},
-   {type:'identity_copy',title:'Fotocopia del carné de identidad'}
-  ]
- }
-};
 function demoNotice(){
  const note=document.createElement('p');
  note.className='privacy-note hiring-demo-notice';
@@ -49,11 +34,14 @@ export async function openHiringDemoContract(root,data=demoData,images={}){
  if(typeof renderHiringContractPaperV3!=='function'){
   await Promise.all([
    'vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js',
-   'contract-paper-v3.js?v=1','hiring-contract-paper-v3.js?v=demo2'
+   'contract-paper-v3.js?v=1','hiring-contract-paper-v3.js?v=demo3'
   ].map(loadScript));
  }
+ const response=await fetch('/assets/hiring-demo-contract.json');
+ if(!response.ok)throw Error('No se pudo cargar el contrato de demostración.');
+ const contract=await response.json();
  root.classList.remove('hiring-candidate-form-surface');
- await renderHiringContractPaperV3(root,{demo:true,contract:demoContract,data,identity_images:images});
+ await renderHiringContractPaperV3(root,{demo:true,contract,data,identity_images:images});
  root.prepend(demoNotice());
 }
 export function openHiringDemo(root,renderForm){
