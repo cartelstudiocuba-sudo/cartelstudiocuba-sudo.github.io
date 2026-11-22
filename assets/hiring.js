@@ -53,6 +53,11 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-send-recipient,.hiring-send-message,.hiring-send-card{border:1px solid #485055;border-radius:12px;background:linear-gradient(140deg,#292e31,#1b1e21)}.hiring-send-recipient{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:14px}.hiring-send-recipient .hiring-review-icon,.hiring-send-card .hiring-review-icon{color:#ffda03}.hiring-send-recipient strong,.hiring-send-recipient small{display:block;overflow-wrap:anywhere}.hiring-notification-dialog .hiring-send-recipient small{margin:0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-send-message{padding:10px 12px;margin-bottom:12px}.hiring-send-message summary{cursor:pointer;font-weight:700}.hiring-send-excerpt{font-size:13px;font-weight:400;color:#e2e8ec;line-height:1.45;overflow-wrap:anywhere}.hiring-send-message[open] .hiring-send-excerpt,.hiring-send-excerpt:empty{display:none}.hiring-send-message summary small{margin:3px 0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-notification-dialog .hiring-send-message .hiring-message{margin:10px 0 0;padding:12px}.hiring-send-card{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;margin-bottom:8px}.hiring-send-card .hiring-send-preview-text{font-size:11px;color:#ffe474}.hiring-notification-dialog .hiring-send-card{border-color:#485055;background:linear-gradient(140deg,#292e31,#1b1e21);font-size:13px;padding:9px 10px}.hiring-preview-form label{display:block;margin:10px 0}.hiring-preview-form input:not([type="checkbox"]),.hiring-preview-form select{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #4d565d;border-radius:6px;background:#20262b;color:#fff;opacity:1}.hiring-preview-form small{letter-spacing:normal}.hiring-preview-form [hidden]{display:none!important}
   .hiring-notification-dialog .hiring-return-to-sheet{background:#56242b;border-color:#a14853;color:#ffe4e7}
   .hiring-notification-dialog .hiring-prepare-links{grid-column:1/-1;border-color:#8b742e;color:#ffe68b}
+  .hiring-notification-dialog.hiring-renew-dialog{width:440px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:clamp(18px,5vw,26px);border-color:#66552c}
+  .hiring-renew-dialog::backdrop{background:#080a0cbb}
+  .hiring-renew-heading{display:flex;align-items:center;gap:12px}.hiring-renew-heading .hiring-review-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#ffda031c;color:#ffda03}.hiring-renew-heading h3{margin:0;color:#fff;font-size:clamp(18px,5vw,22px);line-height:1.25}
+  .hiring-renew-dialog .hiring-renew-effects{margin:14px 0 16px;padding:11px 13px;background:#292416;border:1px solid #65502c;border-radius:10px;color:#ffe5a8;line-height:1.5}
+  .hiring-renew-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.hiring-renew-actions button{flex:1 1 auto}.hiring-notification-dialog .hiring-renew-submit{background:linear-gradient(150deg,#ffe45b,#ffda03);border-color:#ffda03;color:#1d1a11;font-weight:750}
   @media screen{.hiring-candidate-review .is-reading .contract-viewport,.hiring-candidate-review .is-reading>#contractArticle{position:absolute;left:-10000px}.hiring-contract-reading[hidden]{display:none}}
   @media print{.hiring-contract-reading,.hiring-contract-review .hiring-review-back,.hiring-candidate-review .contract-tools,.hiring-contract-review #contractError{display:none!important}}
   .hiring-document-preview:empty{display:none}.hiring-document-preview{margin-top:14px;color:#c7cdd0}.hiring-document-preview p{margin:0 0 8px}.hiring-document-preview img{display:block;max-width:100%;max-height:55dvh;object-fit:contain;border-radius:10px}
@@ -66,6 +71,29 @@ function hiringNotificationDialog(title,returnTo=null){
  const head=document.createElement('header'),label=document.createElement('div'),brand=document.createElement('small'),heading=document.createElement('h3'),close=document.createElement('button');brand.textContent='EL CARTEL STUDIO · CONTRATACIÓN';heading.textContent=title;close.type='button';close.className='hiring-close';close.textContent='×';close.setAttribute('aria-label','Cerrar');const dismiss=()=>{overlay.remove();if(returnTo)returnTo();else previous?.focus()};close.onclick=dismiss;label.append(brand,heading);head.append(label,close);dialog.append(head);overlay.append(dialog);document.body.append(overlay);close.focus();
  overlay.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button:not([hidden]):not(:disabled),a[href],textarea:not(:disabled),input:not(:disabled),select:not(:disabled)')].filter(item=>!item.closest('[hidden]')&&item.tabIndex>=0);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
  return {overlay,dialog};
+}
+function hiringWithLinkRenewalConfirmation(overlay,trigger,existing,proceed,opensWhatsApp=false){
+ if(!existing||existing.revoked_at||Date.parse(existing.expires_at)<=Date.now())return proceed();
+ const confirmation=document.createElement('dialog');
+ confirmation.className='hiring-notification-dialog hiring-renew-dialog';
+ confirmation.setAttribute('aria-labelledby','hiringRenewTitle');
+ confirmation.setAttribute('aria-describedby','hiringRenewEffects');
+ confirmation.innerHTML=`
+  <div class="hiring-renew-heading"><h3 id="hiringRenewTitle">Renovar enlaces de contratación</h3></div>
+  <p id="hiringRenewEffects" class="hiring-renew-effects">Los enlaces anteriores dejarán de funcionar. Si ya los compartiste con el candidato, envíale los nuevos.</p>
+  <div class="hiring-renew-actions">
+   <button type="button" autofocus>Cancelar</button>
+   <button type="button" class="hiring-renew-submit">${opensWhatsApp?'Renovar y abrir WhatsApp':'Renovar enlaces'}</button>
+  </div>`;
+ confirmation.querySelector('.hiring-renew-heading').prepend(hiringReviewIcon('documents'));
+ const [cancel,accept]=confirmation.querySelectorAll('button');
+ const dismiss=()=>{confirmation.close();confirmation.remove();trigger.focus({preventScroll:true});};
+ cancel.onclick=dismiss;
+ accept.onclick=()=>{dismiss();return proceed();};
+ confirmation.addEventListener('keydown',event=>event.stopPropagation());
+ confirmation.addEventListener('cancel',event=>{event.preventDefault();dismiss();});
+ overlay.append(confirmation);
+ confirmation.showModal();
 }
 function hiringMessagePreview(text){const preview=document.createElement('div');preview.className='hiring-message';preview.setAttribute('aria-label','Mensaje aprobado para el candidato');for(const part of text.split(/(https:\/\/[^\s]+)/g)){if(/^https:\/\//.test(part)){const a=document.createElement('a');a.href=part;a.textContent=part;a.target='_blank';a.rel='noopener noreferrer';preview.append(a)}else preview.append(document.createTextNode(part))}return preview;}
 
@@ -238,18 +266,17 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   hiringSendCards(overlay,dialog,candidate,trial,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
   const actions=hiringMessageActions(dialog);
   if(!existing?.employee_id){
-   const confirmLinks=()=>!existing||existing.revoked_at||Date.parse(existing.expires_at)<=Date.now()||
-    confirm('Se crearán enlaces nuevos. Los anteriores dejarán de funcionar. ¿Continuar?');
    const prepareLinks=document.createElement('button');
    prepareLinks.type='button';prepareLinks.className='hiring-prepare-links';prepareLinks.textContent='Preparar enlaces del expediente y contrato';
-   prepareLinks.onclick=()=>{if(confirmLinks())return openHiringPreparationNotification(candidateId,true);};
+   prepareLinks.onclick=()=>hiringWithLinkRenewalConfirmation(overlay,prepareLinks,existing,()=>openHiringPreparationNotification(candidateId,true));
    const send=hiringWhatsAppButton();
    send.onclick=()=>{
     if(candidatePhone(candidate).length<8){status.textContent='Falta un WhatsApp válido.';return;}
-    if(!confirmLinks())return;
-    const tab=window.open('about:blank','_blank');
-    if(!tab){status.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
-    return openHiringPreparationNotification(candidateId,true,false,tab);
+    return hiringWithLinkRenewalConfirmation(overlay,send,existing,()=>{
+     const tab=window.open('about:blank','_blank');
+     if(!tab){status.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
+     return openHiringPreparationNotification(candidateId,true,false,tab);
+    },true);
    };
    actions.append(prepareLinks,send);
   }
@@ -500,7 +527,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
  step('Contrato firmado',!!h.signed_at,'Valida el expediente para poder confirmar el contrato firmado.',act('Confirmar contrato firmado recibido y validado','signed',!h.verified_at||!!h.signed_at));
  const hire=document.createElement('button');hire.textContent='Formalizar contratación';hire.disabled=!!h.employee_id||!h.verified_at||!h.signed_at||!h.notified_at;if(h.employee_id)hire.textContent='Contratación formalizada';hire.onclick=async()=>{if(!confirm('¿Formalizar la contratación con el expediente y el contrato firmado validados?'))return;hire.disabled=true;try{await hiringRpc('hr_finalize_hiring',{p_trial:t.id});overlay.remove();await loadHiringCases();await refreshCandidateAfterStatusChange(id);}catch(e){status.textContent=e.message;hire.disabled=false;}};step('Formalizar contratación',!!h.employee_id,!h.verified_at||!h.signed_at?'Valida el expediente y confirma el contrato firmado.':'Confirma el envío de la notificación al candidato.',hire);
  if(primaryAction)controls.append(primaryAction);
- const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>{overlay.remove();openHiringPreparationNotification(id,true)};
+ const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>hiringWithLinkRenewalConfirmation(overlay,renew,h,()=>openHiringPreparationNotification(id,true));
  if(!h.employee_id){
   const management=document.createElement('details');management.className='hiring-management';
   const label=document.createElement('summary');label.textContent='Gestionar enlaces';
