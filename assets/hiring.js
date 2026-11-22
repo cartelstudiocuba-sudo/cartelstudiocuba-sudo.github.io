@@ -261,7 +261,7 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
   const status=document.createElement('p');
   status.setAttribute('role','status');
-  status.textContent=existing?.employee_id?'Contratación formalizada.':'Prepara los enlaces para revisar o copiar el mensaje completo antes de enviarlo.';
+  status.textContent=existing?.employee_id?'Contratación formalizada.':'Prepara los enlaces para revisar el mensaje. Al abrir WhatsApp, la ficha avanzará al paso 12.';
   dialog.append(status);
   hiringSendCards(overlay,dialog,candidate,trial,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
   const actions=hiringMessageActions(dialog);
@@ -294,41 +294,41 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
   await loadHiringCases();
   if(!overlay.isConnected){whatsappTab?.close();return;}
   const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
-  status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Abrir WhatsApp no confirma su envío.';
+  status.textContent='Puedes editar el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Al abrir WhatsApp, la ficha avanzará al paso 12.';
   const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;hiringSendCards(overlay,dialog,candidate,trial,editor);
   const links=hiringPersonalLinks(form,contract);dialog.append(links);
   dialog.querySelector('.hiring-send-message').open=true;
-  const confirmSend=document.createElement('button');confirmSend.textContent='Confirmar notificación enviada';confirmSend.className='hiring-confirm';confirmSend.hidden=true;
-  confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(candidateId,trial);hiringMessageDraft=undefined;overlay.remove();}catch(e){status.textContent=e.message;confirmSend.disabled=false;}};
-  const send=hiringWhatsAppButton();let opened=false;
+  const send=hiringWhatsAppButton();
+  const retryAdvance=document.createElement('button');retryAdvance.textContent='Reintentar avance al paso 12';retryAdvance.className='hiring-confirm';retryAdvance.hidden=true;
+  const continueRoute=!!window.CartelEvolution?.onboardingState?.(candidateId)?.hiring_reopened;
+  const advance=()=>finishHiringWhatsAppAdvance(candidateId,trial,continueRoute,overlay,status,retryAdvance);
+  retryAdvance.onclick=advance;
   send.onclick=async()=>{
    if(send.disabled)return;
    const phone=candidatePhone(candidate);
    if(phone.length<8)return alert('Falta un WhatsApp válido.');
    if(!editor.value.trim())return alert('Escribe un mensaje.');
-   if(!opened&&(!editor.value.includes(form)||!editor.value.includes(contract))){
+   if(!editor.value.includes(form)||!editor.value.includes(contract)){
     status.textContent='Incluye los enlaces del expediente y del contrato antes de abrir WhatsApp.';
     whatsappTab?.close();whatsappTab=null;return;
    }
    if(Date.parse(prepared.expires_at)<=Date.now())return status.textContent='Los enlaces han caducado. Cierra y vuelve a preparar la contratación.';
    send.disabled=true;
    try{
-    if(!opened){
-     // Reserve synchronously so popup blocking never advances the route.
-     const tab=whatsappTab||window.open('about:blank','_blank');
-     whatsappTab=null;
-     if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
-     try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
-     opened=true;
-     const pending={version:3,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened'};
-     try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify(pending));}catch(_){}
-    }
-    preserveCandidateSheet(candidateId);confirmSend.hidden=false;
-    status.textContent='WhatsApp abierto. Si enviaste el mensaje, confirma la notificación para avanzar al paso 12.';send.disabled=false;
-   }catch(e){status.textContent=e.message;send.textContent='Abrir WhatsApp';send.disabled=false;}
+    // The browser handoff, not WhatsApp delivery, triggers the transition.
+    const tab=whatsappTab||window.open('about:blank','_blank');
+    whatsappTab=null;
+    if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
+    try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
+   }catch(e){status.textContent=e.message;send.disabled=false;return;}
+   send.hidden=true;
+   const pending={version:4,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened',continueRoute};
+   try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify(pending));}catch(_){}
+   preserveCandidateSheet(candidateId);
+   await advance();
   };
   const actions=hiringMessageActions(dialog);
-  actions.append(send,confirmSend);
+  actions.append(send,retryAdvance);
   hiringAddReview(candidateId,overlay,actions);
   hiringReturnToSheet(actions,overlay);
   hiringMessageDraft={candidateId,expiresAt:prepared.expires_at,restore:hiringRestorePanel(overlay,dialog,dialog.querySelector('.hiring-send-message summary'))};
@@ -345,7 +345,7 @@ async function openHiringPreparationNotification(candidateId,renew=false,preview
 }
 // Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
 const hiringNotificationSaves=new Map();
-async function persistHiringNotification(id,trial){
+async function persistHiringNotification(id,trial,continueRoute){
  if(hiringNotificationSaves.has(trial.id))return hiringNotificationSaves.get(trial.id);
  const save=(async()=>{
   if(!hiringCases[String(id)]?.notified_at){
@@ -354,6 +354,7 @@ async function persistHiringNotification(id,trial){
   }
   await loadHiringCases();
   if(!hiringCases[String(id)]?.notified_at)throw Error('No se pudo comprobar el guardado. Reintenta.');
+  if(continueRoute)await onboardingCall(id,'hiring_continue');
   preserveCandidateSheet(id);
   await refreshCandidateAfterStatusChange(id);
   try{sessionStorage.removeItem('cartel-hiring-pending:'+trial.id);}catch(_){}
@@ -361,20 +362,29 @@ async function persistHiringNotification(id,trial){
  hiringNotificationSaves.set(trial.id,save);
  try{return await save;}finally{hiringNotificationSaves.delete(trial.id);}
 }
-async function resumeHiringConfirmation(id){
+async function finishHiringWhatsAppAdvance(id,trial,continueRoute,overlay,status,retry){
+ if(retry.disabled)return;
+ retry.disabled=true;retry.hidden=true;
+ status.textContent='WhatsApp abierto. Guardando el avance al paso 12…';
+ try{await persistHiringNotification(id,trial,continueRoute);hiringMessageDraft=undefined;overlay.remove();}
+ catch(e){status.textContent='No pudimos completar el avance. '+e.message;retry.disabled=false;retry.hidden=false;}
+}
+async function resumeHiringAdvance(id){
  const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||!['trial','hired'].includes(candidate?.status))return;
  let p;try{p=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+t.id)||'null');}catch(_){return;}
  // Old explicit-send confirmations are not evidence of a new automatic action.
- if(![2,3].includes(p?.version)||p.action!=='whatsapp_opened')return;
+ if(p?.version!==4||p.action!=='whatsapp_opened')return;
  if(document.getElementById('hiringNotificationOverlay'))return;
  const h=hiringCases[String(id)];
- if(p.stage!==t.stage||!h||h.revoked_at||Date.parse(h.expires_at)!==Date.parse(p.expires_at)||!Number.isFinite(Date.parse(p.expires_at))||Date.parse(p.expires_at)<=Date.now()||!Number.isFinite(p.at)||Date.now()-p.at>=86400000||p.at>Date.now()){
+ if(p.stage!==t.stage||!h||String(h.trial_id)!==String(t.id)||h.revoked_at||Date.parse(h.expires_at)!==Date.parse(p.expires_at)||!Number.isFinite(Date.parse(p.expires_at))||Date.parse(p.expires_at)<=Date.now()||!Number.isFinite(p.at)||Date.now()-p.at>=86400000||p.at>Date.now()){
   try{sessionStorage.removeItem('cartel-hiring-pending:'+t.id);}catch(_){}return;
  }
- const {overlay,dialog}=hiringNotificationDialog('Confirmar notificación de contratación');
- const info=document.createElement('p');info.setAttribute('role','status');info.textContent='Si enviaste el mensaje preparado, confirma el envío para avanzar al paso 12. Si no lo enviaste, vuelve a la ficha.';
- const confirmSend=document.createElement('button');confirmSend.className='hiring-confirm';confirmSend.textContent='Confirmar notificación enviada';confirmSend.onclick=async()=>{if(confirmSend.disabled)return;confirmSend.disabled=true;try{await persistHiringNotification(id,t);overlay.remove();}catch(e){info.textContent=e.message;confirmSend.disabled=false;}};
- dialog.append(info,confirmSend);hiringReturnToSheet(dialog,overlay);
+ const {overlay,dialog}=hiringNotificationDialog('Avanzar a inserción en sistema');
+ const info=document.createElement('p');info.setAttribute('role','status');
+ const retry=document.createElement('button');retry.className='hiring-confirm';retry.textContent='Reintentar avance al paso 12';
+ retry.onclick=()=>finishHiringWhatsAppAdvance(id,t,p.continueRoute===true,overlay,info,retry);
+ dialog.append(info,retry);hiringReturnToSheet(dialog,overlay);
+ await retry.onclick();
 }
 
 function hiringReviewIcon(key){

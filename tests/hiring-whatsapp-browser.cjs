@@ -25,7 +25,7 @@ for(const width of [320,390,1440]){
 
  assert.equal(await page.locator('.hiring-links').count(),0);
  const urls=message.match(/https:\/\/[^\s]+/g);assert.equal(urls.length,2);assert(urls[0].includes('/expediente-contratacion.html#token='));assert(urls[1].includes('/contrato-laboral.html#token='));const token=urls[0].split('#token=')[1];assert.match(token,/^[a-f0-9]{64}$/);assert.equal(urls[1].split('#token=')[1],token);assert.equal(await page.evaluate(()=>window.calls.find(c=>c.n==='hr_prepare_hiring').a.p_token),token);assert((await page.locator('[role=status]').innerText()).includes('Los enlaces vencen el '));
- assert(await page.getByRole('button',{name:'Confirmar notificación enviada',includeHidden:true}).isHidden());
+ assert(await page.getByRole('button',{name:'Reintentar avance al paso 12',includeHidden:true}).isHidden());
  assert.equal(await page.locator('[aria-label="Enlaces personalizados"] a').count(),2);
  assert.equal(await page.getByRole('button',{name:'Volver a la ficha',exact:true}).count(),1);
  assert.equal(await page.evaluate(()=>candidates[0].full_name),'CANDIDATO DE PRUEBA — Persona prueba');
@@ -46,12 +46,14 @@ for(const width of [320,390,1440]){
  assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);
  assert((await page.locator('[role=status]').innerText()).includes('bloqueó'));
  await page.evaluate(()=>window.blockPopup=false);await page.getByRole('button',{name:'Abrir WhatsApp',exact:true}).click();
- assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);await page.getByRole('button',{name:'Confirmar notificación enviada'}).click();
+ await page.getByRole('button',{name:'Reintentar avance al paso 12'}).waitFor();
  assert.equal(await page.evaluate(()=>new URL(window.opened[0]).searchParams.get('text')),finalText);
  assert((await page.locator('#hiringNotificationOverlay').innerText()).includes('Error sintético'));assert((await page.locator('#detailBody').innerText()).includes('Preparar contratación'));
  const openCount=await page.evaluate(()=>window.opens);const pending=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('cartel-hiring-pending:trial')));assert.equal(pending.action,'whatsapp_opened');assert(!JSON.stringify(pending).includes('token'));
- await page.locator('.hiring-close').click();await page.evaluate(()=>resumeHiringConfirmation('synthetic'));assert(await page.getByRole('button',{name:'Confirmar notificación enviada'}).isVisible());
- await page.evaluate(()=>failNotify=false);await page.getByRole('button',{name:'Confirmar notificación enviada'}).click();await page.getByText('12 ·',{exact:false}).waitFor();
+ await page.locator('.hiring-close').click();
+ await page.evaluate(()=>failNotify=false);
+ await page.evaluate(()=>resumeHiringAdvance('synthetic'));
+ await page.getByText('12 ·',{exact:false}).waitFor();
  assert.equal(await page.evaluate(()=>window.opens),openCount);assert.equal(await page.evaluate(()=>sessionStorage.getItem('cartel-hiring-pending:trial')),null);
  assert((await page.locator('#detailBody').innerText()).toLowerCase().includes('inserción en sistema'));assert.equal(await page.evaluate(()=>candidates[0].status),'trial');assert.equal(await page.evaluate(()=>candidatePreviousStep(candidates[0],trialPeriodsByCandidate.synthetic).hiringBack),true);
  await page.screenshot({path:artifacts+'/automatic-step12-'+width+'.png'});
@@ -66,8 +68,9 @@ for(const width of [320,390,1440]){
  await page.locator('textarea.hiring-message').waitFor();
  await page.screenshot({path:artifacts+'/notification-full-app-'+width+'.png',fullPage:true});
  assert(await page.locator('.hiring-notification-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
- await page.evaluate(()=>{window.notifyHold=true;document.querySelector('.hiring-whatsapp').click()});assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);await page.evaluate(()=>{const b=document.querySelector('.hiring-confirm');b.click();b.click();});
- assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),1);
+ await page.evaluate(()=>{window.notifyHold=true;const button=document.querySelector('.hiring-whatsapp');button.click();button.click();});
+ await page.waitForFunction(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length===1);
+
  assert((await page.locator('#detail .candidate-flow').innerText()).includes('Preparar contratación'));
  const recovery=await page.evaluate(()=>sessionStorage.getItem('cartel-hiring-pending:trial'));assert(recovery);
  await page.evaluate(()=>window.releaseNotify());await page.locator('#hiringNotificationOverlay').waitFor({state:'detached'});
@@ -75,12 +78,14 @@ for(const width of [320,390,1440]){
  await page.reload();await page.locator('#detail .candidate-flow').waitFor({state:'visible'});assert((await page.locator('#detail .candidate-flow').innerText()).includes('Inserción en sistema'));
  // Simulate an application switch interrupting the request, then a real reload.
  await page.evaluate(p=>{const h=JSON.parse(sessionStorage.getItem('fake-hiring'));delete h[0].notified_at;sessionStorage.setItem('fake-hiring',JSON.stringify(h));sessionStorage.setItem('cartel-hiring-pending:trial',p)},recovery);
- await page.reload();await page.getByRole('button',{name:'Confirmar notificación enviada'}).waitFor();assert((await page.locator('#detail .candidate-flow').innerText()).includes('Preparar contratación'));assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);await page.getByRole('button',{name:'Confirmar notificación enviada'}).click();await page.locator('#hiringNotificationOverlay').waitFor({state:'detached'});assert((await page.locator('#detail .candidate-flow').innerText()).includes('Inserción en sistema'));assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),1);
+ await page.reload();
+ await page.locator('#detail .candidate-flow').getByText('Inserción en sistema',{exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),1);
  // Revoked links cannot revive an old pending action.
  await page.evaluate(p=>{const h=JSON.parse(sessionStorage.getItem('fake-hiring'));delete h[0].notified_at;h[0].revoked_at='now';sessionStorage.setItem('fake-hiring',JSON.stringify(h));sessionStorage.setItem('cartel-hiring-pending:trial',p)},recovery);
  await page.reload();await page.locator('#detail .candidate-flow').waitFor({state:'visible'});assert((await page.locator('#detail .candidate-flow').innerText()).includes('Preparar contratación'));assert.equal(await page.evaluate(()=>window.calls.filter(c=>c.n==='hr_manage_hiring').length),0);
  await page.evaluate(()=>{hiringCases.synthetic={notified_at:'now'};openDetail('synthetic')});
  assert(await page.locator('#detail .candidate-flow').evaluate(el=>el.scrollWidth<=el.clientWidth));await page.locator('#detail .candidate-flow').screenshot({path:artifacts+'/flow-'+width+'.png'});assert.deepEqual(errors,[]);await page.close();
 }
-await browser.close();console.log('PASS: 320/390/1440px editable text, secure tokens, blocked popup, explicit confirmation before step12, save failure/retry, single opening, double click, full app return/reload, interrupted save recovery, revoked-link guard, trial status and dashboard navigation. All requests intercepted; no messages or production writes.');
+await browser.close();console.log('PASS: 320/390/1440px editable text, secure tokens, blocked popup, automatic transition at WhatsApp opening, save failure/retry, single opening, double click, full app return/reload, interrupted save recovery, revoked-link guard, trial status and dashboard navigation. All requests intercepted; no messages or production writes.');
 })().catch(e=>{console.error(e);process.exit(1)});
