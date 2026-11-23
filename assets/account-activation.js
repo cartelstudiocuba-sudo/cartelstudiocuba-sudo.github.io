@@ -4,13 +4,35 @@ const activationStatus=document.getElementById('activationStatus'),emailButton=d
 let activationToken='',passwordCheckpoint=null,activationBusy=false;
 function passwordStage(pending){for(const input of [passwordForm.elements.password,passwordForm.elements.confirm]){input.disabled=pending;input.hidden=pending;const label=document.querySelector('label[for="'+input.id+'"]');if(label)label.hidden=pending;}passwordForm.querySelector('button').textContent=pending?'Reintentar activación':'Establecer contraseña y activar';}
 function uncertainActivation(){activationStatus.textContent='La contraseña se guardó, pero no se pudo confirmar el estado del acceso. Comprueba si puedes entrar a Cartel Gestión. Si no puedes, solicita a RRHH que revise el estado o la vigencia del enlace.';activationLogin.textContent='Comprobar acceso en Cartel Gestión →';activationLogin.hidden=false;}
-async function activationReadiness(){const {data:{user},error}=await activationClient.auth.getUser();if(error)throw Error('No se pudo verificar la sesión. Comprueba la conexión y vuelve a intentar.');if(!user)return {user:null,ready:false};const {data,error:checkError}=await activationClient.rpc('system_onboarding_activation_ready',{p_token:activationToken});if(checkError)throw Error('No se pudo comprobar la activación. Reintenta.');return {user,ready:data===true};}
+async function activationReadiness(){
+ let user;
+ try{
+  const {data:sessionData,error:sessionError}=await activationClient.auth.getSession();
+  if(sessionError)throw sessionError;
+  // Opening an invitation before verifying email is normally an anonymous visit.
+  if(!sessionData?.session)return {user:null,ready:false};
+  const result=await activationClient.auth.getUser();
+  if(result.error)throw result.error;
+  user=result.data?.user;
+ }catch{
+  throw Error('No se pudo verificar la sesión. Comprueba la conexión y vuelve a intentar.');
+ }
+ if(!user)return {user:null,ready:false};
+ const {data,error}=await activationClient.rpc('system_onboarding_activation_ready',{p_token:activationToken});
+ if(error)throw Error('No se pudo comprobar la activación. Reintenta.');
+ return {user,ready:data===true};
+}
 async function activationCheck(){const state=await activationReadiness();if(passwordCheckpoint&&state.user?.id!==passwordCheckpoint.userId){passwordCheckpoint=null;passwordForm.reset();passwordStage(false);passwordForm.hidden=true;throw Error('La sesión cambió. Vuelve a abrir el enlace con la cuenta correcta.');}if(state.ready){passwordForm.hidden=false;emailButton.hidden=true;checkButton.hidden=true;passwordStage(!!passwordCheckpoint);activationStatus.textContent=passwordCheckpoint?'La contraseña ya se guardó. Reintenta únicamente la confirmación del acceso.':'Correo verificado. Establece tu contraseña para activar el acceso.';return true;}passwordForm.hidden=!passwordCheckpoint;if(passwordCheckpoint)uncertainActivation();return false;}
 async function initAccountActivation(){
  const params=new URLSearchParams(location.hash.slice(1)),incoming=params.get('activation');
  if(/^[a-f0-9]{64}$/.test(incoming||'')){activationToken=incoming;try{sessionStorage.setItem('cartel-onboarding-capability',incoming);}catch{}}
  else try{activationToken=sessionStorage.getItem('cartel-onboarding-capability')||'';}catch{}
- const {error}=await activationClient.auth.getSession();if(error)throw error;
+ try{
+  const {error}=await activationClient.auth.getSession();
+  if(error)throw error;
+ }catch{
+  throw Error('No se pudo comprobar la conexión. Recarga la página y vuelve a intentar.');
+ }
  history.replaceState(null,'',location.pathname);
  if(!/^[a-f0-9]{64}$/.test(activationToken)){emailButton.hidden=true;checkButton.hidden=true;activationStatus.textContent='Abre el enlace personal que recibiste por WhatsApp. Si verificaste el correo en otro navegador, vuelve a abrir allí el enlace de WhatsApp.';return;}
  if(!await activationCheck())activationStatus.textContent='Verifica tu correo registrado. Recibirás un enlace por correo; ábrelo y después regresa aquí. Si usas otro navegador, vuelve a abrir también el enlace de WhatsApp en ese navegador.';
