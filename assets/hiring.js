@@ -429,8 +429,18 @@ async function openHiringPreparationNotification(id,renew=false,previewOnly=fals
    if(!active())return;
    record=hiringCases[String(id)];
    notice.textContent=record?.submitted_at?'Datos recibidos':'Esperando datos';
+   const guide=document.createElement('aside');
+   guide.className='hiring-review-guide';
+   const copy=document.createElement('div');
+   const heading=document.createElement('strong');
+   const directions=document.createElement('p');
+   heading.textContent='Qué confirmar en la validación';
+   directions.textContent='Revisa los datos nuevos o modificados que envió el candidato y su fotografía. Al confirmar, la fotografía recibida pasa a su perfil.';
+   copy.append(heading,directions);
+   guide.append(hiringReviewIcon('info'),copy);
+   panel.append(guide);
    if(!record?.submitted_at){action('Actualizar estado',()=>show(2));return;}
-   const reviewedRevision=await openHiringReview(id,null,'data',{overlay,dialog,panel,active,show:()=>show(2)});
+   const reviewedRevision=await openHiringReview(id,null,'data',{overlay,dialog,panel,active,validation:true,show:()=>show(2)});
    if(!active())return;
    if(reviewedRevision==null){action('Actualizar expediente',()=>show(2));return;}
    action('Confirmar validación',async event=>{
@@ -506,6 +516,9 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
  if(!t?.id)throw Error('El candidato no tiene un período de prueba asociado.');
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
  if(!overlay.isConnected||(embedded&&!embedded.active()))return;
+ const validation=embedded?.validation===true;
+ const reviewData=validation?await hiringRpc('hr_hiring_validation_changes',{p_trial:t.id,p_revision:h.revision}):h.data;
+ if(!overlay.isConnected||(embedded&&!embedded.active()))return;
  status.textContent='';
  if(!embedded)content.append(hiringReviewProfile(h));
  const navigation=document.createElement('div');navigation.className='hiring-review-nav';navigation.setAttribute('role','tablist');navigation.setAttribute('aria-label','Secciones del expediente');content.append(navigation);
@@ -524,7 +537,9 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
   if(key==='contract'&&!panel.hasChildNodes())return loadHiringContractReview(panel,h);
   if(key==='documents')return loadGallery();
  };
- for(const [label,key] of [['Datos','data'],['Documentos','documents'],['Contrato','contract']]){
+ const sections=[['Datos','data'],['Documentos','documents']];
+ if(!validation)sections.push(['Contrato','contract']);
+ for(const [label,key] of sections){
   const button=document.createElement('button');button.type='button';button.append(hiringReviewIcon(key),document.createTextNode(label));button.id='hiring-review-tab-'+key;
   button.setAttribute('role','tab');button.setAttribute('aria-controls','hiring-review-panel-'+key);
   button.onclick=()=>selectTab(key);
@@ -532,7 +547,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
   panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);
   navigation.append(button);content.append(panel);tabs.set(key,{button,panel});
  }
- navigation.classList.toggle('hiring-review-nav-inline',embedded?.reviewStep===true);
+ navigation.classList.toggle('hiring-review-nav-inline',embedded?.reviewStep===true||validation);
  navigation.onkeydown=e=>{
   const keys=[...tabs.keys()],index=keys.indexOf(activeTab);
   const target={ArrowLeft:keys[(index+keys.length-1)%keys.length],ArrowRight:keys[(index+1)%keys.length],Home:keys[0],End:keys.at(-1)}[e.key];
@@ -540,9 +555,18 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
   e.preventDefault();selectTab(target);tabs.get(target).button.focus();
  };
  const groups=[['Identificación','data'],['Contacto y emergencia','contact'],['Escolaridad','education']];
- hiringFields.forEach((fields,index)=>{const section=document.createElement(embedded?'details':'section');section.className='hiring-review-section hiring-data-card';const title=document.createElement(embedded?'summary':'h4');const [group,icon]=groups[index];title.append(hiringReviewIcon(icon),document.createTextNode(group));const details=document.createElement('dl');details.className='hiring-review-grid';for(const [key,label] of fields){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),value=h.data?.[key];dt.textContent=label.replace(' (opcional)','');const empty=value===null||value===undefined||String(value).trim()==='';const optional=label.includes('(opcional)');dd.textContent=empty?(optional?'No declarado':'Pendiente'):String(value);if(empty)dd.classList.add(optional?'is-missing':'is-pending');if(empty&&!optional){row.classList.add('is-pending');const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');dd.prepend(dot);}if(['address','care_responsibilities','planned_absence','alternative_address'].includes(key))row.classList.add('is-wide');row.append(dt,dd);details.append(row);}section.append(title,details);tabs.get('data').panel.append(section);});
+ hiringFields.forEach((fields,index)=>{if(validation){
+  const available=index===1?[...fields,['emergency_address','Dirección del contacto de emergencia']]:fields;
+  fields=available.filter(([key])=>Object.hasOwn(reviewData,key));
+  if(!fields.length)return;
+ }const section=document.createElement(embedded?'details':'section');section.className='hiring-review-section hiring-data-card';const title=document.createElement(embedded?'summary':'h4');const [group,icon]=groups[index];title.append(hiringReviewIcon(icon),document.createTextNode(group));const details=document.createElement('dl');details.className='hiring-review-grid';for(const [key,label] of fields){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),value=reviewData?.[key];dt.textContent=label.replace(' (opcional)','');const empty=value===null||value===undefined||String(value).trim()==='';const optional=label.includes('(opcional)');dd.textContent=empty?(validation?'Eliminado por el candidato':optional?'No declarado':'Pendiente'):String(value);if(empty)dd.classList.add(optional?'is-missing':'is-pending');if(empty&&!optional){row.classList.add('is-pending');const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');dd.prepend(dot);}if(['address','care_responsibilities','planned_absence','alternative_address'].includes(key))row.classList.add('is-wide');row.append(dt,dd);details.append(row);}section.append(title,details);tabs.get('data').panel.append(section);});
+ if(validation&&!tabs.get('data').panel.hasChildNodes()){
+  const empty=document.createElement('p');
+  empty.textContent='El candidato no añadió ni modificó datos. Puedes revisar la fotografía y los documentos en la otra pestaña.';
+  tabs.get('data').panel.append(empty);
+ }
  const documents=document.createElement('section');documents.className='hiring-review-section';
- documents.innerHTML='<h4>Documentos del expediente</h4>';
+ documents.innerHTML=validation?'<h4>Documentos y fotografía recibidos</h4>':'<h4>Documentos del expediente</h4>';
  const gallery=document.createElement('div');gallery.className='hiring-doc-gallery';documents.append(gallery);
  tabs.get('documents').panel.append(documents);
  const viewer=document.createElement('dialog');viewer.className='hiring-doc-viewer';viewer.setAttribute('aria-labelledby','hiring-doc-viewer-title');
@@ -565,9 +589,9 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
    try{
     let {data,error}=await sb.storage.from('hr-hiring-private').download(t.id+'/'+file);
     let candidatePhoto=false;
-    if(error&&h.inherited_documents?.[file])({data,error}=await sb.storage.from('hr-identity-private').download(h.inherited_documents[file]));
+    if(!validation&&error&&h.inherited_documents?.[file])({data,error}=await sb.storage.from('hr-identity-private').download(h.inherited_documents[file]));
     const missing=()=>String(error?.statusCode||error?.status||'')==='404'||/object not found/i.test(error?.message||'');
-    if(error&&missing()&&file==='portrait'){
+    if(!validation&&error&&missing()&&file==='portrait'){
      const {data:rows,error:lookupError}=await sb.from('hr_candidate_answers').select('answer').eq('candidate_id',id).eq('question_key','photo_path').limit(1);
      if(lookupError)throw lookupError;
      const path=String(rows?.[0]?.answer||'').trim();
@@ -579,7 +603,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
      const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');
      badge.classList.add('is-pending');badge.replaceChildren(dot,document.createTextNode(candidatePhoto?'Pendiente · Foto de la candidatura':'Pendiente'));
     }
-    if(!data)return;
+    if(!data){if(validation)card.remove();return;}
     const source=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(data);});
     if(!overlay.isConnected)return;
     const caption=candidatePhoto?'Foto de la candidatura':title;
@@ -587,7 +611,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
     photo.onerror=()=>showRetry();
     const expand=document.createElement('span');expand.className='hiring-doc-expand';expand.textContent='⤢';expand.setAttribute('aria-hidden','true');
     thumbnail.replaceChildren(photo,expand);photo.src=source;
-    if(!candidatePhoto){badge.classList.add('is-ready');badge.textContent='Disponible';}
+    if(!candidatePhoto){badge.classList.add('is-ready');badge.textContent=validation&&file==='portrait'?'Nueva foto de perfil al confirmar':'Disponible';}
     thumbnail.disabled=false;
     thumbnail.onclick=()=>{viewerTitle.textContent=caption;viewerImage.alt=caption;viewerImage.src=source;viewer.showModal();};
    }catch(e){if(overlay.isConnected)showRetry();}
@@ -602,7 +626,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
  let galleryLoad;
  const loadGallery=()=>galleryLoad??=Promise.all(loaders.map(load=>load()));
  const renew=document.createElement('button');renew.textContent='Preparar nueva notificación y renovar enlaces';renew.onclick=()=>hiringWithLinkRenewalConfirmation(overlay,renew,h,()=>openHiringPreparationNotification(id,true));
- if(!h.employee_id){
+ if(!validation&&!h.employee_id){
   const management=document.createElement('details');management.className='hiring-management';
   const label=document.createElement('summary');label.textContent='Gestionar enlaces';
   const secondary=document.createElement('div');secondary.className='hiring-review-actions';

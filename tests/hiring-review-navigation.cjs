@@ -29,6 +29,10 @@ const assert=require('node:assert/strict');
    }),
    rpc:async(name,args)=>{
     if(name==='hr_prepare_hiring'){prepared=true;return {data:{expires_at:hiring.expires_at}};}
+    if(name==='hr_hiring_validation_changes'){
+     assert.equal(args.p_revision,hiring.revision);
+     return {data:{full_name:hiring.data.full_name,fixed_phone:''}};
+    }
     operations.push(args);
     if(args.p_action==='notify'){
      if(notifyFailed)return {error:{message:'Conexión interrumpida'}};
@@ -83,8 +87,12 @@ const assert=require('node:assert/strict');
   hiring.submitted_at='now';
   hiring.revision=2;
   hiring.data.full_name='Datos recibidos de prueba';
+  hiring.data.email='Anterior y sin cambios';
   await button('Actualizar estado').onclick();
   assert.match(d.querySelector('#hiringNotificationOverlay').textContent,/Datos recibidos de prueba/);
+  assert(!d.querySelector('#hiringNotificationOverlay').textContent.includes('Anterior y sin cambios'));
+  assert.match(d.querySelector('#hiringNotificationOverlay').textContent,/Eliminado por el candidato/);
+  assert.match(d.querySelector('.hiring-review-guide').textContent,/fotografía recibida pasa a su perfil/);
   const validate=button('Confirmar validación');
   await validate.onclick({currentTarget:validate});
   assert.equal(onboarding,true);
