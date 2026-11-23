@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solicitud de presupuesto · El Cartel Studio</title>
+<link rel="stylesheet" href="/assets/inventory-orders.css">
+<script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
+<script defer src="/assets/loading-runtime.js"></script>
+<script defer src="/assets/purchase-budget.js"></script>
+</head>
+<body>
+<main id="orders-root">
+<div class="ecs-window">
+<header class="ecs-head">
+<span class="ecs-kicker">EL CARTEL STUDIO · INVENTARIO</span>
+<h1>Solicitud de presupuesto</h1>
+<p class="ecs-muted">El jefe del área revisa la compra y, si da su visto bueno, la solicitud pasa al Manager General.</p>
+</header>
+<div class="ecs-content">
+<p id="budget-message" role="status" aria-live="polite"></p>
+<form id="budget-form" hidden>
+<h2>Nueva solicitud</h2>
+<div class="ecs-field-grid">
+<label>Tipo de producto<select name="area" required><option value="">Seleccionar área del producto</option><option>Audiovisual</option><option>Gráfica</option></select></label>
+<label>Producto<input name="product" required maxlength="160"></label>
+<label>Cantidad<input name="quantity" required type="number" min="0.001" max="999999" step="0.001"></label>
+<label>Importe total estimado<input name="amount" required type="number" min="0.01" max="99999999999" step="0.01"></label>
+<label>Moneda<select name="currency" required><option value="">Seleccionar moneda</option><option>USD</option><option>CUP</option></select></label>
+</div>
+<label>Motivo de la compra<textarea name="reason" required maxlength="1500" rows="2"></textarea></label>
+<div class="ecs-actions"><button class="ecs-primary">Enviar al jefe de área</button></div>
+</form>
+<section id="budget-list" hidden aria-labelledby="budget-list-title">
+<div class="ecs-section-head"><h2 id="budget-list-title">Solicitudes</h2><button type="button" id="budget-refresh" class="ecs-secondary">Actualizar</button></div>
+<div id="budget-requests"></div>
+<button type="button" id="budget-more" class="ecs-secondary" hidden>Ver más solicitudes</button>
+</section>
+</div></div>
+</main>
+</body>
+</html>

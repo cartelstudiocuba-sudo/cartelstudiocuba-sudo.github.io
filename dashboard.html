@@ -215,6 +215,13 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
     if(caps.approve)list.push({group:'Inventario',title:'Aprobar solicitudes',url:'/inventario-aprobaciones.html',icon:'◇'});
    }
   }catch(e){console.warn('Pedidos de insumos no disponibles',e)}
+  try{
+   const {data:budget,error:budgetError}=await client.rpc('purchase_budget_capabilities');
+   if(!budgetError&&budget&&Object.values(budget).some(Boolean)){
+    if(!grouped.has('Inventario'))grouped.set('Inventario',[]);
+    grouped.get('Inventario').push({group:'Inventario',title:'Solicitud de presupuesto',url:'/inventario-presupuesto.html',icon:'◇'});
+   }
+  }catch(e){console.warn('Solicitudes de presupuesto no disponibles',e);}
   if(data.fridge_audiovisual===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}
   if(data.fridge_manager===true&&data.fridge_audiovisual!==true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Cuadre de nevera',url:'/cuadre-nevera.html',icon:'◇'});}
   if(data.finance_cost_sheets===true){if(!grouped.has('Finanzas'))grouped.set('Finanzas',[]);grouped.get('Finanzas').push({group:'Finanzas',title:'Fichas de costo',url:'/fichas-costo.html',icon:'▥'});}
