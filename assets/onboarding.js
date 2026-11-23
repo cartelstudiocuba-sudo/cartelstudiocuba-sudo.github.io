@@ -68,7 +68,7 @@ async function openSystemOnboarding(id){
  const info=document.createElement('p');info.className='onboarding-status';info.setAttribute('role','status');info.textContent='Consultando el progreso guardado…';dialog.append(info);
 
  const content=document.createElement('div');dialog.append(content);
- let state,activation='',opened=false,editingConfiguration=false,configuredHere=false;
+ let state,activation='',opened=false,editingConfiguration=false;
  const manage=()=>{const a=document.createElement('a');a.className='btn';a.href='/rrhh.html?employee='+encodeURIComponent(state.employee_id||'')+'&person-tab=access';a.onclick=e=>{if(window.CartelEvolution){e.preventDefault();overlay.remove();CartelEvolution.open('access');}};a.textContent='Gestionar acceso';return a;};
  const update=async()=>{
   state=await onboardingCall(id,'read');if(!overlay.isConnected)return;
@@ -95,7 +95,7 @@ async function openSystemOnboarding(id){
   const stepLabels=['Configurar acceso','Crear cuenta','Notificar por WhatsApp'];
   for(const label of stepLabels)bars.append(document.createElement('span'));
   const renderProgress=()=>{
-   const completed=[configuredHere&&state.configured_at,configuredHere&&state.created_at,configuredHere&&state.whatsapp_opened_at];
+   const completed=[state.configured_at||state.created_at,state.created_at,state.whatsapp_opened_at];
    const current=completed.findIndex(done=>!done);
    step.textContent=current<0?'3 de 3 · Completado':(current+1)+' de 3 · '+stepLabels[current];
    [...bars.children].forEach((bar,index)=>{
@@ -107,7 +107,12 @@ async function openSystemOnboarding(id){
   progress.append(step,bars);
   banner.append(hiringReviewIcon('credential'),identity,progress);
   content.append(banner);
-  if(!configuredHere){content.append(await onboardingConfigurationForm(state,roleList,async(_mode,payload)=>{const latest=await onboardingCall(id,'read');if(onboardingHasAccount(latest))throw Error('Este trabajador ya tiene una cuenta vinculada. No se puede crear otra ni modificar la cuenta actual.');await onboardingCall(id,'configure',payload);configuredHere=true;await update();},()=>overlay.remove()));return;}
+  if(onboardingHasAccount(state)&&!state.created_at){
+   progress.hidden=true;
+   info.textContent='Este trabajador ya tiene una cuenta vinculada. Puedes consultarla en Gestionar acceso.';
+   content.append(manage());
+   return;
+  }
   if(state.configured_at){
    const summary=document.createElement('div');summary.className='onboarding-config-summary';
    const heading=document.createElement('div');heading.className='onboarding-config-heading';
@@ -121,7 +126,15 @@ async function openSystemOnboarding(id){
   if(state.created_at)content.append(manage());
   const section=document.createElement('section');section.className='onboarding-section';content.append(section);
   if(!state.created_at){
-   if(!state.configured_at||editingConfiguration){section.append(await onboardingConfigurationForm(state,roleList,async(_mode,payload)=>{await onboardingCall(id,'configure',payload);editingConfiguration=false;await update();},()=>overlay.remove(),{editing:editingConfiguration}));}
+   if(!state.configured_at||editingConfiguration){
+    section.append(await onboardingConfigurationForm(state,roleList,async(_mode,payload)=>{
+     const latest=await onboardingCall(id,'read');
+     if(onboardingHasAccount(latest))throw Error('Este trabajador ya tiene una cuenta vinculada. No se puede crear otra ni modificar la cuenta actual.');
+     await onboardingCall(id,'configure',payload);
+     editingConfiguration=false;
+     await update();
+    },()=>overlay.remove(),{editing:editingConfiguration}));
+   }
    if(state.configured_at&&!editingConfiguration){const heading=document.createElement('h4');heading.textContent='2 · Crear cuenta y preparar notificación';section.append(heading);const hint=document.createElement('p');hint.className='onboarding-step-hint';hint.textContent='La configuración está guardada. Continúa creando la cuenta y preparando el enlace de activación.';section.append(hint);}
    const create=document.createElement('button');create.type='button';create.className='onboarding-create';create.textContent='2 · Crear cuenta y preparar notificación';create.disabled=!state.configured_at||editingConfiguration;create.onclick=async()=>{create.disabled=true;info.textContent='Verificando la identidad y preparando la cuenta…';try{const result=await onboardingEdge(id,'provision');activation=result.activation_url;await update();}catch(e){info.textContent=e.message;create.disabled=false;}};if(state.configured_at&&!editingConfiguration)section.append(create);return;
   }
