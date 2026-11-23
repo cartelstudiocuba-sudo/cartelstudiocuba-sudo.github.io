@@ -1,133 +1,86 @@
-const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert/strict');
-(async()=>{const dom=new JSDOM('<!doctype html><button id="entry">Contratar</button>',{url:'https://gestion.elcartelstudio.com/rrhh.html',runScripts:'outside-only'}),w=dom.window,d=w.document;w.alert=m=>{throw Error(m)};w.confirm=()=>true;w.structuredClone=structuredClone;
-const h={trial_id:'T',candidate_id:'A',expires_at:'2099-01-01T00:00:00Z',revision:1,data:{full_name:'Persona <script>alert(1)</script>',mobile:'12345678'},contract:{logos:{}},submitted_at:'now',verified_at:null,signed_at:null,employee_id:null};let prepares=0,fail=false,failNotify=true,notifications=0,refreshes=0;
-w.candidates=[{id:'A',full_name:'Persona simulada',status:'trial'}];w.trialPeriodsByCandidate={A:{id:'T',stage:'training'}};w.trainingNotificationByTrial={T:true};w.trainingDecisionByTrial={T:'continue'};w.dashboardCandidateRoleName=()=> 'Plaza simulada';w.candidatePhone=()=> '5312345678';w.preserveCandidateSheet=()=>{};w.refreshCandidateAfterStatusChange=async()=>{refreshes++;};
-w.sb={from:()=>({select(){return this},eq(){return this},single:async()=>fail?{error:{message:'Lectura fallida'}}:{data:structuredClone(h)},then(resolve,reject){return Promise.resolve({data:[h]}).then(resolve,reject)}}),rpc:async(name,args)=>{if(name==='hr_prepare_hiring'){prepares++;return {data:{expires_at:h.expires_at}}}if(name==='hr_preview_hiring_form')return {data:{data:h.data,role_title:'Plaza simulada',front:true}};if(args.p_action==='verify')h.verified_at='now';if(args.p_action==='notify'){if(failNotify)return {error:{message:'Falló la conexión durante el guardado'}};notifications++;h.notified_at='now';w.candidates[0].status='hired';}return {data:null}}};
-w.eval(fs.readFileSync('assets/cuba-localities.js','utf8')+'\n'+fs.readFileSync('assets/hiring.js','utf8')+';window.__reviewScripts=hiringReviewScripts;window.__clearDraft=()=>{hiringMessageDraft=undefined};');await w.openHiringPreparationNotification('A');const original=d.querySelector('#hiringNotificationOverlay'),editor=d.querySelector('textarea.hiring-message');editor.value+='\nTexto editado para conservar.';const edited=editor.value,links=[...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href);assert.equal(links.length,2);assert(!d.querySelector('.hiring-personal-links').textContent.includes('token'));const review=[...d.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato');
-assert.match(editor.value,/^¡Felicidades, Persona!/);
-assert(editor.value.includes('Descarga el PDF, imprímelo, fírmalo y entrégaselo a tu tutor.'));
-assert(editor.value.includes('\n\n'+links[0]+'\n\n*Paso 2'));
-assert(editor.value.includes('\n\n'+links[1]+'\n\nCuando recibamos'));
-assert.equal(original.querySelector('.hiring-send-recipient'),null);
-assert.equal(original.querySelector('.hiring-send-card').nextElementSibling,original.querySelector('.hiring-send-message'));
-w.sb.from=((originalFrom)=>table=>{
- const query=originalFrom(table);
- query.maybeSingle=query.single;
- return query;
-})(w.sb.from);
-const formPreview=d.querySelector('[aria-label="Previsualizar formulario de expediente"]');
-await formPreview.onclick();
-assert.equal(d.querySelector('#hiringForm [name=full_name]').type,'hidden');
-assert.equal(d.querySelector('#hiringForm [name=front]'),null);
-assert.equal(d.querySelector('#hiringPrev'),null);
-assert.equal(original.querySelectorAll('.hiring-send-card').length,1);
-await d.querySelector('#hiringNext').onclick();
-assert.equal(d.querySelector('#hiringForm section:nth-of-type(2)').hidden,false);
-await d.querySelector('#hiringNext').onclick();
-await d.querySelector('#hiringNext').onclick();
-assert.equal(d.querySelector('#hiringSubmit').hidden,false);
-assert.equal(d.querySelector('#hiringSubmit').disabled,true);
-d.querySelector('.hiring-review-back').click();
-assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
-assert.equal(editor.value,edited);
-assert.equal(prepares,1);
-async function open(){review.click();await new Promise(r=>setTimeout(r,0));}
-await open();assert.equal(d.querySelector('#hiring-review-tab-data').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiring-review-panel-validation'),null);assert.equal(d.querySelectorAll('.hiring-review-section').length,4);assert.equal(d.querySelector('.hiring-review-grid dd').textContent,h.data.full_name);assert.equal(d.querySelectorAll('.hiring-review-grid script').length,0);assert([...d.querySelectorAll('dd')].some(el=>el.textContent==='No declarado'));
-const originalFrom=w.sb.from;
-const downloads=[];
-let hasCandidatePhoto=true;
-w.sb.from=(table)=>table==='hr_candidate_answers'?{select(){return this},eq(){return this},limit:async()=>({data:hasCandidatePhoto?[{answer:'interview-photos/A/photo.jpg'}]:[]})}:originalFrom(table);
-w.sb.storage={from:bucket=>({download:async path=>{
- downloads.push([bucket,path]);
- return bucket==='hr-candidate-files'?{data:new w.Blob(['photo'],{type:'image/jpeg'})}:{error:{message:'Object not found'}};
-}})};
-await d.querySelector('#hiring-review-tab-documents').onclick();
-assert.equal(d.querySelectorAll('.hiring-doc-card').length,3);
-assert(downloads.some(([bucket,path])=>bucket==='hr-candidate-files'&&path==='interview-photos/A/photo.jpg'));
-assert.equal(d.querySelectorAll('.hiring-doc-status.is-pending').length,3);
-const viewer=d.querySelector('.hiring-doc-viewer');viewer.showModal=()=>viewer.setAttribute('open','');
-d.querySelector('.hiring-doc-card.is-portrait button').click();
-assert.equal(viewer.open,true);
-assert.equal(viewer.querySelector('img').alt,'Foto de la candidatura');
-hasCandidatePhoto=false;
-assert.equal(d.querySelector('.hiring-management').open,false);
-const back=[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje');back.click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(editor.value,edited);assert.deepEqual([...d.querySelectorAll('.hiring-personal-links a')].map(a=>a.href),links);assert.equal(prepares,1);assert.equal(d.activeElement,review);
-w.open=()=>({location:{replace(url){assert(url.startsWith('https://wa.me/'))}},close(){}});await d.querySelector('.hiring-whatsapp').onclick();assert.equal(d.querySelector('.hiring-confirm').hidden,false);assert.match(d.querySelector('.hiring-confirm').textContent,/Reintentar avance/);
-await open();d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);assert.equal(d.querySelector('.hiring-confirm').hidden,false);assert.match(d.querySelector('.hiring-confirm').textContent,/Reintentar avance/);
-await open();d.querySelector('#hiringNotificationOverlay').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
-w.renderHiringContract=async root=>{
- root.innerHTML='<div class="contract-tools"><button id="contractDownload">Descargar</button></div><div class="contract-viewport"><article id="contractArticle"><div class="contract-paper-page"><header class="contract-paper-header">Contrato simulado</header><div class="contract-page-content"><p>Primera cláusula.</p></div><footer>Pie de página</footer></div><div class="contract-paper-page"><div class="contract-page-content"><p>Última cláusula.</p></div></div></article></div>';
-};w.eval("for(const file of ['vendor/jspdf-2.5.2.umd.min.js','vendor/html2canvas-1.4.1.min.js','trial-closure-document.js','contract-paper.js','hiring-contract-paper.js','hiring-contract.js','contract-paper-v3.js','hiring-contract-paper-v3.js'])window.__reviewScripts.set(file,Promise.resolve())");
-await open();const reviewPanel=d.querySelector('#hiringNotificationOverlay');d.querySelector('#hiring-review-tab-documents').click();await d.querySelector('#hiring-review-tab-contract').onclick();const reading=d.querySelector('.hiring-contract-reading');
-assert.equal(reading.hidden,false);
-const [readMode,letterMode]=d.querySelectorAll('.hiring-contract-modes button');
-assert.equal(readMode.getAttribute('aria-pressed'),'true');
-letterMode.click();
-assert.equal(reading.hidden,true);
-assert.equal(letterMode.getAttribute('aria-pressed'),'true');
-readMode.click();
-assert.equal(reading.hidden,false);
-assert.equal(reading.textContent,'Contrato simuladoPrimera cláusula.Última cláusula.');
-d.querySelector('#contractDownload').click();
-assert.equal(reading.hidden,true);
-d.querySelector('.contract-tools button').click();
-assert.equal(reading.hidden,false);
-d.querySelector('#hiring-review-tab-documents').click();assert.equal(d.querySelector('#hiring-review-panel-contract').hidden,true);assert.equal(d.querySelector('#hiring-review-panel-documents').hidden,false);d.querySelector('#hiring-review-tab-documents').dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.equal(d.querySelector('#hiring-review-tab-contract').getAttribute('aria-selected'),'true');assert.equal(d.querySelector('#hiringNotificationOverlay'),reviewPanel);d.querySelector('.hiring-close').click();assert.equal(d.querySelector('#hiringNotificationOverlay'),original);
-fail=true;await open();assert(d.querySelector('[role=status]').textContent.includes('Lectura fallida'));[...d.querySelectorAll('button')].find(b=>b.textContent==='← Volver al mensaje').click();assert.equal(editor.value,edited);assert.equal(prepares,1);assert.equal(d.querySelectorAll('#hiringNotificationOverlay').length,1);
-// Reopen from Step 11 with a draft, then simulate a fresh page with saved links.
-fail=false;d.querySelector('.hiring-close').click();
-await w.openHiringPreparationNotification('A');assert.equal(d.querySelector('textarea.hiring-message').value,edited);assert.equal(prepares,1);
-w.__clearDraft();await w.openHiringPreparationNotification('A');
-const savedMessage=d.querySelector('#hiringNotificationOverlay');
-assert(savedMessage.querySelector('.hiring-message').textContent.includes('[Enlace al expediente laboral]'));
-assert.equal(savedMessage.querySelector('.hiring-whatsapp').textContent,'Abrir WhatsApp');
-[...savedMessage.querySelectorAll('button')].find(b=>b.textContent==='Revisar expediente y contrato').click();
-await new Promise(r=>setTimeout(r,0));
-assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
-d.querySelector('.hiring-review-back').click();
-assert.equal(d.querySelector('#hiringNotificationOverlay'),savedMessage);assert.equal(prepares,1);
-// Direct review entries still return to the message, without rotating links.
-fail=false;await w.openHiringReview('A');assert.equal(d.querySelector('.hiring-review-back').textContent,'← Volver al mensaje');
-await d.querySelector('.hiring-review-back').onclick();
-assert.equal(d.querySelector('.hiring-notification-dialog h3').textContent,'Preparar contratación');
-assert.equal(prepares,1);
-const outbound=[];
-w.open=()=>({location:{replace(url){outbound.push(url)}},close(){}});
-w.HTMLDialogElement.prototype.showModal=function(){this.open=true;this.querySelector('[autofocus]').focus();};
-w.HTMLDialogElement.prototype.close=function(){this.open=false;};
-const confirmRenewal=()=>d.querySelector('.hiring-renew-dialog');
-const sendFromPreview=d.querySelector('.hiring-whatsapp');
-await sendFromPreview.onclick();
-assert.equal(confirmRenewal().querySelector('h3').textContent,'Renovar enlaces de contratación');
-assert.equal(d.activeElement.textContent,'Cancelar');
-confirmRenewal().dispatchEvent(new w.Event('cancel',{cancelable:true}));
-assert.equal(confirmRenewal(),null);
-assert.equal(d.activeElement,sendFromPreview);
-assert.equal(prepares,1);assert.equal(outbound.length,0);
-failNotify=false;
-await sendFromPreview.onclick();
-assert.equal(confirmRenewal().querySelector('.hiring-renew-submit').textContent,'Renovar y abrir WhatsApp');
-await confirmRenewal().querySelector('.hiring-renew-submit').onclick();
-assert.equal(prepares,2);assert.equal(outbound.length,1);
-assert(decodeURIComponent(outbound[0]).includes('/expediente-contratacion.html#token='));
-assert(decodeURIComponent(outbound[0]).includes('/contrato-laboral.html#token='));
-assert.equal(notifications,1);
-assert.equal(refreshes,1);
-assert.equal(d.querySelector('#hiringNotificationOverlay'),null);
-assert.equal(w.sessionStorage.getItem('cartel-hiring-pending:T'),null);
-w.__clearDraft();await w.openHiringPreparationNotification('A');
-assert.equal(d.querySelector('.hiring-prepare-links'),null);
-assert.deepEqual([...d.querySelector('.hiring-message-actions').children].map(button=>button.textContent),['Revisar expediente y contrato','Abrir WhatsApp','Volver a la ficha']);
-d.querySelector('.hiring-close').click();
-const pending={version:4,stage:'training',expires_at:h.expires_at,at:Date.now(),action:'whatsapp_opened'};
-h.notified_at=null;w.candidates[0].status='trial';
-w.sessionStorage.setItem('cartel-hiring-pending:T',JSON.stringify({...pending,version:3}));
-await w.resumeHiringAdvance('A');assert.equal(notifications,1);
-w.sessionStorage.setItem('cartel-hiring-pending:T',JSON.stringify(pending));
-h.revoked_at='now';await w.resumeHiringAdvance('A');assert.equal(notifications,1);
-h.revoked_at=null;w.sessionStorage.setItem('cartel-hiring-pending:T',JSON.stringify(pending));
-await w.resumeHiringAdvance('A');assert.equal(notifications,2);assert.equal(outbound.length,1);
-let reopenedAdvances=0;w.onboardingCall=async(id,action)=>{assert.equal(id,'A');assert.equal(action,'hiring_continue');reopenedAdvances++;};
-w.sessionStorage.setItem('cartel-hiring-pending:T',JSON.stringify({...pending,continueRoute:true}));
-await w.resumeHiringAdvance('A');assert.equal(notifications,2);assert.equal(reopenedAdvances,1);
-dom.window.close();console.log('PASS: review navigation, saved and edited messages, direct entry and link preservation');})().catch(e=>{console.error(e);process.exit(1)});
+const {JSDOM}=require('jsdom');
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
+
+(async()=>{
+ const dom=new JSDOM('<!doctype html><main id="sheet">Ficha del candidato</main>',{
+  url:'https://gestion.elcartelstudio.com/rrhh.html?candidate=A',
+  runScripts:'outside-only'
+ });
+ try{
+  const {window:w}=dom,d=w.document;
+  const hiring={trial_id:'T',candidate_id:'A',expires_at:'2099-01-01T00:00:00Z',revision:1,data:{full_name:'Persona simulada'}};
+  const operations=[];
+  let popupBlocked=true,notifyFailed=true,prepared=false;
+  let opened='',onboarding=false;
+  w.candidates=[{id:'A',full_name:'Persona simulada',status:'trial'}];
+  w.trialPeriodsByCandidate={A:{id:'T',stage:'training'}};
+  w.dashboardCandidateRoleName=()=> 'Plaza simulada';
+  w.candidatePhone=()=> '5312345678';
+  w.preserveCandidateSheet=id=>assert.equal(id,'A');
+  w.refreshCandidateAfterStatusChange=async()=>assert.equal(w.candidates[0].status,'hired');
+  w.openSystemOnboarding=id=>{assert.equal(id,'A');onboarding=true;};
+  w.open=()=>popupBlocked?null:{location:{replace:url=>{opened=url;}},close(){}};
+  w.sb={
+   from:()=>({
+    select(){return this;},eq(){return this;},
+    single:async()=>({data:structuredClone(hiring)}),
+    then(resolve,reject){return Promise.resolve({data:prepared?[structuredClone(hiring)]:[]}).then(resolve,reject);}
+   }),
+   rpc:async(name,args)=>{
+    if(name==='hr_prepare_hiring'){prepared=true;return {data:{expires_at:hiring.expires_at}};}
+    operations.push(args);
+    if(args.p_action==='notify'){
+     if(notifyFailed)return {error:{message:'Conexión interrumpida'}};
+     hiring.notified_at='now';
+    }else{
+     assert.equal(args.p_action,'validate_and_advance');
+     assert.equal(args.p_revision,hiring.revision);
+     assert(hiring.submitted_at);
+     hiring.verified_at='now';
+     w.candidates[0].status='hired';
+    }
+    return {data:null};
+   }
+  };
+  w.eval(fs.readFileSync('assets/hiring.js','utf8'));
+  const route=()=>[...d.querySelectorAll('.hiring-step-route button')];
+  const button=name=>[...d.querySelectorAll('button')].find(item=>item.textContent===name);
+  await w.openHiringPreparationNotification('A');
+  assert.deepEqual([...d.querySelectorAll('[role=tab]')].map(tab=>tab.textContent),['Datos','Documentos','Contrato']);
+  assert(route()[0].matches('.is-current'));
+  assert(route()[1].disabled&&route()[2].disabled);
+  assert.equal(button('Enviar mensaje al candidato'),undefined);
+  await button('Continuar').onclick();
+  assert(route()[0].matches('.is-complete')&&route()[1].matches('.is-current'));
+  assert.equal(d.querySelector('.hiring-send-card').nextElementSibling.className,'hiring-send-message');
+  const editor=d.querySelector('textarea.hiring-message');
+  editor.value+='\nTexto adicional';
+  await button('Enviar mensaje al candidato').onclick();
+  assert.equal(operations.length,0);
+  popupBlocked=false;
+  await button('Enviar mensaje al candidato').onclick();
+  assert.match(decodeURIComponent(opened),/Texto adicional/);
+  assert.match(decodeURIComponent(opened),/expediente-contratacion\.html#token=/);
+  assert(route()[1].matches('.is-current'));
+  assert.equal(w.candidates[0].status,'trial');
+  notifyFailed=false;
+  const retry=button('Reintentar registrar apertura');
+  await retry.onclick({currentTarget:retry});
+  assert(route()[1].matches('.is-complete')&&route()[2].matches('.is-current'));
+  assert.match(d.querySelector('#hiringNotificationOverlay').textContent,/Esperando datos/);
+  assert.equal(button('Confirmar validación'),undefined);
+  assert.equal(onboarding,false);
+  hiring.submitted_at='now';
+  hiring.revision=2;
+  hiring.data.full_name='Datos recibidos de prueba';
+  await button('Actualizar estado').onclick();
+  assert.match(d.querySelector('#hiringNotificationOverlay').textContent,/Datos recibidos de prueba/);
+  const validate=button('Confirmar validación');
+  await validate.onclick({currentTarget:validate});
+  assert.equal(onboarding,true);
+  assert.equal(d.querySelector('#hiringNotificationOverlay'),null);
+  assert.deepEqual(operations.map(operation=>operation.p_action),['notify','notify','validate_and_advance']);
+  console.log('PASS: revisión, WhatsApp, reintento, espera, validación e inserción en sistema');
+ }finally{dom.window.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -50,6 +50,16 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-candidate-review .hiring-data-card h4{margin-bottom:7px}.hiring-candidate-review .hiring-data-card .hiring-review-grid{grid-template-columns:minmax(0,1fr);gap:0}.hiring-data-card .hiring-review-grid>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid #ffffff16;border-radius:0;background:none}.hiring-data-card .hiring-review-grid dt{margin:0;overflow-wrap:anywhere}.hiring-data-card .hiring-review-grid dd{text-align:right;font-size:13px}
   .hiring-data-card .hiring-review-grid>div.is-pending{padding-inline:8px;border-radius:6px;background:#ffbf4714}.hiring-data-card .hiring-review-grid>.is-pending dt{color:#f7dfaf}.hiring-data-card .hiring-review-grid dd.is-pending{color:#ffda03;font-weight:750;display:flex;align-items:center;justify-content:flex-end;gap:6px}.hiring-field-pending-dot{display:inline-block;flex:0 0 7px;height:7px;border-radius:50%;background:#ff5a62}
   .hiring-doc-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hiring-doc-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #454c50;border-radius:12px;background:linear-gradient(145deg,#2b3033,#1b1e21)}.hiring-doc-card.is-portrait{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr);align-items:center;gap:12px}.hiring-doc-card h5{margin:0;font-size:13px;line-height:1.3}.hiring-notification-dialog .hiring-doc-thumb{position:relative;display:grid;place-items:center;width:100%;padding:4px;aspect-ratio:1.6;background:#111416;border-radius:8px;border:1px solid #4a5156;color:#c4cdd2}.hiring-doc-card.is-portrait .hiring-doc-thumb{aspect-ratio:1}.hiring-doc-thumb img{width:100%;height:100%;min-height:0;object-fit:contain;border-radius:5px}.hiring-doc-expand{position:absolute;top:5px;right:5px;padding:0 4px;border-radius:4px;background:#111e;color:#fff}.hiring-doc-status{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#c7d0d6}.hiring-doc-status.is-pending{color:#ffda03}.hiring-doc-status.is-ready{color:#bdffcf}.hiring-doc-viewer{border:1px solid #53575b;border-radius:16px;background:#16191b;color:white;width:min(94vw,860px);max-width:none;padding:14px;box-sizing:border-box}.hiring-doc-viewer::backdrop{background:#000c}.hiring-doc-viewer header{margin-bottom:12px}.hiring-doc-viewer img{display:block;max-width:100%;max-height:72dvh;object-fit:contain;margin:auto}
+  .hiring-step-route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:18px 0}
+  .hiring-notification-dialog .hiring-step-route button{min-width:0;padding:8px 12px 8px 15px;border:0;border-radius:0;background:linear-gradient(#495057,#30363b);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%);font-size:clamp(11px,3.2vw,15px)}
+  .hiring-step-route button:disabled{cursor:default}
+  .hiring-notification-dialog .hiring-step-route .is-current{background:linear-gradient(#ffe450,#ffda03);color:#161400}
+  .hiring-notification-dialog .hiring-step-route .is-complete{background:linear-gradient(#218355,#14653d);color:#fff}
+  .hiring-step-route button[aria-current=step]:focus-visible,.hiring-step-route button:focus-visible{filter:brightness(1.3);text-decoration:underline}
+  .hiring-step-footer{margin-top:12px}
+  .hiring-step-footer button,.hiring-step-route~section>.hiring-confirm,.hiring-step-route~section>.hiring-whatsapp{width:100%}
+  .hiring-step-route~section>[role=status]:empty{display:none}
+  @media print{.hiring-step-route,.hiring-step-footer,.hiring-step-route~section>.hiring-confirm{display:none!important}}
   .hiring-send-message,.hiring-send-card{border:1px solid #485055;border-radius:12px;background:linear-gradient(140deg,#292e31,#1b1e21)}.hiring-send-card .hiring-review-icon{color:#ffda03}.hiring-send-message{padding:10px 12px;margin-bottom:12px}.hiring-send-message summary{cursor:pointer;font-weight:700}.hiring-send-excerpt{font-size:13px;font-weight:400;color:#e2e8ec;line-height:1.45;overflow-wrap:anywhere}.hiring-send-message[open] .hiring-send-excerpt,.hiring-send-excerpt:empty{display:none}.hiring-send-message summary small{margin:3px 0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-notification-dialog .hiring-send-message .hiring-message{margin:10px 0 0;padding:12px}.hiring-send-card{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;margin-bottom:8px}.hiring-send-card .hiring-send-preview-text{font-size:11px;color:#ffe474}.hiring-notification-dialog .hiring-send-card{border-color:#485055;background:linear-gradient(140deg,#292e31,#1b1e21);font-size:13px;padding:9px 10px}.hiring-preview-form label{display:block;margin:10px 0}.hiring-preview-form input:not([type="checkbox"]),.hiring-preview-form select{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #4d565d;border-radius:6px;background:#20262b;color:#fff;opacity:1}.hiring-preview-form small{letter-spacing:normal}.hiring-preview-form [hidden]{display:none!important}
   .hiring-notification-dialog .hiring-return-to-sheet{background:#56242b;border-color:#a14853;color:#ffe4e7}
   .hiring-notification-dialog.hiring-renew-dialog{width:440px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:clamp(18px,5vw,26px);border-color:#66552c}
@@ -103,7 +113,7 @@ function hiringReviewBack(dialog,back,label){const button=document.createElement
 function hiringPersonalLinks(form,contract){const links=document.createElement('nav');links.className='hiring-personal-links';links.setAttribute('aria-label','Enlaces personalizados');for(const [href,label] of [[form,'Completar expediente laboral'],[contract,'Revisar y descargar contrato']]){const a=document.createElement('a');a.href=href;a.textContent=label+' ↗';a.target='_blank';a.rel='noopener noreferrer';links.append(a);}return links;}
 let hiringCases={};
 function hiringPreparationActions(id,h){
- return '<button type="button" class="candidate-flow-action" onclick="openHiringPreparationNotification(\''+hiringEsc(id)+'\')">Notificar al candidato →</button>';
+ return '<button type="button" class="candidate-flow-action" onclick="openHiringPreparationNotification(\''+hiringEsc(id)+'\')">Preparar contratación →</button>';
 }
 function hiringReturnToSheet(dialog,overlay){
  const back=document.createElement('button');back.className='hiring-return-to-sheet';back.textContent='Volver a la ficha';back.onclick=()=>overlay.remove();dialog.append(back);
@@ -199,13 +209,7 @@ function hiringWhatsAppButton(){
  button.innerHTML=hiringWhatsAppIcon+'<span>Abrir WhatsApp</span>';
  return button;
 }
-function hiringMessageActions(dialog){
- const actions=document.createElement('footer');
- actions.className='hiring-message-actions';
- dialog.append(actions);
- return actions;
-}
-function hiringSendCards(overlay,dialog,trial,message){
+function hiringSendCards(overlay,dialog,panel,trial,message){
  const disclosure=document.createElement('details');disclosure.className='hiring-send-message';
  const summary=document.createElement('summary'),caption=document.createElement('small');
  summary.textContent='Mensaje de WhatsApp';caption.textContent='Ver mensaje completo';summary.append(caption);
@@ -221,7 +225,7 @@ function hiringSendCards(overlay,dialog,trial,message){
  const action=document.createElement('span');action.className='hiring-send-preview-text';action.textContent='Previsualizar';
  card.append(hiringReviewIcon('documents'),document.createTextNode('Formulario de expediente'),action);
  card.onclick=()=>openHiringCandidatePreview(trial,hiringRestorePanel(overlay,dialog,card));
- dialog.append(card,disclosure);
+ panel.append(card,disclosure);
 }
 async function openHiringCandidatePreview(trial,back){
  const {dialog}=hiringNotificationDialog('Formulario de expediente',back);
@@ -236,149 +240,188 @@ async function openHiringCandidatePreview(trial,back){
   showHiringCandidateForm(root,result,null,true);
  }catch(e){root.textContent='No se pudo cargar la vista previa. Vuelve al mensaje e inténtalo de nuevo.';}
 }
-let hiringMessageDraft;
-function hiringAddReview(candidateId,overlay,container){
- const review=document.createElement('button');
- review.type='button';
- review.className='hiring-open-review';
- const label=document.createElement('span');label.textContent='Revisar expediente y contrato';
- review.append(hiringReviewIcon('documents'),label);
- review.onclick=()=>openHiringReview(candidateId,hiringRestorePanel(overlay,overlay.firstElementChild,review));
- container.append(review);
-}
-async function openHiringPreparationNotification(candidateId,renew=false,previewOnly=false,whatsappTab=null){
- const existing=hiringCases[String(candidateId)];
- const candidate=candidates.find(c=>String(c.id)===String(candidateId)),trial=trialPeriodsByCandidate[String(candidateId)];
- if(!renew&&(existing||previewOnly)&&candidate){
-  const draft=hiringMessageDraft;
-  if(existing&&draft?.candidateId===candidateId&&draft.expiresAt===existing.expires_at&&!existing.revoked_at&&Date.parse(existing.expires_at)>Date.now()){
-   draft.restore();
-   return;
-  }
-  const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
-  const status=document.createElement('p');
-  status.setAttribute('role','status');
-  status.textContent=existing?.employee_id?'Contratación formalizada.':'Revisa la documentación y prepara los enlaces antes de abrir WhatsApp. Al abrirlo, la ficha avanzará al paso 12 para configurar las credenciales.';
-  dialog.append(status);
-  hiringSendCards(overlay,dialog,trial,hiringMessagePreview(hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]')));
-  const actions=hiringMessageActions(dialog);
-  hiringAddReview(candidateId,overlay,actions);
-  if(!existing?.employee_id){
-   const send=hiringWhatsAppButton();
-   send.onclick=()=>{
-    if(candidatePhone(candidate).length<8){status.textContent='Falta un WhatsApp válido.';return;}
-    return hiringWithLinkRenewalConfirmation(overlay,send,existing,()=>{
-     const tab=window.open('about:blank','_blank');
-     if(!tab){status.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
-     return openHiringPreparationNotification(candidateId,true,false,tab);
-    },true);
-   };
-   actions.append(send);
-  }
-  hiringReturnToSheet(actions,overlay);
-  return;
- }
- if(!candidate||!['trial','hired'].includes(candidate.status)||!trainingNotificationByTrial[String(trial?.id)]||trainingDecisionByTrial[String(trial?.id)]!=='continue'){whatsappTab?.close();return alert('Actualiza la ficha para comprobar la etapa.');}
- const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
- const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Preparando enlaces individuales protegidos…';dialog.append(status);
-
+const hiringPreparedMessages=new Map();
+function hiringPendingNotification(trial,record){
  try{
-  hiringMessageDraft=undefined;
-  const token=hiringToken(),prepared=await hiringRpc('hr_prepare_hiring',{p_trial:trial.id,p_token:token});
+  const pending=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+trial.id)||'null');
+  return pending?.version===4&&pending.action==='whatsapp_opened'&&pending.stage===trial.stage&&
+   pending.expires_at===record?.expires_at&&!record.revoked_at&&Date.parse(record.expires_at)>Date.now();
+ }catch(_){return false;}
+}
+async function openHiringPreparationNotification(id,renew=false,previewOnly=false){
+ const trial=trialPeriodsByCandidate[String(id)];
+ const candidate=candidates.find(item=>String(item.id)===String(id));
+ if(!trial||!candidate)return;
+ const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
+ const route=document.createElement('nav');
+ route.className='hiring-step-route';
+ route.setAttribute('aria-label','Pasos de preparación');
+ const notice=document.createElement('p');
+ notice.setAttribute('role','status');
+ const panel=document.createElement('section');
+ const footer=document.createElement('footer');
+ footer.className='hiring-step-footer';
+ dialog.append(route,notice,panel,footer);
+ hiringReturnToSheet(footer,overlay);
+ let record=hiringCases[String(id)],current=0,reached=0,request=0;
+ let pending=hiringPendingNotification(trial,record);
+ const buttons=['Revisar','Notificar','Validar'].map((label,index)=>{
+  const button=document.createElement('button');
+  button.type='button';
+  button.onclick=()=>show(index);
+  route.append(button);
+  return {button,label};
+ });
+ const action=(label,onClick,target=panel)=>{
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='hiring-confirm';
+  button.textContent=label;
+  button.onclick=onClick;
+  target.append(button);
+  return button;
+ };
+ const prepare=async()=>{
+  const token=hiringToken();
+  const prepared=await hiringRpc('hr_prepare_hiring',{p_trial:trial.id,p_token:token});
   await loadHiringCases();
-  if(!overlay.isConnected){whatsappTab?.close();return;}
-  const form=location.origin+'/expediente-contratacion.html#token='+token,contract=location.origin+'/contrato-laboral.html#token='+token;
-  status.textContent='Revisa la documentación y el mensaje antes de abrir WhatsApp. Los enlaces vencen el '+new Date(prepared.expires_at).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. Al abrir WhatsApp, la ficha avanzará al paso 12.';
-  const messageText=hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract);const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje para el candidato (editable)');editor.value=messageText;hiringSendCards(overlay,dialog,trial,editor);
-  const links=hiringPersonalLinks(form,contract);dialog.append(links);
-  dialog.querySelector('.hiring-send-message').open=true;
-  const send=hiringWhatsAppButton();
-  const retryAdvance=document.createElement('button');retryAdvance.textContent='Reintentar avance al paso 12';retryAdvance.className='hiring-confirm';retryAdvance.hidden=true;
-  const continueRoute=!!window.CartelEvolution?.onboardingState?.(candidateId)?.hiring_reopened;
-  const advance=()=>finishHiringWhatsAppAdvance(candidateId,trial,continueRoute,overlay,status,retryAdvance);
-  retryAdvance.onclick=advance;
-  send.onclick=async()=>{
-   if(send.disabled)return;
-   const phone=candidatePhone(candidate);
-   if(phone.length<8)return alert('Falta un WhatsApp válido.');
-   if(!editor.value.trim())return alert('Escribe un mensaje.');
-   if(!editor.value.includes(form)||!editor.value.includes(contract)){
-    status.textContent='Incluye los enlaces del expediente y del contrato antes de abrir WhatsApp.';
-    whatsappTab?.close();whatsappTab=null;return;
+  record=hiringCases[String(id)];
+  const form=location.origin+'/expediente-contratacion.html#token='+token;
+  const contract=location.origin+'/contrato-laboral.html#token='+token;
+  const draft={form,contract,expiresAt:prepared.expires_at,message:hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),form,contract)};
+  hiringPreparedMessages.set(trial.id,draft);
+  return draft;
+ };
+ const saveNotification=async button=>{
+  button.disabled=true;
+  notice.textContent='Guardando la apertura de WhatsApp…';
+  try{
+   await hiringRpc('hr_manage_hiring',{p_trial:trial.id,p_action:'notify'});
+   await loadHiringCases();
+   record=hiringCases[String(id)];
+   pending=false;
+   try{sessionStorage.removeItem('cartel-hiring-pending:'+trial.id);}catch(_){}
+   if(overlay.isConnected)await show(2);
+  }catch(error){
+   notice.textContent='No se pudo registrar la apertura. '+error.message;
+   button.disabled=false;
+  }
+ };
+ const show=async index=>{
+  const generation=++request;
+  current=index;
+  reached=Math.max(reached,index);
+  for(const [step,{button,label}] of buttons.entries()){
+   const complete=step<reached;
+   button.classList.toggle('is-complete',complete);
+   button.classList.toggle('is-current',step===current&&!complete);
+   button.disabled=step>reached;
+   button.textContent=(complete?'✓ ':'')+label;
+   button.setAttribute('aria-label',label+(complete?', completado':''));
+   if(step===current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+  }
+  dialog.classList.remove('hiring-contract-review','hiring-candidate-review');
+  notice.textContent='';
+  panel.replaceChildren();
+  dialog.scrollTop=0;
+  const active=()=>generation===request&&overlay.isConnected;
+  try{
+   if(index===0){
+    if(!record){notice.textContent='Preparando el expediente…';await prepare();if(!active())return;notice.textContent='';}
+    const revision=await openHiringReview(id,null,'data',{overlay,dialog,panel,active,show:()=>show(0)});
+    if(active()){
+     if(revision==null)action('Reintentar',()=>show(0));
+     else action('Continuar',()=>show(reached>=2?2:1));
+    }
+    return;
    }
-   if(Date.parse(prepared.expires_at)<=Date.now())return status.textContent='Los enlaces han caducado. Cierra y vuelve a preparar la contratación.';
-   send.disabled=true;
-   try{
-    // The browser handoff, not WhatsApp delivery, triggers the transition.
-    const tab=whatsappTab||window.open('about:blank','_blank');
-    whatsappTab=null;
-    if(!tab)throw Error('El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.');
-    try{tab.opener=null;if(tab.document){const policy=tab.document.createElement('meta');policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);}tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(editor.value));}catch(e){tab.close();throw e;}
-   }catch(e){status.textContent=e.message;send.disabled=false;return;}
-   send.hidden=true;
-   const pending={version:4,stage:trial.stage,expires_at:prepared.expires_at,at:Date.now(),action:'whatsapp_opened',continueRoute};
-   try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify(pending));}catch(_){}
-   preserveCandidateSheet(candidateId);
-   await advance();
-  };
-  const actions=hiringMessageActions(dialog);
-  hiringAddReview(candidateId,overlay,actions);
-  actions.append(send,retryAdvance);
-  hiringReturnToSheet(actions,overlay);
-  hiringMessageDraft={candidateId,expiresAt:prepared.expires_at,restore:hiringRestorePanel(overlay,dialog,dialog.querySelector('.hiring-send-message summary'))};
-  if(whatsappTab)await send.onclick();
- }catch(e){
-  whatsappTab?.close();
-  status.textContent=e.message;
-  if(overlay.isConnected){
-   const actions=hiringMessageActions(dialog);
-   const retry=document.createElement('button');retry.textContent='Reintentar';retry.onclick=()=>openHiringPreparationNotification(candidateId);
-   actions.append(retry);hiringAddReview(candidateId,overlay,actions);hiringReturnToSheet(actions,overlay);
+   if(index===1){
+    const draft=hiringPreparedMessages.get(trial.id);
+    const usable=draft&&draft.expiresAt===record?.expires_at&&!record.revoked_at&&Date.parse(draft.expiresAt)>Date.now();
+    const editor=document.createElement('textarea');
+    editor.className='hiring-message';
+    editor.setAttribute('aria-label','Mensaje para el candidato (editable)');
+    editor.value=usable?draft.message:hiringMessage(hiringGreetingName(candidate),dashboardCandidateRoleName(candidate),'[Enlace al expediente laboral]','[Enlace al contrato laboral]');
+    if(usable)editor.addEventListener('input',()=>{draft.message=editor.value;});
+    hiringSendCards(overlay,dialog,panel,trial,editor);
+    panel.querySelector('details').open=true;
+    if(record?.employee_id||(record?.notified_at&&!renew)){
+     editor.readOnly=true;
+     notice.textContent='WhatsApp abierto. El envío se realiza desde WhatsApp.';
+     return;
+    }
+    if(pending){editor.readOnly=true;action('Reintentar registrar apertura',event=>saveNotification(event.currentTarget));return;}
+    const send=hiringWhatsAppButton();
+    send.querySelector('span').textContent='Enviar mensaje al candidato';
+    send.onclick=()=>{
+     const phone=candidatePhone(candidate);
+     if(phone.length<8){notice.textContent='Falta un WhatsApp válido.';return;}
+     const launch=async()=>{
+      const tab=window.open('about:blank','_blank');
+      if(!tab){notice.textContent='El navegador bloqueó WhatsApp. Permite las ventanas emergentes y reintenta.';return;}
+      send.disabled=true;
+      editor.readOnly=true;
+      try{
+       const links=usable?draft:await prepare();
+       if(!active()){tab.close();return;}
+       const message=usable?editor.value:editor.value.replace('[Enlace al expediente laboral]',links.form).replace('[Enlace al contrato laboral]',links.contract);
+       if(!message.includes(links.form)||!message.includes(links.contract))throw Error('Incluye los enlaces del expediente y del contrato en el mensaje.');
+       tab.opener=null;
+       if(tab.document){
+        const policy=tab.document.createElement('meta');
+        policy.name='referrer';policy.content='no-referrer';tab.document.head.append(policy);
+       }
+       tab.location.replace('https://wa.me/'+phone+'?text='+encodeURIComponent(message));
+       pending=true;
+       try{sessionStorage.setItem('cartel-hiring-pending:'+trial.id,JSON.stringify({version:4,action:'whatsapp_opened',stage:trial.stage,expires_at:links.expiresAt}));}catch(_){}
+       send.remove();
+       const retry=action('Reintentar registrar apertura',event=>saveNotification(event.currentTarget));
+       await saveNotification(retry);
+      }catch(error){
+       tab.close();notice.textContent=error.message;send.disabled=false;editor.readOnly=false;
+      }
+     };
+     return usable?launch():hiringWithLinkRenewalConfirmation(overlay,send,record,launch,true);
+    };
+    panel.append(send);
+    return;
+   }
+   notice.textContent='Comprobando los datos recibidos…';
+   await loadHiringCases();
+   if(!active())return;
+   record=hiringCases[String(id)];
+   notice.textContent=record?.submitted_at?'Datos recibidos':'Esperando datos';
+   if(!record?.submitted_at){action('Actualizar estado',()=>show(2));return;}
+   const reviewedRevision=await openHiringReview(id,null,'data',{overlay,dialog,panel,active,show:()=>show(2)});
+   if(!active())return;
+   if(reviewedRevision==null){action('Actualizar expediente',()=>show(2));return;}
+   action('Confirmar validación',async event=>{
+    const button=event.currentTarget;
+    button.disabled=true;
+    try{
+     await hiringRpc('hr_manage_hiring',{p_trial:trial.id,p_action:'validate_and_advance',p_revision:reviewedRevision});
+     preserveCandidateSheet(id);
+     await refreshCandidateAfterStatusChange(id);
+     if(overlay.isConnected){overlay.remove();openSystemOnboarding(id);}
+    }catch(error){
+     notice.textContent=error.message;
+     action('Actualizar expediente',()=>show(2));
+    }
+   });
+  }catch(error){
+   if(active()){notice.textContent=error.message;action('Reintentar',()=>show(index));}
   }
+ };
+ if(renew){
+  notice.textContent='Preparando enlaces…';
+  try{await prepare();}catch(error){notice.textContent=error.message;action('Reintentar',()=>openHiringPreparationNotification(id,true));return;}
+  if(!overlay.isConnected)return;
  }
-}
-// Legacy notified_at / hiring_notify mean notification initiated, never verified delivery.
-const hiringNotificationSaves=new Map();
-async function persistHiringNotification(id,trial,continueRoute){
- if(hiringNotificationSaves.has(trial.id))return hiringNotificationSaves.get(trial.id);
- const save=(async()=>{
-  if(!hiringCases[String(id)]?.notified_at){
-   let timeout;
-   try{await Promise.race([hiringRpc('hr_manage_hiring',{p_trial:trial.id,p_action:'notify'}),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('El guardado tarda demasiado. Reintenta para comprobar el avance.')),15000);})]);}finally{clearTimeout(timeout);}
-  }
-  await loadHiringCases();
-  if(!hiringCases[String(id)]?.notified_at)throw Error('No se pudo comprobar el guardado. Reintenta.');
-  if(continueRoute)await onboardingCall(id,'hiring_continue');
-  preserveCandidateSheet(id);
-  await refreshCandidateAfterStatusChange(id);
-  try{sessionStorage.removeItem('cartel-hiring-pending:'+trial.id);}catch(_){}
- })();
- hiringNotificationSaves.set(trial.id,save);
- try{return await save;}finally{hiringNotificationSaves.delete(trial.id);}
-}
-async function finishHiringWhatsAppAdvance(id,trial,continueRoute,overlay,status,retry){
- if(retry.disabled)return;
- retry.disabled=true;retry.hidden=true;
- status.textContent='WhatsApp abierto. Guardando el avance al paso 12…';
- try{await persistHiringNotification(id,trial,continueRoute);hiringMessageDraft=undefined;overlay.remove();}
- catch(e){status.textContent='No pudimos completar el avance. '+e.message;retry.disabled=false;retry.hidden=false;}
+ await show(renew||pending?1:record?.notified_at&&!previewOnly?2:0);
 }
 async function resumeHiringAdvance(id){
- const t=trialPeriodsByCandidate[String(id)],candidate=candidates.find(c=>String(c.id)===String(id));if(!t||!['trial','hired'].includes(candidate?.status))return;
- let p;try{p=JSON.parse(sessionStorage.getItem('cartel-hiring-pending:'+t.id)||'null');}catch(_){return;}
- // Old explicit-send confirmations are not evidence of a new automatic action.
- if(p?.version!==4||p.action!=='whatsapp_opened')return;
- if(document.getElementById('hiringNotificationOverlay'))return;
- const h=hiringCases[String(id)];
- if(p.stage!==t.stage||!h||String(h.trial_id)!==String(t.id)||h.revoked_at||Date.parse(h.expires_at)!==Date.parse(p.expires_at)||!Number.isFinite(Date.parse(p.expires_at))||Date.parse(p.expires_at)<=Date.now()||!Number.isFinite(p.at)||Date.now()-p.at>=86400000||p.at>Date.now()){
-  try{sessionStorage.removeItem('cartel-hiring-pending:'+t.id);}catch(_){}return;
- }
- const {overlay,dialog}=hiringNotificationDialog('Avanzar a inserción en sistema');
- const info=document.createElement('p');info.setAttribute('role','status');
- const retry=document.createElement('button');retry.className='hiring-confirm';retry.textContent='Reintentar avance al paso 12';
- retry.onclick=()=>finishHiringWhatsAppAdvance(id,t,p.continueRoute===true,overlay,info,retry);
- dialog.append(info,retry);hiringReturnToSheet(dialog,overlay);
- await retry.onclick();
+ const trial=trialPeriodsByCandidate[String(id)];
+ if(trial&&!document.getElementById('hiringNotificationOverlay')&&hiringPendingNotification(trial,hiringCases[String(id)]))await openHiringPreparationNotification(id);
 }
 
 function hiringReviewIcon(key){
@@ -407,10 +450,13 @@ function hiringReviewProfile(h){
  state.textContent=h.submitted_at?'Expediente recibido':'Expediente pendiente';
  details.append(state);profile.append(initials,details);return profile;
 }
-async function openHiringReview(id,returnTo=null,activeTab='data'){
- const {overlay,dialog}=hiringNotificationDialog('Revisar expediente y contrato',returnTo);dialog.classList.add('hiring-candidate-review');const t=trialPeriodsByCandidate[String(id)];
- const status=document.createElement('p');status.setAttribute('role','status');dialog.append(status);
- hiringReviewBack(dialog,()=>{
+async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null){
+ const {overlay,dialog}=embedded||hiringNotificationDialog('Revisar expediente y contrato',returnTo);
+ const content=embedded?.panel||dialog;
+ dialog.classList.add('hiring-candidate-review');
+ const t=trialPeriodsByCandidate[String(id)];
+ const status=document.createElement('p');status.setAttribute('role','status');content.append(status);
+ if(!embedded)hiringReviewBack(dialog,()=>{
   overlay.remove();
   return returnTo ? returnTo() : openHiringPreparationNotification(id,false,true);
  },'Volver al mensaje');
@@ -418,10 +464,10 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
  try{
  if(!t?.id)throw Error('El candidato no tiene un período de prueba asociado.');
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
- if(!overlay.isConnected)return;
+ if(!overlay.isConnected||(embedded&&!embedded.active()))return;
  status.textContent='';
- dialog.append(hiringReviewProfile(h));
- const navigation=document.createElement('div');navigation.className='hiring-review-nav';navigation.setAttribute('role','tablist');navigation.setAttribute('aria-label','Secciones del expediente');dialog.append(navigation);
+ content.append(hiringReviewProfile(h));
+ const navigation=document.createElement('div');navigation.className='hiring-review-nav';navigation.setAttribute('role','tablist');navigation.setAttribute('aria-label','Secciones del expediente');content.append(navigation);
  const tabs=new Map();
  const selectTab=key=>{
   for(const [name,{button,panel}] of tabs){
@@ -443,7 +489,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
   button.onclick=()=>selectTab(key);
   const panel=document.createElement('div');panel.id='hiring-review-panel-'+key;panel.hidden=true;
   panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);
-  navigation.append(button);dialog.append(panel);tabs.set(key,{button,panel});
+  navigation.append(button);content.append(panel);tabs.set(key,{button,panel});
  }
  navigation.onkeydown=e=>{
   const keys=[...tabs.keys()],index=keys.indexOf(activeTab);
@@ -526,16 +572,17 @@ async function openHiringReview(id,returnTo=null,activeTab='data'){
     await hiringRpc('hr_manage_hiring',{p_trial:t.id,p_action:action,p_revision:h.revision});
     await loadHiringCases();
     window.CartelEvolution?.refresh();
-    if(overlay.isConnected)openHiringReview(id,returnTo,activeTab);
+    if(overlay.isConnected){if(embedded)embedded.show();else openHiringReview(id,returnTo,activeTab);}
    }catch(e){status.textContent=e.message;button.disabled=false;}
   };
   revoke.onclick=()=>manage(revoke,'revoke');
   if(h.verified_at){
    const reopen=document.createElement('button');reopen.type='button';reopen.textContent='Permitir correcciones del expediente';reopen.onclick=()=>manage(reopen,'reopen');secondary.append(reopen);
   }
-  secondary.append(renew,revoke);management.append(label,secondary);dialog.append(management);
+  secondary.append(renew,revoke);management.append(label,secondary);content.append(management);
  }
  await selectTab(activeTab);
+ return h.revision;
  }catch(e){status.textContent=e.message;}
 }
 const hiringFields=[
