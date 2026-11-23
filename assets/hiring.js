@@ -481,6 +481,7 @@ function hiringReviewIcon(key){
   contract:'<path d="m4 16 12-12 4 4L8 20H4zm10-10 4 4M3 22h18"/>',
   back:'<path d="M19 12H5m6-6-6 6 6 6"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+  credential:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M9 6V3h6v3m-2 5h5m-5 4h5M5 17a3 3 0 0 1 6 0"/><circle cx="8" cy="11" r="1.3"/>',
   confirm:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
   contact:'<path d="M7 3H4c-1 0-1 2-1 3 0 8 7 15 15 15 1 0 3 0 3-1v-3l-5-2-2 2c-3-1-6-4-7-7l2-2z"/>',
   education:'<path d="m2 9 10-5 10 5-10 5zM6 11v5l6 3 6-3v-5m4-2v7"/>'

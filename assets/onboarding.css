@@ -69,3 +69,35 @@
 .onboarding-dialog .onboarding-config-actions .onboarding-save{flex:1;width:auto;margin:0;min-height:52px}
 @media(max-width:600px){.onboarding-dialog .onboarding-account-actions{grid-template-columns:1fr}.onboarding-dialog .onboarding-account-actions .onboarding-continue{grid-row:1}.onboarding-dialog .onboarding-existing-access>.onboarding-config-back{width:100%}.onboarding-dialog .onboarding-config-actions{flex-direction:column-reverse}}
 
+
+.onboarding-dialog.onboarding-credential-dialog > .onboarding-credential-heading{align-items:center;padding:0 0 12px;border-color:#42474e}
+.onboarding-credential-heading h3{display:flex;align-items:center;gap:9px}
+.onboarding-credential-heading .hiring-review-icon{color:#ffda03}
+.onboarding-credential-dialog .onboarding-status:empty{display:none}
+.onboarding-credential-banner{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;margin:14px 0 12px;padding:13px 16px;border:1px solid #42464b;border-radius:13px;background:linear-gradient(115deg,#1d2228 40%,#383016 66%,#1d2228 67%)}
+.onboarding-credential-banner>.hiring-review-icon{color:#ffda03}
+.onboarding-credential-banner>.hiring-review-icon svg{width:34px;height:34px}
+.onboarding-credential-banner strong,.onboarding-credential-banner span{display:block}
+.onboarding-credential-banner strong{font-size:16px;color:#fff}
+.onboarding-credential-banner span{font-size:12px;color:#d0d6db;overflow-wrap:anywhere}
+.onboarding-credential-progress{text-align:right}
+.onboarding-credential-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}
+.onboarding-credential-bars>span{height:4px;border-radius:4px;background:#48515b}
+.onboarding-credential-bars>.is-current{background:#ffda03}
+.onboarding-credential-bars>.is-complete{background:#59cc8d}
+.onboarding-credential-card{padding:14px 16px;border:1px solid #a89128;border-radius:13px;background:linear-gradient(150deg,#1b2026,#15191d)}
+.onboarding-credential-dialog .onboarding-fields{gap:12px 16px}
+.onboarding-credential-dialog .onboarding-field small{margin-top:5px}
+.onboarding-credential-dialog .onboarding-permission-preview{background:none;border:0;border-top:1px solid #454b50;border-radius:0;margin:12px 0 0;padding:10px 0 0}
+.onboarding-credential-dialog .onboarding-permission-preview summary{cursor:pointer;font-weight:700}
+.onboarding-credential-dialog .onboarding-config-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:14px}
+.onboarding-credential-dialog .onboarding-config-actions .onboarding-config-back{justify-self:start;min-width:0;white-space:normal}
+.onboarding-credential-dialog .onboarding-config-actions .onboarding-save{justify-self:end;display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:46px;padding:9px 10px}
+.onboarding-credential-dialog .onboarding-config-actions .onboarding-save:enabled{color:#f4fff8;border-color:#4cb77c;background:linear-gradient(#219759,#137540);box-shadow:0 4px 0 #0d492b}
+@media(max-width:600px){
+ .onboarding-credential-banner{gap:8px;padding:10px}
+ .onboarding-credential-banner>.hiring-review-icon svg{width:26px;height:26px}
+ .onboarding-credential-progress{grid-column:2/-1;text-align:left}
+ .onboarding-credential-bars{max-width:130px}
+ .onboarding-credential-dialog .onboarding-config-actions button{width:100%!important;font-size:12px}
+}
