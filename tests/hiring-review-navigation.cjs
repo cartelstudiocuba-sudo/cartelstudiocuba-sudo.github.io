@@ -49,6 +49,15 @@ const assert=require('node:assert/strict');
   await w.openHiringPreparationNotification('A');
   assert.deepEqual([...d.querySelectorAll('[role=tab]')].map(tab=>tab.textContent),['Datos','Documentos','Contrato']);
   assert(route()[0].matches('.is-current'));
+  assert.equal(d.querySelector('.hiring-preparation-banner h3').textContent,'Preparar la contratación');
+  assert.equal(d.querySelector('.hiring-review-profile'),null);
+  const sections=[...d.querySelectorAll('details.hiring-data-card')];
+  assert.deepEqual(sections.map(section=>section.querySelector('summary').textContent),['Identificación','Contacto y emergencia','Escolaridad']);
+  assert(sections.every(section=>!section.open));
+  sections[0].querySelector('summary').click();
+  assert(sections[0].open);
+  assert(d.querySelector('.hiring-continue svg'));
+
   assert(route()[1].disabled&&route()[2].disabled);
   assert.equal(button('Enviar mensaje al candidato'),undefined);
   await button('Continuar').onclick();

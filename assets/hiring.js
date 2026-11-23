@@ -50,6 +50,14 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-candidate-review .hiring-data-card h4{margin-bottom:7px}.hiring-candidate-review .hiring-data-card .hiring-review-grid{grid-template-columns:minmax(0,1fr);gap:0}.hiring-data-card .hiring-review-grid>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid #ffffff16;border-radius:0;background:none}.hiring-data-card .hiring-review-grid dt{margin:0;overflow-wrap:anywhere}.hiring-data-card .hiring-review-grid dd{text-align:right;font-size:13px}
   .hiring-data-card .hiring-review-grid>div.is-pending{padding-inline:8px;border-radius:6px;background:#ffbf4714}.hiring-data-card .hiring-review-grid>.is-pending dt{color:#f7dfaf}.hiring-data-card .hiring-review-grid dd.is-pending{color:#ffda03;font-weight:750;display:flex;align-items:center;justify-content:flex-end;gap:6px}.hiring-field-pending-dot{display:inline-block;flex:0 0 7px;height:7px;border-radius:50%;background:#ff5a62}
   .hiring-doc-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hiring-doc-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #454c50;border-radius:12px;background:linear-gradient(145deg,#2b3033,#1b1e21)}.hiring-doc-card.is-portrait{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr);align-items:center;gap:12px}.hiring-doc-card h5{margin:0;font-size:13px;line-height:1.3}.hiring-notification-dialog .hiring-doc-thumb{position:relative;display:grid;place-items:center;width:100%;padding:4px;aspect-ratio:1.6;background:#111416;border-radius:8px;border:1px solid #4a5156;color:#c4cdd2}.hiring-doc-card.is-portrait .hiring-doc-thumb{aspect-ratio:1}.hiring-doc-thumb img{width:100%;height:100%;min-height:0;object-fit:contain;border-radius:5px}.hiring-doc-expand{position:absolute;top:5px;right:5px;padding:0 4px;border-radius:4px;background:#111e;color:#fff}.hiring-doc-status{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#c7d0d6}.hiring-doc-status.is-pending{color:#ffda03}.hiring-doc-status.is-ready{color:#bdffcf}.hiring-doc-viewer{border:1px solid #53575b;border-radius:16px;background:#16191b;color:white;width:min(94vw,860px);max-width:none;padding:14px;box-sizing:border-box}.hiring-doc-viewer::backdrop{background:#000c}.hiring-doc-viewer header{margin-bottom:12px}.hiring-doc-viewer img{display:block;max-width:100%;max-height:72dvh;object-fit:contain;margin:auto}
+  .hiring-notification-dialog > .hiring-preparation-banner{align-items:center;padding:12px 14px;border:1px solid #504a33;border-radius:15px;background:linear-gradient(115deg,#2b3032,#1a1d1f 58%,#3d3418)}
+  .hiring-preparation-banner h3{display:flex;align-items:center;gap:10px}
+  .hiring-preparation-banner h3 .hiring-review-icon{color:#ffda03;border:1px solid #84732a;border-radius:9px;padding:7px;background:#1c2022}
+  .hiring-candidate-review details.hiring-data-card{padding:0}
+  .hiring-data-card summary{cursor:pointer;padding:10px 13px;font-weight:650}
+  .hiring-data-card summary .hiring-review-icon{color:#ffda03;vertical-align:middle;margin:0 7px}
+  .hiring-candidate-review details.hiring-data-card .hiring-review-grid{padding:0 13px 9px}
+  .hiring-notification-dialog button.hiring-continue{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;background:linear-gradient(145deg,#19814c,#126338);border-color:#2c9b63;color:#fff;box-shadow:0 3px 0 #0c4828}
   .hiring-step-route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:18px 0}
   .hiring-notification-dialog .hiring-step-route button{min-width:0;padding:8px 12px 8px 15px;border:0;border-radius:0;background:linear-gradient(#495057,#30363b);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%);font-size:clamp(11px,3.2vw,15px)}
   .hiring-step-route button:disabled{cursor:default}
@@ -59,7 +67,7 @@ function hiringNotificationDialog(title,returnTo=null){
   .hiring-step-footer{margin-top:12px}
   .hiring-step-footer button,.hiring-step-route~section>.hiring-confirm,.hiring-step-route~section>.hiring-whatsapp{width:100%}
   .hiring-step-route~section>[role=status]:empty{display:none}
-  @media print{.hiring-step-route,.hiring-step-footer,.hiring-step-route~section>.hiring-confirm{display:none!important}}
+  @media print{.hiring-preparation-banner,.hiring-step-route,.hiring-step-footer,.hiring-step-route~section>.hiring-confirm{display:none!important}}
   .hiring-send-message,.hiring-send-card{border:1px solid #485055;border-radius:12px;background:linear-gradient(140deg,#292e31,#1b1e21)}.hiring-send-card .hiring-review-icon{color:#ffda03}.hiring-send-message{padding:10px 12px;margin-bottom:12px}.hiring-send-message summary{cursor:pointer;font-weight:700}.hiring-send-excerpt{font-size:13px;font-weight:400;color:#e2e8ec;line-height:1.45;overflow-wrap:anywhere}.hiring-send-message[open] .hiring-send-excerpt,.hiring-send-excerpt:empty{display:none}.hiring-send-message summary small{margin:3px 0;color:#c7d0d6;font-size:12px;letter-spacing:normal;font-weight:500}.hiring-notification-dialog .hiring-send-message .hiring-message{margin:10px 0 0;padding:12px}.hiring-send-card{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;margin-bottom:8px}.hiring-send-card .hiring-send-preview-text{font-size:11px;color:#ffe474}.hiring-notification-dialog .hiring-send-card{border-color:#485055;background:linear-gradient(140deg,#292e31,#1b1e21);font-size:13px;padding:9px 10px}.hiring-preview-form label{display:block;margin:10px 0}.hiring-preview-form input:not([type="checkbox"]),.hiring-preview-form select{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #4d565d;border-radius:6px;background:#20262b;color:#fff;opacity:1}.hiring-preview-form small{letter-spacing:normal}.hiring-preview-form [hidden]{display:none!important}
   .hiring-notification-dialog .hiring-return-to-sheet{background:#56242b;border-color:#a14853;color:#ffe4e7}
   .hiring-notification-dialog.hiring-renew-dialog{width:440px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);margin:auto;padding:clamp(18px,5vw,26px);border-color:#66552c}
@@ -77,7 +85,7 @@ function hiringNotificationDialog(title,returnTo=null){
   `;document.head.append(style);
  }
  const previous=document.activeElement,overlay=document.createElement('div'),dialog=document.createElement('section');overlay.id='hiringNotificationOverlay';overlay.className='hiring-notification-overlay';dialog.className='hiring-notification-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label',title);
- const head=document.createElement('header'),label=document.createElement('div'),brand=document.createElement('small'),heading=document.createElement('h3'),close=document.createElement('button');brand.textContent='EL CARTEL STUDIO · CONTRATACIÓN';brand.hidden=title==='Preparar contratación';heading.textContent=title;close.type='button';close.className='hiring-close';close.textContent='×';close.setAttribute('aria-label','Cerrar');const dismiss=()=>{overlay.remove();if(returnTo)returnTo();else previous?.focus()};close.onclick=dismiss;label.append(brand,heading);head.append(label,close);dialog.append(head);overlay.append(dialog);document.body.append(overlay);close.focus();
+ const head=document.createElement('header'),label=document.createElement('div'),brand=document.createElement('small'),heading=document.createElement('h3'),close=document.createElement('button');brand.textContent='EL CARTEL STUDIO · CONTRATACIÓN';brand.hidden=title==='Preparar la contratación';heading.textContent=title;close.type='button';close.className='hiring-close';close.textContent='×';close.setAttribute('aria-label','Cerrar');const dismiss=()=>{overlay.remove();if(returnTo)returnTo();else previous?.focus()};close.onclick=dismiss;label.append(brand,heading);head.append(label,close);dialog.append(head);overlay.append(dialog);document.body.append(overlay);close.focus();
  overlay.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button:not([hidden]):not(:disabled),a[href],textarea:not(:disabled),input:not(:disabled),select:not(:disabled)')].filter(item=>!item.closest('[hidden]')&&item.tabIndex>=0);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
  return {overlay,dialog};
 }
@@ -252,7 +260,10 @@ async function openHiringPreparationNotification(id,renew=false,previewOnly=fals
  const trial=trialPeriodsByCandidate[String(id)];
  const candidate=candidates.find(item=>String(item.id)===String(id));
  if(!trial||!candidate)return;
- const {overlay,dialog}=hiringNotificationDialog('Preparar contratación');
+ const {overlay,dialog}=hiringNotificationDialog('Preparar la contratación');
+ const banner=dialog.querySelector('header');
+ banner.classList.add('hiring-preparation-banner');
+ banner.querySelector('h3').prepend(hiringReviewIcon('documents'));
  const route=document.createElement('nav');
  route.className='hiring-step-route';
  route.setAttribute('aria-label','Pasos de preparación');
@@ -331,7 +342,11 @@ async function openHiringPreparationNotification(id,renew=false,previewOnly=fals
     const revision=await openHiringReview(id,null,'data',{overlay,dialog,panel,active,show:()=>show(0)});
     if(active()){
      if(revision==null)action('Reintentar',()=>show(0));
-     else action('Continuar',()=>show(reached>=2?2:1));
+     else{
+      const next=action('Continuar',()=>show(reached>=2?2:1));
+      next.classList.add('hiring-continue');
+      next.prepend(hiringReviewIcon('confirm'));
+     }
     }
     return;
    }
@@ -431,6 +446,7 @@ function hiringReviewIcon(key){
   print:'<path d="M6 8V3h12v5M6 17H4a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2M6 14h12v7H6zM6 11h1"/>',
   download:'<path d="M12 3v12m-5-5 5 5 5-5M4 18v3h16v-3"/>',
   contract:'<path d="m4 16 12-12 4 4L8 20H4zm10-10 4 4M3 22h18"/>',
+  confirm:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
   contact:'<path d="M7 3H4c-1 0-1 2-1 3 0 8 7 15 15 15 1 0 3 0 3-1v-3l-5-2-2 2c-3-1-6-4-7-7l2-2z"/>',
   education:'<path d="m2 9 10-5 10 5-10 5zM6 11v5l6 3 6-3v-5m4-2v7"/>'
  };
@@ -466,7 +482,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
  const {data:h,error}=await sb.from('hr_hiring_cases').select('*').eq('trial_id',t.id).single();if(error)throw error;
  if(!overlay.isConnected||(embedded&&!embedded.active()))return;
  status.textContent='';
- content.append(hiringReviewProfile(h));
+ if(!embedded)content.append(hiringReviewProfile(h));
  const navigation=document.createElement('div');navigation.className='hiring-review-nav';navigation.setAttribute('role','tablist');navigation.setAttribute('aria-label','Secciones del expediente');content.append(navigation);
  const tabs=new Map();
  const selectTab=key=>{
@@ -498,7 +514,7 @@ async function openHiringReview(id,returnTo=null,activeTab='data',embedded=null)
   e.preventDefault();selectTab(target);tabs.get(target).button.focus();
  };
  const groups=[['Identificación','data'],['Contacto y emergencia','contact'],['Escolaridad','education']];
- hiringFields.forEach((fields,index)=>{const section=document.createElement('section');section.className='hiring-review-section hiring-data-card';const title=document.createElement('h4');const [group,icon]=groups[index];title.append(hiringReviewIcon(icon),document.createTextNode(group));const details=document.createElement('dl');details.className='hiring-review-grid';for(const [key,label] of fields){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),value=h.data?.[key];dt.textContent=label.replace(' (opcional)','');const empty=value===null||value===undefined||String(value).trim()==='';const optional=label.includes('(opcional)');dd.textContent=empty?(optional?'No declarado':'Pendiente'):String(value);if(empty)dd.classList.add(optional?'is-missing':'is-pending');if(empty&&!optional){row.classList.add('is-pending');const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');dd.prepend(dot);}if(['address','care_responsibilities','planned_absence','alternative_address'].includes(key))row.classList.add('is-wide');row.append(dt,dd);details.append(row);}section.append(title,details);tabs.get('data').panel.append(section);});
+ hiringFields.forEach((fields,index)=>{const section=document.createElement(embedded?'details':'section');section.className='hiring-review-section hiring-data-card';const title=document.createElement(embedded?'summary':'h4');const [group,icon]=groups[index];title.append(hiringReviewIcon(icon),document.createTextNode(group));const details=document.createElement('dl');details.className='hiring-review-grid';for(const [key,label] of fields){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd'),value=h.data?.[key];dt.textContent=label.replace(' (opcional)','');const empty=value===null||value===undefined||String(value).trim()==='';const optional=label.includes('(opcional)');dd.textContent=empty?(optional?'No declarado':'Pendiente'):String(value);if(empty)dd.classList.add(optional?'is-missing':'is-pending');if(empty&&!optional){row.classList.add('is-pending');const dot=document.createElement('span');dot.className='hiring-field-pending-dot';dot.setAttribute('aria-hidden','true');dd.prepend(dot);}if(['address','care_responsibilities','planned_absence','alternative_address'].includes(key))row.classList.add('is-wide');row.append(dt,dd);details.append(row);}section.append(title,details);tabs.get('data').panel.append(section);});
  const documents=document.createElement('section');documents.className='hiring-review-section';
  documents.innerHTML='<h4>Documentos del expediente</h4>';
  const gallery=document.createElement('div');gallery.className='hiring-doc-gallery';documents.append(gallery);
