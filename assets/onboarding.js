@@ -3,7 +3,19 @@ const onboardingActivationMarker='[Enlace seguro de activación]';
 let employmentClosures={};
 async function loadEmploymentClosures(){const{data,error}=await sb.rpc('hr_offboarding',{p_employee:null,p_action:'list',p_payload:{}});if(error)throw Error('No se pudo comprobar el estado de las bajas. '+error.message);employmentClosures=Object.fromEntries((data||[]).filter(c=>c.candidate_id).map(c=>[String(c.candidate_id),c]));}
 function onboardingRouteActions(id,h){if(window.CartelEvolution?.onboarded(id))return '<a class="candidate-flow-action" href="/bajas.html?candidate='+encodeURIComponent(id)+'">13 · Efectuar baja →</a>';const state=window.CartelEvolution?.onboardingState?.(id),label=state?(state.configured_at?'Continuar inserción en sistema →':'Configurar acceso al sistema →'):'Comprobar inserción en sistema →';return '<button type="button" class="candidate-flow-action" onclick="openSystemOnboarding(\''+hiringEsc(id)+'\')">'+label+'</button>';}
-function onboardingMessage(name,username,email,activation,guide){return `Hola, ${name}. Tu cuenta de acceso a *nuestra Plataforma Automatizada* ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
+const onboardingMobileInstructions=`*ACCESO DESDE TU CELULAR*
+
+Abre https://gestion.elcartelstudio.com y agrega Gestión a tu pantalla de inicio para abrirla como una aplicación.
+
+• *iPhone:* abre el enlace en Safari, toca Compartir → Agregar a la pantalla de inicio y pulsa Agregar. Si aparece «Abrir como app web», déjalo activado.
+• *Android:* abre el enlace en Chrome, toca los tres puntos ⋮ → Agregar a la pantalla de inicio y elige Instalar o Agregar, según lo que te aparezca.
+
+Después, toca el ícono de Gestión en tu pantalla de inicio y entra con tu usuario o correo y la contraseña que configuraste.`;
+const onboardingPreviousMobileInstructions=`*ACCESO DESDE TU CELULAR: *Puedes instalar un acceso directo a la plataforma en la pantalla de inicio de tu celular para utilizarla como una aplicación.
+
+Instrucciones de instalación:
+https://gestion.elcartelstudio.com/guia-acceso-movil.html`;
+function onboardingMessage(name,username,email,activation){return `Hola, ${name}. Tu cuenta de acceso a *nuestra Plataforma Automatizada* ha sido creada como parte de tu incorporación oficial a El Cartel Studio.
 
 *DATOS DE ACCESO*
 
@@ -17,10 +29,7 @@ https://gestion.elcartelstudio.com
 
 ${activation}
 
-*ACCESO DESDE TU CELULAR: *Puedes instalar un acceso directo a la plataforma en la pantalla de inicio de tu celular para utilizarla como una aplicación.
-
-Instrucciones de instalación:
-${guide}
+${onboardingMobileInstructions}
 
 *IMPORTANTE — INFORMACIÓN CONFIDENCIAL*
 
@@ -123,8 +132,7 @@ async function openSystemOnboarding(id){
   if(!activation&&!expired){try{activation=(await onboardingEdge(id,'preview')).activation_url;}catch(e){info.textContent=e.message;}}
   const expiry=document.createElement('p');expiry.textContent='Enlace de un uso · vence: '+new Date(state.expires_at).toLocaleString('es')+'. Abrir WhatsApp no confirma el envío.';section.append(expiry);
   const editor=document.createElement('textarea');editor.className='hiring-message';editor.setAttribute('aria-label','Mensaje de acceso para WhatsApp (editable)');editor.maxLength=12000;
-  const guide='https://gestion.elcartelstudio.com/guia-acceso-movil.html';
-  editor.value=(state.message||onboardingMessage(hiringGreetingName(candidate),state.username,state.email,onboardingActivationMarker,guide)).split(onboardingActivationMarker).join(activation||onboardingActivationMarker);section.append(editor);
+  editor.value=(state.message||onboardingMessage(hiringGreetingName(candidate),state.username,state.email,onboardingActivationMarker)).replace(onboardingPreviousMobileInstructions,onboardingMobileInstructions).split(onboardingActivationMarker).join(activation||onboardingActivationMarker);section.append(editor);
   const actions=document.createElement('div');actions.className='onboarding-actions';section.append(actions);
   const persistEditor=async()=>{const text=activation?editor.value.split(activation).join(onboardingActivationMarker):editor.value;await onboardingCall(id,'message',{message:text});};
   const save=document.createElement('button');save.type='button';save.textContent='Guardar mensaje';save.onclick=async()=>{save.disabled=true;try{await persistEditor();info.textContent='Mensaje guardado.';}catch(e){info.textContent='No se guardó el mensaje: '+e.message;}finally{save.disabled=editor.readOnly;}};

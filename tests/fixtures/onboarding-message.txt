@@ -12,10 +12,14 @@ ACTIVACIÓN DE TU CUENTA: Para establecer tu contraseña y activar el acceso, ut
 
 [Enlace seguro de activación]
 
-ACCESO DESDE TU CELULAR: Puedes instalar un acceso directo a la plataforma en la pantalla de inicio de tu celular para utilizarla como una aplicación.
+ACCESO DESDE TU CELULAR
 
-Instrucciones de instalación:
-[Enlace a la guía para Android y iPhone]
+Abre https://gestion.elcartelstudio.com y agrega Gestión a tu pantalla de inicio para abrirla como una aplicación.
+
+• iPhone: abre el enlace en Safari, toca Compartir → Agregar a la pantalla de inicio y pulsa Agregar. Si aparece «Abrir como app web», déjalo activado.
+• Android: abre el enlace en Chrome, toca los tres puntos ⋮ → Agregar a la pantalla de inicio y elige Instalar o Agregar, según lo que te aparezca.
+
+Después, toca el ícono de Gestión en tu pantalla de inicio y entra con tu usuario o correo y la contraseña que configuraste.
 
 IMPORTANTE — INFORMACIÓN CONFIDENCIAL
 
