@@ -9,6 +9,7 @@
   approved:{label:'Aprobadas',color:'#52df85',icon:'✓',detail:'Aprobada'},
   rejected:{label:'No aprobadas',color:'#ff7474',icon:'×',detail:'No aprobada'}
  };
+ let rateGeneration=0,rateSource='manual',rateDate=null;
  let caps, user, requests=[], filter='all', limit=25, step=0, unlocked=0, busy=false, attempt=null, catalog=null;
  const direct = () => ['Administrador','Jefe de Área'].includes(caps.request_role_title);
  const canSubmit = () => caps.request || direct();
@@ -77,6 +78,7 @@
   if(request.items) itemSummary(body,request.items);
   else labeled(body,'Cantidad',String(request.quantity));
   const details=request.details||{};
+  if(validRate(Number(details.exchange_rate))){labeled(body,'Tasa utilizada','1 USD = '+details.exchange_rate+' CUP');const totals=node('div','','budget-converted budget-confirm-totals');totalsView(totals,requestTotals(request),Number(details.exchange_rate));body.append(totals);}
   labeled(body,'Proveedor',details.supplier);labeled(body,'Fecha requerida',details.needed_on);labeled(body,'Observaciones',details.observations);labeled(body,'Referencia',details.reference);
   labeled(body,'Observación jefe de área',request.chief_note);labeled(body,'Observación Manager General',request.manager_note);
   const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
@@ -108,12 +110,13 @@
   const container=$('budget-items');
   if(product&&container.children.length===1&&!container.querySelector('[name=item_name]').value.trim()&&!container.querySelector('[name=item_price]').value)container.replaceChildren();
   if(container.children.length>=100)return;
-  const item=node('div','','item'),header=node('div','','item-head');header.append(node('strong','Artículo o servicio'),button('Quitar','',()=>{item.remove();updateTotals();}));
+  const item=node('div','','item'),header=node('div','','item-head');
+  const remove=button('×','item-remove',()=>{item.remove();updateTotals();});remove.setAttribute('aria-label','Quitar artículo');
   const name=itemInput('Nombre','item_name','text',product?.name||'',{required:'',maxlength:'160'});
   const fields=node('div','','item-fields');
   const currencyLabel=node('label','Moneda'),currency=node('select');currency.name='item_currency';for(const code of ['USD','CUP'])currency.append(node('option',code));currencyLabel.append(currency);
   fields.append(itemInput('Cantidad','item_quantity','number','1',{required:'',min:'0.001',max:'999999',step:'0.001'}),itemInput('Precio unitario','item_price','number',product?.cost??'',{required:'',min:'0.01',step:'0.01',max:'99999999999'}),currencyLabel);
-  item.append(header,name,fields,node('p','','item-subtotal'));container.append(item);updateTotals();
+  header.append(name,remove);item.append(header,fields,node('p','','item-subtotal'));container.append(item);updateTotals();
  }
  function collectItems() {
   return [...$('budget-items').children].map(row=>{
@@ -125,21 +128,44 @@
  function calculate(items) {
   const totals={CUP:0,USD:0};for(const item of items)totals[item.currency]+=Number.isFinite(item.subtotal)?item.subtotal:0;return totals;
  }
- function totalsView(target,totals) {
-  target.replaceChildren(...['CUP','USD'].map(currency=>node('strong',format(totals[currency],currency))));
+ function validRate(value){return Number.isFinite(value)&&value>0&&value<=1000000;}
+ function equivalents(totals,rate){
+  if(!validRate(rate))return null;
+  const cup=Number(totals.CUP||0),usd=Number(totals.USD||0);
+  return {CUP:cup+usd*rate,USD:usd+cup/rate};
+ }
+ function totalsView(target,totals,rate){
+  const original=node('div','','budget-original');original.append(node('span','Importes originales'),node('strong',format(totals.CUP||0,'CUP')+' + '+format(totals.USD||0,'USD')));
+  const converted=equivalents(totals,rate);
+  target.replaceChildren(original,...['CUP','USD'].map(currency=>{
+   const card=node('div','','budget-equivalent');card.append(node('span','Equivalente en '+currency),node('strong',converted?format(converted[currency],currency):'—'));return card;
+  }));
+ }
+ async function fetchRate(force=false){
+  const generation=++rateGeneration,input=$('budget-exchange-rate'),status=$('budget-rate-status');
+  const refresh=$('budget-rate-refresh');refresh.disabled=true;status.textContent='Consultando referencia del día…';
+  try{
+   const reference=await window.CartelExchangeRates.read(client,{force});
+   if(generation!==rateGeneration||!dialog.open)return;
+   input.value=String(reference.value);rateSource='reference';rateDate=reference.source_date||reference.fetched_at;status.textContent=window.CartelExchangeRates.label(reference);updateTotals();
+  }catch{if(generation===rateGeneration&&dialog.open)status.textContent='Referencia no disponible. Puedes introducir la tasa manualmente.';}
+  finally{if(generation===rateGeneration)refresh.disabled=false;}
+ }
+ function manualRate(){
+  rateGeneration++;rateSource='manual-edited';rateDate=null;$('budget-rate-refresh').disabled=false;$('budget-rate-status').textContent='Tasa declarada manualmente · editable';updateTotals();
  }
  function updateTotals() {
   const items=collectItems();[...$('budget-items').children].forEach((row,index)=>{row.querySelector('.item-subtotal').textContent='Subtotal · '+format(items[index].subtotal||0,items[index].currency);});
-  totalsView($('budget-totals'),calculate(items));
+  totalsView($('budget-totals'),calculate(items),Number(field('exchange_rate').value));
  }
  function payload() {
   return {area:field('area').value,kind:field('kind').value,priority:field('priority').value,reason:field('reason').value.trim(),items:collectItems(),
-   details:{concept:field('concept').value.trim(),supplier:field('supplier').value.trim(),needed_on:field('needed_on').value,observations:field('observations').value.trim(),reference:field('reference').value.trim()}};
+   details:{concept:field('concept').value.trim(),supplier:field('supplier').value.trim(),needed_on:field('needed_on').value,observations:field('observations').value.trim(),reference:field('reference').value.trim(),exchange_rate:Number(field('exchange_rate').value),exchange_rate_source:rateSource==='reference'?'reference':'manual',exchange_rate_date:rateDate}};
  }
  function displaySummary() {
   const values=payload(),summary=$('budget-summary');summary.replaceChildren();
   labeled(summary,'Destino',recipient());labeled(summary,'Área',values.area);labeled(summary,'Tipo de gasto',values.kind);labeled(summary,'Concepto',values.details.concept);labeled(summary,'Prioridad',values.priority);labeled(summary,'Justificación',values.reason);
-  itemSummary(summary,values.items);const totals=node('div','','totals');totalsView(totals,calculate(values.items));summary.append(totals);
+  itemSummary(summary,values.items);const totals=node('div','','budget-converted budget-confirm-totals');labeled(summary,'Tasa utilizada','1 USD = '+values.details.exchange_rate+' CUP');totalsView(totals,calculate(values.items),values.details.exchange_rate);summary.append(totals);
   labeled(summary,'Proveedor',values.details.supplier);labeled(summary,'Fecha requerida',values.details.needed_on);labeled(summary,'Observaciones',values.details.observations);labeled(summary,'Referencia',values.details.reference);
  }
  function validPanel(index) {
@@ -147,6 +173,7 @@
   if(index===1&&!$('budget-items').children.length){report('Agrega al menos un artículo o servicio.');return false;}
   for(const input of panel.querySelectorAll('input,select,textarea'))if(!input.closest('[hidden]')&&(!input.checkValidity()||(input.required&&!input.value.trim()))){input.reportValidity();return false;}
   if(index===0&&field('kind').value==='Abastecimiento de nevera'&&field('area').value!=='Audiovisual'){report('El abastecimiento de nevera corresponde al área Audiovisual.');return false;}
+  if(index===1&&!validRate(Number(field('exchange_rate').value))){report('Introduce una tasa de cambio válida.');return false;}
   if(index===1&&collectItems().some(item=>item.subtotal<=0)){report('El subtotal debe ser mayor que cero.');return false;}
   return true;
  }
@@ -156,7 +183,7 @@
   form.querySelectorAll('[data-step]').forEach(button=>{const index=Number(button.dataset.step);button.disabled=index>unlocked;button.classList.toggle('completed',index<step);if(index===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
   $('budget-back').textContent=step?'← Regresar':'Cancelar';$('budget-next').hidden=step===3;$('budget-send').hidden=step!==3;
   $('budget-send').textContent='Enviar al '+recipient();if(step===3)displaySummary();
-  if(step===1){$('budget-catalog').hidden=field('kind').value!=='Abastecimiento de nevera';if(!$('budget-catalog').hidden)void loadCatalog();}
+  if(step===1){if(!field('exchange_rate').value&&rateSource!=='manual-edited')void fetchRate();$('budget-catalog').hidden=field('kind').value!=='Abastecimiento de nevera';if(!$('budget-catalog').hidden)void loadCatalog();}
  }
  function configureArea() {
   field('area').value=caps.request_area||'';
@@ -187,7 +214,7 @@
   for(const product of catalog.filter(product=>normalize(product.name).includes(query)).slice(0,12))results.append(button(product.name+' · '+product.stock+' disponibles','catalog-choice',()=>{addItem(product);$('catalog-search').value='';results.replaceChildren();}));
  }
  function openForm(){
-  form.reset();attempt=null;unlocked=0;$('budget-items').replaceChildren();$('catalog-results').replaceChildren();configureArea();typeChanged();priorityChanged();addItem();dialog.showModal();move(0);
+  form.reset();rateGeneration++;rateSource='manual';rateDate=null;$('budget-rate-refresh').disabled=false;$('budget-rate-status').textContent='Consultando referencia…';attempt=null;unlocked=0;$('budget-items').replaceChildren();$('catalog-results').replaceChildren();configureArea();typeChanged();priorityChanged();addItem();dialog.showModal();move(0);
  }
  const discard=$('budget-discard');
  function cancel(){if(busy||discard.open)return;discard.showModal();}
@@ -198,6 +225,7 @@
  $('budget-back').onclick=()=>step?move(step-1):cancel();
  $('budget-next').onclick=()=>{if(validPanel(step))move(step+1);};
  form.querySelectorAll('[data-step]').forEach(button=>button.onclick=()=>{const next=Number(button.dataset.step);if(next<=step)move(next);else if(next===step+1&&validPanel(step))move(next);});
+ $('budget-rate-refresh').onclick=()=>void fetchRate(true);field('exchange_rate').addEventListener('input',manualRate);
  $('budget-add').onclick=()=>addItem();$('budget-items').addEventListener('input',updateTotals);$('budget-items').addEventListener('change',updateTotals);
  field('kind').onchange=typeChanged;field('priority').onchange=priorityChanged;$('catalog-search').oninput=renderCatalog;
  form.addEventListener('input',()=>{unlocked=step;});
