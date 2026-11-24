@@ -10,7 +10,7 @@
   rejected:{label:'No aprobadas',color:'#ff7474',icon:'×',detail:'No aprobada'}
  };
  let caps, user, requests=[], filter='all', limit=25, step=0, unlocked=0, busy=false, attempt=null, catalog=null;
- const direct = () => caps.administrator || caps.audiovisual || caps.graphics;
+ const direct = () => ['Administrador','Jefe de Área'].includes(caps.request_role_title);
  const canSubmit = () => caps.request || direct();
  const recipient = () => direct() ? 'Manager General' : 'Jefe de área';
  const format = (value,currency) => new Intl.NumberFormat('es-CU',{style:'currency',currency,currencyDisplay:'code'}).format(value);
@@ -138,7 +138,7 @@
  }
  function displaySummary() {
   const values=payload(),summary=$('budget-summary');summary.replaceChildren();
-  labeled(summary,'Destino',recipient());labeled(summary,'Área',values.area);labeled(summary,'Tipo',values.kind);labeled(summary,'Concepto',values.details.concept);labeled(summary,'Prioridad',values.priority);labeled(summary,'Justificación',values.reason);
+  labeled(summary,'Destino',recipient());labeled(summary,'Área',values.area);labeled(summary,'Tipo de gasto',values.kind);labeled(summary,'Concepto',values.details.concept);labeled(summary,'Prioridad',values.priority);labeled(summary,'Justificación',values.reason);
   itemSummary(summary,values.items);const totals=node('div','','totals');totalsView(totals,calculate(values.items));summary.append(totals);
   labeled(summary,'Proveedor',values.details.supplier);labeled(summary,'Fecha requerida',values.details.needed_on);labeled(summary,'Observaciones',values.details.observations);labeled(summary,'Referencia',values.details.reference);
  }
@@ -146,7 +146,7 @@
   const panel=form.querySelector('[data-panel="'+index+'"]');
   if(index===1&&!$('budget-items').children.length){report('Agrega al menos un artículo o servicio.');return false;}
   for(const input of panel.querySelectorAll('input,select,textarea'))if(!input.closest('[hidden]')&&(!input.checkValidity()||(input.required&&!input.value.trim()))){input.reportValidity();return false;}
-  if(index===0&&field('kind').value==='Abastecimiento de Nevera Audiovisual'&&field('area').value!=='Audiovisual'){report('Selecciona el área Audiovisual para el abastecimiento de nevera.');return false;}
+  if(index===0&&field('kind').value==='Abastecimiento de Nevera Audiovisual'&&field('area').value!=='Audiovisual'){report('El abastecimiento de nevera corresponde al área Audiovisual.');return false;}
   if(index===1&&collectItems().some(item=>item.subtotal<=0)){report('El subtotal debe ser mayor que cero.');return false;}
   return true;
  }
@@ -159,13 +159,26 @@
   if(step===1){$('budget-catalog').hidden=field('kind').value!=='Abastecimiento de Nevera Audiovisual';if(!$('budget-catalog').hidden)void loadCatalog();}
  }
  function configureArea() {
-  [...field('area').options].forEach(option=>{option.hidden=option.value==='Generales'&&!caps.administrator||direct()&&!caps.administrator&&option.value!==''&&!((option.value==='Audiovisual'&&caps.audiovisual)||(option.value==='Gráfica'&&caps.graphics));option.disabled=option.hidden;});
-  if(!caps.administrator&&direct()&&!(caps.audiovisual&&caps.graphics))field('area').value=caps.audiovisual?'Audiovisual':'Gráfica';
+  field('area').value=caps.request_area||'';
+  $('budget-area-label').textContent=caps.request_area||'Sin área asignada';
+  $('budget-role-label').textContent=caps.request_role_title||'Solicitante';
+  const fridge=[...field('kind').options].find(option=>option.value==='Abastecimiento de Nevera Audiovisual');
+  fridge.disabled=field('area').value!=='Audiovisual';fridge.hidden=fridge.disabled;
  }
+ const expenseIcons={
+  'Abastecimiento de Nevera Audiovisual':'<path d="M3 10h18l-2 11H5L3 10ZM8 10l4-7 4 7M9 14v4m6-4v4"/>',
+  'Compra de herramientas':'<path d="m4 20 9-9M14 4a6 6 0 0 0 7 7l-6 6-4-4-7 7-2-2 7-7-2-4 6-6-1 5Z"/>',
+  'Materiales de mantenimiento':'<path d="m3 20 7-7m3-10 8 8-4 4-8-8zM5 20l-1 1-2-2 1-1"/>',
+  'Materias primas e insumos':'<path d="m12 3 9 5-9 5-9-5Zm-9 5v11l9 5 9-5V8M12 13v11"/>',
+  'Equipos y accesorios':'<rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 22h8m-4-4v4"/>',
+  'Repuestos y componentes':'<circle cx="12" cy="12" r="4"/><path d="M12 2v5m0 10v5M2 12h5m10 0h5M5 5l4 4m6 6 4 4M5 19l4-4m6-6 4-4"/>',
+  'Reparaciones y servicios técnicos':'<path d="M14 6 18 2l4 4-4 4-4-4ZM6 18l8-8 4 4-8 8-4-4ZM2 2l7 7m-7 4 4-4"/>'
+ };
  function typeChanged() {
-  const other=field('kind').value==='Otros gastos';$('concept-wrap').hidden=!other;field('concept').required=other;if(!other)field('concept').value='';
-  if(field('kind').value==='Abastecimiento de Nevera Audiovisual'&&!field('area').options[1].disabled)field('area').value='Audiovisual';
+  const kind=field('kind').value,other=kind==='Otros gastos';$('concept-wrap').hidden=!other;field('concept').required=other;if(!other)field('concept').value='';
+  $('expense-icon').innerHTML=expenseIcons[kind]||'<path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/>';
  }
+ function priorityChanged(){$('priority-dot').dataset.priority=field('priority').value;}
  async function loadCatalog() {
   if(catalog){renderCatalog();return;}
   try{const data=await rpc('fridge_state');catalog=data.products.filter(product=>product.active);renderCatalog();}
@@ -177,7 +190,7 @@
   for(const product of catalog.filter(product=>normalize(product.name).includes(query)).slice(0,12))results.append(button(product.name+' · '+product.stock+' disponibles','catalog-choice',()=>{addItem(product);$('catalog-search').value='';results.replaceChildren();}));
  }
  function openForm(){
-  form.reset();attempt=null;unlocked=0;$('budget-items').replaceChildren();$('catalog-results').replaceChildren();configureArea();typeChanged();addItem();dialog.showModal();move(0);
+  form.reset();attempt=null;unlocked=0;$('budget-items').replaceChildren();$('catalog-results').replaceChildren();configureArea();typeChanged();priorityChanged();addItem();dialog.showModal();move(0);
  }
  const discard=$('budget-discard');
  function cancel(){if(busy||discard.open)return;discard.showModal();}
@@ -189,7 +202,7 @@
  $('budget-next').onclick=()=>{if(validPanel(step))move(step+1);};
  form.querySelectorAll('[data-step]').forEach(button=>button.onclick=()=>{const next=Number(button.dataset.step);if(next<=step)move(next);else if(next===step+1&&validPanel(step))move(next);});
  $('budget-add').onclick=()=>addItem();$('budget-items').addEventListener('input',updateTotals);$('budget-items').addEventListener('change',updateTotals);
- field('kind').onchange=typeChanged;$('catalog-search').oninput=renderCatalog;
+ field('kind').onchange=typeChanged;field('priority').onchange=priorityChanged;$('catalog-search').oninput=renderCatalog;
  form.addEventListener('input',()=>{unlocked=step;});
  form.noValidate=true;
  form.onsubmit=event=>{event.preventDefault();if(step!==3)return;run(async()=>{

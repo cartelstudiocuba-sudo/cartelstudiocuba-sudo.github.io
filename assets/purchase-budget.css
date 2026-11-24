@@ -16,3 +16,28 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 .discard-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
 .danger{background:linear-gradient(#963d44,#6c232c);color:#fff;border-color:#bd5964;padding:10px 12px;box-shadow:0 3px #3c1419}
 @media(max-width:360px){.discard-content{padding:22px 14px}.discard-actions{grid-template-columns:1fr}}
+
+/* Graphic ribbon and role-assigned information in the request wizard. */
+#budget-dialog{width:min(900px,calc(100vw - 24px));max-width:none;background:linear-gradient(145deg,#232629,#17191c 70%);border-color:#676569}
+#budget-dialog .modal-hero{background:linear-gradient(110deg,#282518 0%,#56430b 58%,#aa820b 100%);border-bottom-color:#b69b31;box-shadow:inset 0 1px #e8c74d50,0 3px 14px #0004}
+#budget-dialog .modal-hero .hero-icon{background:transparent;color:#ffda03;border-color:#b8a040}
+.steps{gap:5px;padding:23px 22px 5px}
+.steps button{position:relative;isolation:isolate;display:flex;justify-content:center;align-items:center;gap:7px;min-height:65px;clip-path:polygon(0 0,calc(100% - 15px) 0,100% 50%,calc(100% - 15px) 100%,0 100%,15px 50%);background:linear-gradient(#758293,#445364 35%,#283440);box-shadow:inset 0 2px #ffffff68,inset 0 -3px #0e1722;filter:drop-shadow(0 4px 3px #0008);color:#f2f5f9;font-size:15px;padding:8px 19px 8px 25px}
+.steps button:first-child{clip-path:polygon(0 0,calc(100% - 15px) 0,100% 50%,calc(100% - 15px) 100%,0 100%);padding-left:10px}
+.steps button svg,.identity-card svg,.select-decoration svg{width:25px;height:25px;flex:0 0 25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.steps [aria-current=step]{background:linear-gradient(#fff5a5,#ffda03 42%,#efad00);box-shadow:inset 0 2px #fff9,inset 0 -4px #b47c00;color:#17160e}
+.steps .completed{background:linear-gradient(#4dc47e,#1c9751 42%,#146135);box-shadow:inset 0 2px #a4ffc16b,inset 0 -4px #0e4828;color:#f2fff6}
+.request-identity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.identity-card{display:flex;align-items:center;gap:13px;min-width:0;padding:13px;border-radius:13px;background:linear-gradient(135deg,#33332b,#202226);border:1px solid #a89130;box-shadow:inset 0 1px #ffffff12,0 4px 9px #0003}
+.identity-card svg{width:34px;height:34px;flex-basis:34px;color:#ffda03}
+.identity-card>div{min-width:0;padding-left:13px;border-left:1px solid #6d6b58}
+.identity-card strong{display:block;font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.identity-card small{display:block;color:#c6cbd0;font-size:12px;line-height:1.4;margin-top:3px}
+.expense-fields{align-items:start}.expense-fields #concept-wrap{grid-column:1/-1}
+.select-decoration{position:relative;display:block}.select-decoration select{padding-left:45px;background:linear-gradient(#2f3439,#1b1d20);box-shadow:inset 0 1px #fff1,0 3px 7px #0003}
+.select-decoration svg,.priority-dot{position:absolute;top:50%;left:12px;transform:translateY(-50%);pointer-events:none;color:#ffda03}
+.priority-dot{width:13px;height:13px;border:1px solid #ffffff50;border-radius:50%;background:#29d466;box-shadow:0 0 9px #29d46659}
+.priority-dot[data-priority="Urgente"]{background:#ffb020;box-shadow:0 0 9px #ffb02059}
+.priority-dot[data-priority="Crítica"]{background:#ff535c;box-shadow:0 0 9px #ff535c59}
+@media(max-width:680px){.steps{gap:3px;padding:14px 10px 3px}.steps button{min-height:57px;gap:4px;flex-direction:column;font-size:10px;padding:7px 14px 7px 17px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%)}.steps button:first-child{padding-left:5px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%)}.steps button svg{width:19px;height:19px;flex-basis:19px}.steps button span{text-align:center;line-height:1.1}.request-identity{gap:8px}.identity-card{gap:7px;padding:10px 8px}.identity-card svg{width:22px;height:22px;flex-basis:22px}.identity-card>div{padding-left:7px}.identity-card strong{font-size:13px}.identity-card small{font-size:10px}}
+@media(max-width:375px){.request-identity,.expense-fields{grid-template-columns:1fr}.steps button{font-size:9px}}
