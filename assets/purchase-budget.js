@@ -43,9 +43,7 @@
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
    const team=requests.filter(r=>r.requester!==user.id&&((r.area==='Audiovisual'&&caps.audiovisual)||(r.area==='Gráfica'&&caps.graphics)));
-   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests:team,canReview:r=>r.status==='chief_pending',openBudget:id=>{
-    const request=requests.find(r=>r.id===id);if(request)renderRequest(request).querySelector('.request-visual-row').click();
-   },selectFilter:setFilter,selected:filter});
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests:team,selectFilter:setFilter,selected:filter});
   }
 
   const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);
@@ -61,7 +59,7 @@
  function renderList() {
   const query=normalize($('budget-search').value);
   const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
-  $('budget-count').textContent=visible.length+' solicitudes';
+  $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
   const own=visible.filter(request=>request.requester===user.id),incoming=visible.filter(request=>request.requester!==user.id);
   const groups=[];
