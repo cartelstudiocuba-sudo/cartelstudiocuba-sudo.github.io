@@ -82,3 +82,34 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 .budget-confirm-totals{grid-template-columns:repeat(2,minmax(0,1fr));background:#222629;padding:13px;border:1px solid #5c5944;border-radius:11px;margin:10px 0}
 .budget-confirm-totals .budget-original{grid-column:1/-1}
 @media(max-width:680px){.budget-purchase-layout{grid-template-columns:1fr}.budget-side-summary .budget-converted{grid-template-columns:repeat(2,minmax(0,1fr))}.budget-side-summary .budget-original{grid-column:1/-1}.budget-rate-fields{gap:8px}.budget-rate-fields label{min-width:0;flex-basis:100%}.budget-item-list .item-fields label{font-size:10px}}
+
+/* Confirmation sheet, design B. */
+.confirmation-sheet{display:grid;gap:13px}
+.confirmation-section{padding:15px;border:1px solid #4c5156;border-radius:13px;background:linear-gradient(145deg,#26292c,#1b1e21);box-shadow:0 3px 10px #0003}
+.confirmation-heading{display:flex;align-items:center;gap:9px;font-size:18px!important;margin:0 0 12px!important}
+.confirmation-icon{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;color:var(--yellow)}
+.confirmation-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.confirmation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.confirmation-field{display:flex;align-items:center;gap:11px;min-width:0;border:1px solid #4e5358;background:linear-gradient(#303438,#232629);border-radius:10px;padding:11px 12px}
+.confirmation-field>div{min-width:0}
+.confirmation-field small,.confirmation-totals small{display:block;font-size:12px;color:#c4cbd1;margin-bottom:3px}
+.confirmation-field strong{font-size:15px;line-height:1.4;display:block;overflow-wrap:anywhere;white-space:pre-wrap}
+.confirmation-field .confirmation-priority{position:static;transform:none;flex:0 0 15px;width:15px;height:15px;margin:0 5px}
+.confirmation-receipt{border:1px solid #51565a;border-radius:9px;overflow:hidden}
+.confirmation-receipt-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(55px,.32fr) minmax(95px,.55fr);gap:10px;align-items:center;padding:10px 12px;background:#25292c}
+.confirmation-receipt-row+.confirmation-receipt-row{border-top:1px dashed #4c5359}
+.confirmation-receipt-row>strong:first-child{overflow-wrap:anywhere}
+.confirmation-quantity{color:#c8cdd1;font-size:13px;text-align:center}
+.confirmation-cost{text-align:right;overflow-wrap:anywhere}
+.confirmation-finance{border-color:#736738;background:linear-gradient(145deg,#302b1c,#1d2022 82%)}
+.confirmation-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:4px 0 14px}
+.confirmation-original,.confirmation-equivalent{display:grid;align-content:start;gap:5px;min-width:0}
+.confirmation-original{border-right:1px solid #696449;padding-right:15px}
+.confirmation-original strong,.confirmation-equivalent strong{font-size:clamp(17px,3vw,25px);line-height:1.2;overflow-wrap:anywhere}
+.confirmation-original strong{color:var(--yellow)}
+.confirmation-equivalent strong{color:#78e79b}
+.confirmation-rate{display:flex;align-items:center;gap:9px;padding:9px 11px;background:#191c1f;border:1px solid #53585c;border-radius:9px;color:#e2e5e7;font-size:13px}
+@media(max-width:680px){.confirmation-section{padding:11px}.confirmation-grid{gap:7px}.confirmation-field{padding:8px;gap:6px}.confirmation-field strong{font-size:13px}.confirmation-field small{font-size:10px}.confirmation-field .confirmation-icon{flex-basis:19px;width:19px;height:19px}.confirmation-field .confirmation-icon svg{width:19px;height:19px}.confirmation-receipt-row{grid-template-columns:minmax(0,1fr) 50px minmax(78px,.7fr);gap:5px;font-size:12px;padding:9px 7px}.confirmation-quantity{font-size:11px}.confirmation-totals{gap:10px}.confirmation-original{padding-right:10px}}
+#budget-send{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+#budget-send .confirmation-icon{color:#fff;flex-basis:21px;width:21px;height:21px}
+#budget-send .confirmation-icon svg{width:21px;height:21px}

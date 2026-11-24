@@ -162,10 +162,51 @@
   return {area:field('area').value,kind:field('kind').value,priority:field('priority').value,reason:field('reason').value.trim(),items:collectItems(),
    details:{concept:field('concept').value.trim(),exchange_rate:Number(field('exchange_rate').value),exchange_rate_source:rateSource==='reference'?'reference':'manual',exchange_rate_date:rateDate}};
  }
+ const confirmationIcons={
+  person:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/>',
+  area:'<path d="m12 3 10 5-10 5L2 8Zm-10 9 10 5 10-5M2 16l10 5 10-5"/>',
+  type:'<path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/>',
+  destination:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/>',
+  note:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  cart:'<path d="M2 3h3l3 13h11l3-10H6M10 20h.01M18 20h.01"/>',
+  calculator:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v4H8zM8 14h1m6 0h1m-8 4h1m6 0h1"/>',
+  rate:'<path d="M3 7h18l-5-5M21 17H3l5 5"/>',
+  send:'<path d="m22 2-7 20-4-9-9-4Zm-11 11L22 2"/>'
+ };
+ function confirmationIcon(name){
+  const icon=node('span','','confirmation-icon');icon.setAttribute('aria-hidden','true');
+  icon.innerHTML='<svg viewBox="0 0 24 24">'+confirmationIcons[name]+'</svg>';return icon;
+ }
+ function confirmationHeading(title,icon){
+  const heading=node('h3','','confirmation-heading');heading.append(confirmationIcon(icon),document.createTextNode(title));return heading;
+ }
+ function confirmationField(title,value,icon,priority){
+  const card=node('div','','confirmation-field');
+  if(priority){const dot=node('span','','confirmation-priority priority-dot');dot.dataset.priority=value;dot.setAttribute('aria-hidden','true');card.append(dot);}
+  else card.append(confirmationIcon(icon));
+  const copy=node('div');copy.append(node('small',title),node('strong',value));card.append(copy);return card;
+ }
  function displaySummary() {
   const values=payload(),summary=$('budget-summary');summary.replaceChildren();
-  labeled(summary,'Destino',recipient());labeled(summary,'Área',values.area);labeled(summary,'Tipo de gasto',values.kind);labeled(summary,'Concepto',values.details.concept);labeled(summary,'Prioridad',values.priority);labeled(summary,'Justificación',values.reason);
-  itemSummary(summary,values.items);const totals=node('div','','budget-converted budget-confirm-totals');labeled(summary,'Tasa utilizada','1 USD = '+values.details.exchange_rate+' CUP');totalsView(totals,calculate(values.items),values.details.exchange_rate);summary.append(totals);
+  const data=node('section','','confirmation-section'),grid=node('div','','confirmation-grid');
+  grid.append(confirmationField('Solicitante',caps.request_role_title||'Solicitante','person'),confirmationField('Área',values.area,'area'),
+   confirmationField('Tipo de gasto',values.details.concept?values.kind+' · '+values.details.concept:values.kind,'type'),confirmationField('Destino',recipient(),'destination'),
+   confirmationField('Justificación',values.reason,'note'),confirmationField('Prioridad',values.priority,null,true));
+  data.append(confirmationHeading('Ficha de solicitud','note'),grid);
+  const articles=node('section','','confirmation-section'),list=node('div','','confirmation-receipt');
+  articles.append(confirmationHeading('Artículos solicitados','cart'));
+  for(const item of values.items){
+   const row=node('div','','confirmation-receipt-row');row.append(node('strong',item.name),node('span','Cant. '+item.quantity,'confirmation-quantity'),node('strong',format(item.subtotal,item.currency),'confirmation-cost'));list.append(row);
+  }
+  articles.append(list);
+  const converted=equivalents(calculate(values.items),values.details.exchange_rate),totals=calculate(values.items);
+  const cost=node('section','','confirmation-section confirmation-finance'),columns=node('div','','confirmation-totals'),original=node('div','','confirmation-original'),equivalent=node('div','','confirmation-equivalent');
+  original.append(node('small','Importes originales'),node('strong',format(totals.CUP||0,'CUP')+' + '+format(totals.USD||0,'USD')));
+  equivalent.append(node('small','Totales equivalentes'),node('strong',converted?format(converted.CUP,'CUP'):'—'),node('strong',converted?format(converted.USD,'USD'):'—'));
+  columns.append(original,equivalent);
+  const rate=node('div','','confirmation-rate');rate.append(confirmationIcon('rate'),document.createTextNode('Tasa utilizada · 1 USD = '+values.details.exchange_rate+' CUP'));
+  cost.append(confirmationHeading('Resumen de totales','calculator'),columns,rate);
+  summary.append(data,articles,cost);
  }
  function validPanel(index) {
   const panel=form.querySelector('[data-panel="'+index+'"]');
@@ -181,7 +222,7 @@
   form.querySelectorAll('[data-panel]').forEach(panel=>panel.hidden=Number(panel.dataset.panel)!==step);
   form.querySelectorAll('[data-step]').forEach(button=>{const index=Number(button.dataset.step);button.disabled=index>unlocked;button.classList.toggle('completed',index<step);if(index===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
   $('budget-back').textContent=step?'← Regresar':'Cancelar';$('budget-next').hidden=step===2;$('budget-send').hidden=step!==2;
-  $('budget-send').textContent='Enviar al '+recipient();if(step===2)displaySummary();
+  $('budget-send').replaceChildren(confirmationIcon('send'),document.createTextNode('Enviar al '+recipient()));if(step===2)displaySummary();
   if(step===1){if(!field('exchange_rate').value&&rateSource!=='manual-edited')void fetchRate();$('budget-catalog').hidden=field('kind').value!=='Abastecimiento de nevera';if(!$('budget-catalog').hidden)void loadCatalog();}
  }
  function configureArea() {
