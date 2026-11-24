@@ -63,7 +63,7 @@
   const lines=node('div','','summary-lines');
   for(const item of items){
    const row=node('div','','summary-line');row.append(node('strong',format(item.subtotal,item.currency)));
-   row.append(document.createTextNode(item.name+' · '+item.quantity+' '+(item.unit||'')));lines.append(row);
+   row.append(document.createTextNode(item.name+' · '+item.quantity+(item.unit&&item.unit!=='unidad'?' '+item.unit:'')));lines.append(row);
   }
   parent.append(lines);
  }
@@ -112,14 +112,14 @@
   const name=itemInput('Nombre','item_name','text',product?.name||'',{required:'',maxlength:'160'});
   const fields=node('div','','item-fields');
   const currencyLabel=node('label','Moneda'),currency=node('select');currency.name='item_currency';for(const code of ['USD','CUP'])currency.append(node('option',code));currencyLabel.append(currency);
-  fields.append(itemInput('Unidad','item_unit','text','unidad',{required:'',maxlength:'40'}),itemInput('Cantidad','item_quantity','number','1',{required:'',min:'0.001',max:'999999',step:'0.001'}),itemInput('Precio unitario','item_price','number',product?.cost??'',{required:'',min:'0.01',step:'0.01',max:'99999999999'}),currencyLabel);
+  fields.append(itemInput('Cantidad','item_quantity','number','1',{required:'',min:'0.001',max:'999999',step:'0.001'}),itemInput('Precio unitario','item_price','number',product?.cost??'',{required:'',min:'0.01',step:'0.01',max:'99999999999'}),currencyLabel);
   item.append(header,name,fields,node('p','','item-subtotal'));container.append(item);updateTotals();
  }
  function collectItems() {
   return [...$('budget-items').children].map(row=>{
    const get=name=>row.querySelector('[name='+name+']').value;
    const quantity=Number(get('item_quantity')),unit_price=Number(get('item_price'));
-   return {name:get('item_name').trim(),unit:get('item_unit').trim(),quantity,unit_price,currency:get('item_currency'),subtotal:Math.round(quantity*unit_price*100)/100};
+   return {name:get('item_name').trim(),unit:'unidad',quantity,unit_price,currency:get('item_currency'),subtotal:Math.round(quantity*unit_price*100)/100};
   });
  }
  function calculate(items) {
