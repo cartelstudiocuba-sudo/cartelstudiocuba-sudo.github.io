@@ -179,7 +179,11 @@
  function openForm(){
   form.reset();attempt=null;unlocked=0;$('budget-items').replaceChildren();$('catalog-results').replaceChildren();configureArea();typeChanged();addItem();dialog.showModal();move(0);
  }
- function cancel(){if(busy)return;if(confirm('¿Cerrar y descartar esta solicitud?'))dialog.close();}
+ const discard=$('budget-discard');
+ function cancel(){if(busy||discard.open)return;discard.showModal();}
+ $('discard-keep').onclick=()=>discard.close();
+ $('discard-confirm').onclick=()=>{discard.close();dialog.close();};
+ discard.addEventListener('cancel',event=>{event.preventDefault();discard.close();});
  $('budget-new').onclick=openForm;$('budget-close').onclick=cancel;dialog.addEventListener('cancel',event=>{event.preventDefault();cancel();});
  $('budget-back').onclick=()=>step?move(step-1):cancel();
  $('budget-next').onclick=()=>{if(validPanel(step))move(step+1);};

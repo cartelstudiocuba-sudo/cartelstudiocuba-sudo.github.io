@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Solicitudes de presupuesto · El Cartel Studio</title>
-<link rel="stylesheet" href="/assets/purchase-budget.css?v=2-full-width">
+<link rel="stylesheet" href="/assets/purchase-budget.css?v=3-discard-dialog">
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
-<script defer src="/assets/purchase-budget.js?v=2-dashboard"></script>
+<script defer src="/assets/purchase-budget.js?v=3-discard-dialog"></script>
 </head>
 <body>
 <main class="budget">
@@ -36,6 +36,14 @@
 </div>
 <footer class="modal-footer"><button type="button" class="secondary" id="budget-back">Cancelar</button><button type="button" class="success" id="budget-next">Continuar →</button><button type="submit" class="success" id="budget-send" hidden>Enviar solicitud</button></footer>
 </form>
+</dialog>
+<dialog id="budget-discard" class="discard-dialog" aria-labelledby="discard-title" aria-describedby="discard-description">
+<div class="discard-content">
+<span class="discard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.9 19a1 1 0 0 0 .9 1.5h16.4a1 1 0 0 0 .9-1.5L12 3Z"/><path d="M12 9v4.5m0 3.5h.01"/></svg></span>
+<h2 id="discard-title">¿Descartar solicitud?</h2>
+<p id="discard-description">Si sales ahora, se perderán los datos que has preparado.</p>
+<div class="discard-actions"><button type="button" class="secondary" id="discard-keep" autofocus>Seguir editando</button><button type="button" class="danger" id="discard-confirm">Descartar solicitud</button></div>
+</div>
 </dialog>
 </main>
 </body>
