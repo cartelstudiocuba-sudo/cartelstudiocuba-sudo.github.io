@@ -8,13 +8,16 @@
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
 <script defer src="/assets/exchange-rates.js?v=1-official-api"></script>
-<script defer src="/assets/purchase-budget.js?v=13-area-home"></script>
+<link rel="stylesheet" href="/assets/budget-summary.css?v=1">
+<script defer src="/assets/budget-summary.js?v=1"></script>
+<script defer src="/assets/purchase-budget.js?v=14-module-summary"></script>
 <link rel="stylesheet" href="/assets/inventory-portrait.css?v=1"><script defer src="/assets/inventory-portrait.js?v=1"></script></head>
 <body>
 <main class="budget">
 <header class="hero"><span class="hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M6 7V4h12v3m3 5h-6v5h6"/></svg></span><div><small>EL CARTEL STUDIO · INVENTARIO</small><h1>Solicitudes de presupuesto</h1></div><button id="budget-new" class="primary" hidden>＋ Nueva solicitud</button></header>
 <p id="budget-message" role="status" aria-live="polite"></p>
 <section id="budget-list" hidden>
+<div id="budget-chief-summary" hidden></div>
 <div id="budget-stats" class="stats" aria-label="Estados de solicitudes"></div>
 <div class="toolbar"><nav id="budget-filters" class="filters" aria-label="Filtrar solicitudes"></nav><button id="budget-refresh" class="secondary">↻ Actualizar</button></div>
 <input type="search" id="budget-search" placeholder="Buscar concepto, área o solicitante…" aria-label="Buscar solicitudes">

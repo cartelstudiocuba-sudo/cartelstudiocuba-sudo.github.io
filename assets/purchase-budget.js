@@ -38,6 +38,16 @@
  }
  function updateStats() {
   const stats=$('budget-stats'),filters=$('budget-filters');stats.replaceChildren();filters.replaceChildren();
+  const chief=!!(caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner;
+  $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
+  document.documentElement.classList.toggle('budget-chief-view',chief);
+  if(chief){
+   const team=requests.filter(r=>r.requester!==user.id&&((r.area==='Audiovisual'&&caps.audiovisual)||(r.area==='Gráfica'&&caps.graphics)));
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests:team,canReview:r=>r.status==='chief_pending',openBudget:id=>{
+    const request=requests.find(r=>r.id===id);if(request)renderRequest(request).querySelector('.request-visual-row').click();
+   },selectFilter:setFilter,selected:filter});
+  }
+
   const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);
   for(const [key,value] of Object.entries(statuses)){
    const count=requests.filter(request=>request.status===key).length;
