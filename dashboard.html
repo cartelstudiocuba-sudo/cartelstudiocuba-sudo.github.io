@@ -239,7 +239,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
    wrap.append(parent,sub);nav.appendChild(wrap);
   });
   if(data.fridge_audiovisual===true){
-   const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_technical===true?'Nevera audiovisual · Resumen y Existencias':data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
+   const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_technical===true?'Nevera audiovisual · Resumen, Existencias y Carta menú':data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
   }
   const homeRole=data.home_role||(data.fridge_limited===true?'gestor_operativo_audiovisual':null);
   const homeProfiles={manager_general:['Manager General','Dirección Operativa'],jefe_audiovisuales:['Jefe de Área','Departamento Audiovisual'],jefe_grafica:['Jefe de Área','Departamento de Gráfica'],gestor_comercial_grafica:['Gestor Operativo','Departamento de Gráfica'],gestor_operativo_audiovisual:['Gestor Operativo','Departamento Audiovisual']};
