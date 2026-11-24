@@ -1,4 +1,17 @@
 .dashboard.area-chief-home{padding:18px clamp(14px,2vw,30px) 34px}
+.area-chief-home .operational-welcome{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;min-height:129px;padding:18px 25px;margin:0 0 14px;border-radius:19px;border-color:#3b555c;background:radial-gradient(ellipse at 110% 110%,#ffda0370 0%,transparent 38%),linear-gradient(113deg,#0d2030,#0c3d43 72%,#183234);box-shadow:inset 0 1px #ffffff20,0 5px 15px #0003}
+.area-chief-home .operational-banner-art{position:relative;inset:auto;grid-column:1;grid-row:1;width:92px;height:80px;opacity:1;color:#ffda03;border-right:1px solid #ffda0380}
+.area-chief-home .operational-art-card{position:absolute;inset:0 16px 0 0;display:grid;place-items:center;background:none;border:0;box-shadow:none;transform:none;color:inherit}
+.area-chief-home .operational-art-card svg{width:74px;max-width:100%}
+.area-chief-home .operational-orbit,.area-chief-home .operational-art-chip,.area-chief-home .operational-eyebrow{display:none}
+.area-chief-home .operational-welcome-copy{grid-column:2;grid-row:1;max-width:none;min-width:0}
+.area-chief-home .operational-welcome h1{margin:0 0 5px}
+.area-chief-home .operational-welcome p:not(.home-brand-motto){color:#dce7ee}
+.area-chief-home .operational-welcome .home-brand-motto{grid-column:3;grid-row:1;margin:0;font-size:clamp(26px,3.6vw,51px);text-align:right;line-height:1.05}
+.area-chief-home #exchange-mobile-trigger.exchange-banner{width:100%;grid-template-columns:auto minmax(0,1fr) auto;gap:12px 20px;margin-bottom:15px;padding:9px 16px;border-radius:12px;border-color:#316853;background:linear-gradient(100deg,#0f3328,#112623);box-shadow:inset 0 1px #ffffff10}
+.area-chief-home .operational-rate-intro{padding-right:16px;border-right:1px solid #518773}
+.area-chief-home #exchange-mobile-trigger #exchange-mobile-usd{color:#c9f7de}
+.area-chief-home .exchange-banner-link{min-height:36px;padding:6px 4px;background:none;box-shadow:none;color:#ffda03}
 .area-chief-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}
 .area-chief-metric{display:flex;min-width:0;align-items:center;gap:13px;padding:16px;border:1px solid #506274;border-radius:15px;background:radial-gradient(ellipse at 110% 140%,var(--area-accent),transparent 53%),linear-gradient(145deg,#263746,#172430);box-shadow:inset 0 1px #ffffff18,0 5px 12px #0003}
 .area-chief-metric svg{width:34px;height:34px;flex:none;color:var(--area-accent)}
@@ -25,4 +38,4 @@
 .area-chief-ring strong{font-size:32px;line-height:1.05}
 .area-chief-ring span{font-size:13px}
 @media(max-width:1200px){.area-chief-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.area-chief-row-head{display:none}.area-chief-request{grid-column:1/-1}.area-chief-state{grid-column:1}.area-chief-review{grid-column:2/-1;justify-self:end}}
-@media(max-width:720px){.area-chief-columns{grid-template-columns:minmax(0,1fr)}.area-chief-card{min-height:0}.area-chief-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.area-chief-metric{padding:12px;gap:8px}.area-chief-metric svg{width:27px;height:27px}}
+@media(max-width:720px){.area-chief-columns{grid-template-columns:minmax(0,1fr)}.area-chief-card{min-height:0}.area-chief-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.area-chief-metric{padding:12px;gap:8px}.area-chief-metric svg{width:27px;height:27px}.area-chief-home .operational-welcome{grid-template-columns:auto minmax(0,1fr);gap:10px;padding:15px}.area-chief-home .operational-banner-art{width:58px;height:60px}.area-chief-home .operational-art-card{right:8px}.area-chief-home .operational-welcome .home-brand-motto{grid-column:2;grid-row:2;text-align:left}.area-chief-home #exchange-mobile-trigger.exchange-banner{grid-template-columns:minmax(0,1fr) auto}.area-chief-home .operational-rate-intro{border:0;padding-right:0}}

@@ -19,6 +19,9 @@
  const make=(tag,text='',className='')=>Object.assign(document.createElement(tag),{textContent:text,className});
  function mount({home,rate,client,userId,area,openBudget}){
   home.classList.add('area-chief-home');
+  const banner=home.querySelector('.operational-welcome');
+  banner.append(banner.querySelector('.home-brand-motto'));
+  rate.querySelector('.exchange-banner-link').textContent='Ver tasas ›';
   const panel=make('section','','area-chief-panel');
   panel.setAttribute('aria-label','Resumen de solicitudes de presupuesto');
   panel.innerHTML='<div class="area-chief-metrics"></div><div class="area-chief-columns"><section class="area-chief-card"><h2>'+icon('checklist')+'Solicitudes pendientes</h2><div class="area-chief-list" aria-live="polite"></div></section><section class="area-chief-card"><h2>'+icon('chart')+'Estado de solicitudes</h2><div class="area-chief-graph"></div></section></div>';
