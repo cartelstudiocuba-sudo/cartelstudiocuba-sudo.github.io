@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Solicitudes de presupuesto · El Cartel Studio</title>
-<link rel="stylesheet" href="/assets/purchase-budget.css?v=7-conversion">
+<link rel="stylesheet" href="/assets/purchase-budget.css?v=8-three-steps">
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
 <script defer src="/assets/exchange-rates.js?v=1-official-api"></script>
-<script defer src="/assets/purchase-budget.js?v=7-conversion"></script>
+<script defer src="/assets/purchase-budget.js?v=8-three-steps"></script>
 </head>
 <body>
 <main class="budget">
@@ -25,7 +25,7 @@
 <dialog id="budget-dialog" aria-labelledby="budget-dialog-title">
 <header class="hero modal-hero"><span class="hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M6 7V4h12v3m3 5h-6v5h6"/></svg></span><h2 id="budget-dialog-title">Nueva solicitud de presupuesto</h2><button type="button" class="close" id="budget-close" aria-label="Cerrar">×</button></header>
 <form id="budget-form">
-<nav class="steps" aria-label="Pasos de la solicitud"><button type="button" data-step="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/></svg><span>Tipo de gasto</span></button><button type="button" data-step="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18l-2 11H5L3 10ZM8 10l4-7 4 7M9 14v4m6-4v4"/></svg><span>Artículos</span></button><button type="button" data-step="2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5zM14 3v5h5M8 12h8M8 16h8"/></svg><span>Detalles</span></button><button type="button" data-step="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg><span>Confirmar</span></button></nav>
+<nav class="steps" aria-label="Pasos de la solicitud"><button type="button" data-step="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/></svg><span>Tipo de gasto</span></button><button type="button" data-step="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18l-2 11H5L3 10ZM8 10l4-7 4 7M9 14v4m6-4v4"/></svg><span>Artículos</span></button><button type="button" data-step="2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg><span>Confirmar</span></button></nav>
 <div class="modal-content">
 <section data-panel="0"><h3>Tipo de gasto</h3><p class="muted">Selecciona el concepto de la compra y su prioridad.</p>
 <input type="hidden" name="area">
@@ -38,8 +38,7 @@
 <label id="concept-wrap" hidden>Especificar concepto<input name="concept" maxlength="160"></label></div>
 <label>Justificación<textarea name="reason" required maxlength="1500" rows="3" placeholder="Explica brevemente el objetivo de esta compra"></textarea></label></section>
 <section data-panel="1" hidden><h3>Artículos y servicios</h3><p class="muted">Agrega cada producto con su cantidad y precio estimado.</p><div id="budget-catalog" hidden><label>Buscar producto de Nevera Audiovisual<input type="search" id="catalog-search" placeholder="Buscar por nombre"></label><div id="catalog-results"></div></div><div class="budget-purchase-layout"><div class="budget-item-list"><div id="budget-items"></div><button type="button" class="success" id="budget-add">＋ Agregar artículo o servicio</button></div><aside class="budget-side-summary" aria-label="Resumen de presupuesto"><h3>Resumen</h3><div id="budget-totals" class="budget-converted" aria-live="polite"></div></aside></div><div class="budget-rate-panel"><h3><span aria-hidden="true">⇄</span> Conversión de moneda</h3><div class="budget-rate-fields"><label for="budget-exchange-rate">Tasa de cambio<span class="budget-rate-input"><span>1 USD =</span><input type="number" id="budget-exchange-rate" name="exchange_rate" min="0.000001" max="1000000" step="any" required inputmode="decimal" placeholder="Tasa"><span>CUP</span></span></label><button type="button" class="secondary" id="budget-rate-refresh">↻ Referencia del día</button></div><p id="budget-rate-status" class="muted" role="status">Consultando referencia…</p></div></section>
-<section data-panel="2" hidden><h3>Información complementaria</h3><div class="fields"><label>Proveedor o lugar de compra<input name="supplier" maxlength="200" placeholder="Opcional"></label><label>Fecha requerida<input name="needed_on" type="date"></label></div><label>Observaciones<textarea name="observations" maxlength="1500" rows="3"></textarea></label><label>Enlace de cotización o referencia<input name="reference" type="url" maxlength="500" placeholder="https://…"></label></section>
-<section data-panel="3" hidden><h3>Revisar y confirmar</h3><div id="budget-summary"></div></section>
+<section data-panel="2" hidden><h3>Revisar y confirmar</h3><div id="budget-summary"></div></section>
 <p id="budget-form-message" role="alert"></p>
 </div>
 <footer class="modal-footer"><button type="button" class="secondary" id="budget-back">Cancelar</button><button type="button" class="success" id="budget-next">Continuar →</button><button type="submit" class="success" id="budget-send" hidden>Enviar solicitud</button></footer>

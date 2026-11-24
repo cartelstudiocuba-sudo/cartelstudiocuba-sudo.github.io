@@ -160,13 +160,12 @@
  }
  function payload() {
   return {area:field('area').value,kind:field('kind').value,priority:field('priority').value,reason:field('reason').value.trim(),items:collectItems(),
-   details:{concept:field('concept').value.trim(),supplier:field('supplier').value.trim(),needed_on:field('needed_on').value,observations:field('observations').value.trim(),reference:field('reference').value.trim(),exchange_rate:Number(field('exchange_rate').value),exchange_rate_source:rateSource==='reference'?'reference':'manual',exchange_rate_date:rateDate}};
+   details:{concept:field('concept').value.trim(),exchange_rate:Number(field('exchange_rate').value),exchange_rate_source:rateSource==='reference'?'reference':'manual',exchange_rate_date:rateDate}};
  }
  function displaySummary() {
   const values=payload(),summary=$('budget-summary');summary.replaceChildren();
   labeled(summary,'Destino',recipient());labeled(summary,'Área',values.area);labeled(summary,'Tipo de gasto',values.kind);labeled(summary,'Concepto',values.details.concept);labeled(summary,'Prioridad',values.priority);labeled(summary,'Justificación',values.reason);
   itemSummary(summary,values.items);const totals=node('div','','budget-converted budget-confirm-totals');labeled(summary,'Tasa utilizada','1 USD = '+values.details.exchange_rate+' CUP');totalsView(totals,calculate(values.items),values.details.exchange_rate);summary.append(totals);
-  labeled(summary,'Proveedor',values.details.supplier);labeled(summary,'Fecha requerida',values.details.needed_on);labeled(summary,'Observaciones',values.details.observations);labeled(summary,'Referencia',values.details.reference);
  }
  function validPanel(index) {
   const panel=form.querySelector('[data-panel="'+index+'"]');
@@ -181,8 +180,8 @@
   step=next;unlocked=Math.max(unlocked,next);report('');
   form.querySelectorAll('[data-panel]').forEach(panel=>panel.hidden=Number(panel.dataset.panel)!==step);
   form.querySelectorAll('[data-step]').forEach(button=>{const index=Number(button.dataset.step);button.disabled=index>unlocked;button.classList.toggle('completed',index<step);if(index===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
-  $('budget-back').textContent=step?'← Regresar':'Cancelar';$('budget-next').hidden=step===3;$('budget-send').hidden=step!==3;
-  $('budget-send').textContent='Enviar al '+recipient();if(step===3)displaySummary();
+  $('budget-back').textContent=step?'← Regresar':'Cancelar';$('budget-next').hidden=step===2;$('budget-send').hidden=step!==2;
+  $('budget-send').textContent='Enviar al '+recipient();if(step===2)displaySummary();
   if(step===1){if(!field('exchange_rate').value&&rateSource!=='manual-edited')void fetchRate();$('budget-catalog').hidden=field('kind').value!=='Abastecimiento de nevera';if(!$('budget-catalog').hidden)void loadCatalog();}
  }
  function configureArea() {
@@ -230,7 +229,7 @@
  field('kind').onchange=typeChanged;field('priority').onchange=priorityChanged;$('catalog-search').oninput=renderCatalog;
  form.addEventListener('input',()=>{unlocked=step;});
  form.noValidate=true;
- form.onsubmit=event=>{event.preventDefault();if(step!==3)return;run(async()=>{
+ form.onsubmit=event=>{event.preventDefault();if(step!==2)return;run(async()=>{
   const values=payload(),fingerprint=JSON.stringify(values);
   if(attempt?.fingerprint!==fingerprint)attempt={fingerprint,id:crypto.randomUUID()};
   $('budget-send').disabled=true;
