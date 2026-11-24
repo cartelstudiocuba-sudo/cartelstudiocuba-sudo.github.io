@@ -32,8 +32,15 @@ function render(){scheduled=false;if(!window.cartelPersonalNavigationReady)retur
  if(more.length){const b=button('Más','grid',()=>{openSheet('Tus módulos',b);fillModules();},more.some(groupActive));if(more.some(g=>g.links.some(a=>['/inventario-aprobaciones.html','/inventario-pedidos.html','/inventario-solicitud.html'].includes(a.getAttribute('href')))))b.dataset.inventoryNotice='unseen';function fillModules(){document.getElementById('worker-mobile-sheet-title').textContent='Tus módulos';const content=document.getElementById('worker-mobile-sheet-content');content.replaceChildren();more.forEach(group=>{const item=button(group.name,icon(group.name),()=>fillGroup(group,b,fillModules),groupActive(group));if(group.links.some(a=>['/inventario-aprobaciones.html','/inventario-pedidos.html','/inventario-solicitud.html'].includes(a.getAttribute('href'))))item.dataset.inventoryNotice='unseen';content.append(item);});window.CartelInventoryNotices?.decorate();window.CartelFridgeNotices?.decorate();window.CartelBudgetNotices?.decorate();}b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');bar.append(b);}
  const account=button('Cuenta','account',()=>{openSheet('Mi cuenta',account);const node=document.getElementById('cartel-account');const content=document.getElementById('worker-mobile-sheet-content');if(node){accountNode=node;accountAnchor=document.createComment('account-position');node.parentNode.insertBefore(accountAnchor,node);content.append(node);}else{const p=document.createElement('p');p.textContent='La información de tu cuenta se está cargando.';content.append(p);}});account.setAttribute('aria-haspopup','dialog');account.setAttribute('aria-expanded','false');bar.append(account);syncBarSelection();window.CartelInventoryNotices?.decorate();window.CartelFridgeNotices?.decorate();window.CartelBudgetNotices?.decorate();
 }
-function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(render);}
-new MutationObserver(schedule).observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
+function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(render);}
+function isNotice(node){return node?.nodeType===1&&node.matches('.inventory-notice-badge');}
+function changesNavigation(record){
+ if(isNotice(record.target))return false;
+ if(record.type!=='childList')return true;
+ const changed=[...record.addedNodes,...record.removedNodes];
+ return changed.some(node=>!isNotice(node));
+}
+new MutationObserver(records=>{if(records.some(changesNavigation))schedule();}).observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
 window.addEventListener('cartel-navigation-ready',schedule);window.addEventListener('resize',()=>{if(innerWidth>900&&sheet.open)sheet.close();if(innerWidth>900)document.documentElement.classList.remove('fridge-mobile-unified');else if(unifiedFridge)document.documentElement.classList.add('fridge-mobile-unified');});if(window.cartelPersonalNavigationReady)schedule();
 // Only the embedded Nevera uses a viewport dock above the global mobile bar.
 const workspace=document.getElementById('workspace'),moduleFrame=document.getElementById('frame');
