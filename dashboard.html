@@ -171,6 +171,11 @@ if(window.top===window&&(navigator.standalone||matchMedia('(display-mode: standa
  .dashboard[data-admin-home]:not(.operational-home) .modules{grid-template-columns:repeat(2,minmax(0,1fr))}
  .dashboard[data-admin-home]:not(.operational-home) .module.inv{grid-column:1/-1}
  .dashboard[data-admin-home]:not(.operational-home) .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body:has(.dashboard[data-admin-home]:not(.operational-home)) #worker-mobile-sheet[data-inventory-menu][open]{
+  position:fixed;inset:auto 0 var(--worker-nav-space,94px);margin:0 auto;
+  width:min(420px,calc(100% - 32px));max-height:calc(100dvh - var(--worker-nav-space,94px) - 16px);
+ }
+
 }
 </style><link rel="stylesheet" href="/assets/area-chief-home.css?v=1"></head><body><div id="dashboardBoot" role="status" aria-live="polite" aria-atomic="true"><div class="platform-splash-brand" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1859" role="img" aria-label="El Cartel Studio">
 <style>
@@ -465,4 +470,4 @@ function prepareSelectionFrame(){
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void load();});
 
 })();
-</script><script src="/assets/mobile-navigation.js?v=20261124-recovery"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=2"></script><script src="/assets/budget-sidebar-count.js?v=1"></script></body></html>
+</script><script src="/assets/mobile-navigation.js?v=20261124-inventory-sheet"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=2"></script><script src="/assets/budget-sidebar-count.js?v=1"></script></body></html>
