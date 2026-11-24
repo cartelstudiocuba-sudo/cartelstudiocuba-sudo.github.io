@@ -1,0 +1,15 @@
+/* Embedded inventory screens on a portrait tablet use the available frame, not the device viewport. */
+html.inventory-compact-viewport,html.inventory-compact-viewport body{overscroll-behavior-y:none;min-height:100%;height:auto}
+html.inventory-compact-viewport{overflow-y:auto}
+html.inventory-compact-viewport body{overflow:visible}
+.inventory-compact-viewport :is(.report-overlay,.modal-backdrop,.weekly-export-backdrop,.inventory-suppliers-modal,#inventory-product-editor){box-sizing:border-box;inset:0;max-width:100%;padding:12px;overscroll-behavior-y:none;align-items:flex-start}
+.inventory-compact-viewport :is(.report-overlay,#inventory-reconciliation-view,.inventory-app-modal){overflow-y:auto;overflow-x:hidden;min-height:0}
+.inventory-compact-viewport :is(.report-overlay,.inventory-app-modal)>:is(.report-dialog,.panel,.reconcile-dashboard){box-sizing:border-box;margin:0 auto;max-width:100%;min-width:0;max-height:none;overflow:visible}
+.inventory-compact-viewport :is(#movement-modal,.inventory-suppliers-modal,#inventory-product-editor,.weekly-export-backdrop){overflow:hidden;min-height:0}
+.inventory-compact-viewport :is(#movement-modal .modal-sheet,.inventory-suppliers-card,#inventory-product-editor .inventory-editor-card,.weekly-export-dialog){box-sizing:border-box;min-width:0;min-height:0;max-width:100%;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.inventory-compact-viewport #inventory-movements-view .table-scroll{max-height:none;overflow-x:auto;overflow-y:visible}
+.inventory-compact-viewport dialog[open]{box-sizing:border-box;max-width:calc(100% - 24px);max-height:calc(100% - 24px);overflow-y:auto;overscroll-behavior-y:contain}
+.inventory-compact-viewport :is(.report-dialog,.modal-sheet,.inventory-suppliers-card,.inventory-editor-card,.weekly-export-dialog) :is(input,textarea,select){max-width:100%;min-width:0}
+.inventory-compact-viewport :is(.report-overlay,.modal-sheet,.inventory-suppliers-card,.inventory-editor-card,.weekly-export-dialog,dialog[open]) :is(.table-scroll,.table-wrap){max-width:100%;overscroll-behavior:contain}
+.inventory-compact-viewport #reconcile-view-back{position:sticky;top:0;right:auto}
+html.inventory-compact-viewport:has(dialog[open],.modal-backdrop.open,.report-overlay:not([hidden]),.weekly-export-backdrop:not([hidden]),.inventory-suppliers-modal:not([hidden]),#inventory-product-editor:not([hidden])){overflow:hidden}
