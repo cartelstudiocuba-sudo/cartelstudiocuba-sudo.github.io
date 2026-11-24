@@ -2,7 +2,7 @@
  'use strict';
  const client = CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co', 'sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn', {auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});
  const $ = id => document.getElementById(id);
- const form = $('budget-form'), dialog = $('budget-dialog');
+ const form = $('budget-form'), dialog = $('budget-dialog'), detailDialog=$('budget-detail-dialog');
  const statuses = {
   chief_pending:{label:'En revisión',color:'#ffd65b',icon:'⌛',detail:'Pendiente del jefe de área'},
   manager_pending:{label:'En trámite',color:'#70b8ff',icon:'↻',detail:'Pendiente del Manager General'},
@@ -15,7 +15,7 @@
  const canSubmit = () => caps.request || direct();
  const recipient = () => direct() ? 'Manager General' : 'Jefe de área';
  const format = (value,currency) => new Intl.NumberFormat('es-CU',{style:'currency',currency,currencyDisplay:'code'}).format(value);
- const report = text => { $(dialog.open?'budget-form-message':'budget-message').textContent = text; };
+ const report = text => { $(dialog.open?'budget-form-message':detailDialog.open?'budget-detail-message':'budget-message').textContent = text; };
  const field = name => form.elements.namedItem(name);
  const normalize = value => String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  function node(tag,value='',className='') {
@@ -52,9 +52,19 @@
   const query=normalize($('budget-search').value);
   const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
   $('budget-count').textContent=visible.length+' solicitudes';
-  $('budget-requests').replaceChildren(...visible.slice(0,limit).map(renderRequest));
-  if(!visible.length)$('budget-requests').append(node('p','No hay solicitudes para mostrar.','empty'));
-  $('budget-more').hidden=visible.length<=limit;
+  const target=$('budget-requests');target.replaceChildren();
+  const own=visible.filter(request=>request.requester===user.id),incoming=visible.filter(request=>request.requester!==user.id);
+  const groups=[];
+  if(caps.audiovisual||caps.graphics||caps.manager||caps.owner||incoming.length)groups.push(['Solicitudes de subordinados',incoming]);
+  groups.push(['Solicitudes propias',own]);
+  for(const [title,rows] of groups){
+   const section=node('section','','request-group'),heading=node('h3','','request-group-heading');
+   heading.append(node('span',title),node('small',String(rows.length),'request-group-count'));section.append(heading);
+   if(rows.length)section.append(...rows.slice(0,limit).map(renderRequest));
+   else section.append(node('p','No hay solicitudes en este grupo.','empty'));
+   target.append(section);
+  }
+  $('budget-more').hidden=groups.every(([,rows])=>rows.length<=limit);
  }
  function labeled(parent,label,value) {
   if(!value)return;
@@ -69,7 +79,7 @@
   parent.append(lines);
  }
  function renderRequest(request) {
-  const card=node('details','','request'),header=node('summary'),state=statuses[request.status];
+  const card=node('article','','request'),header=node('button'),state=statuses[request.status];header.type='button';header.setAttribute('aria-haspopup','dialog');
   header.className='request-visual-row';
   const category=node('span','','request-category'),icon=node('span','','request-category-icon'),title=node('span',request.product,'request-title');
   const legacyKinds={'Abastecimiento de Nevera Audiovisual':'Abastecimiento de nevera','Compra de herramientas':'Equipos y herramientas','Equipos y accesorios':'Equipos y herramientas','Materiales de mantenimiento':'Materiales e insumos','Materias primas e insumos':'Materiales e insumos','Repuestos y componentes':'Mantenimiento y reparación','Reparaciones y servicios técnicos':'Mantenimiento y reparación'};
@@ -84,7 +94,7 @@
   const amounts=node('span','','request-amount request-column');const totals=requestTotals(request);const original=['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' + ');
   amounts.append(node('small','Importe original','request-label'),node('strong',original||'—'));
   header.append(category,requester,date,priority,badge,amounts);card.append(header);
-  const body=node('div','','request-body');labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
+  const body=node('div','','request-body');labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
   if(request.items) itemSummary(body,request.items);
   else labeled(body,'Cantidad',String(request.quantity));
   const details=request.details||{};
@@ -98,10 +108,10 @@
    const actions=node('div','','decision-actions');
    const approve=node('button',chief?'Aprobar y pasar al Manager General':'Aprobar presupuesto','success'),reject=node('button','Rechazar','secondary');
    actions.append(reject,approve);decision.append(note,actions);
-   decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});await load();report('Decisión guardada.');});};
+   decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});detailDialog.close();await load();report('Decisión guardada.');});};
    body.append(decision);
   }
-  card.append(body);return card;
+  header.onclick=()=>{ $('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal(); };return card;
  }
  async function load() {
   const rows=[];const size=250;
@@ -109,7 +119,7 @@
    const {data,error}=await client.from('purchase_budget_requests').select('*').order('created_at',{ascending:false}).order('id').range(offset,offset+size-1);
    if(error)throw error;rows.push(...data);if(data.length<size)break;
   }
-  requests=rows;updateStats();renderList();
+  requests=rows;updateStats();renderList();if(window.parent!==window)window.parent.postMessage({type:'purchase-budget-changed'},location.origin);
  }
  function itemInput(label,name,type,value,attrs={}) {
   const wrap=node('label',label),input=node('input');input.name=name;input.type=type;input.value=value;
@@ -287,6 +297,7 @@
   try{await rpc('purchase_budget_submit_form',{p_id:attempt.id,p_form:values});attempt=null;dialog.close();await load();report('Solicitud enviada al '+recipient()+'.');}
   finally{$('budget-send').disabled=false;}
  });};
+ $('budget-detail-close').onclick=()=>{if(!busy)detailDialog.close();};detailDialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
  $('budget-search').oninput=()=>{limit=25;renderList();};$('budget-refresh').onclick=()=>run(load);$('budget-more').onclick=()=>{limit+=25;renderList();};
  run(async()=>{
   const result=await client.auth.getUser();user=result.data.user;if(!user){location.href='/';return;}
