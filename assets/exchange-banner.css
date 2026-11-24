@@ -26,13 +26,13 @@
 
 .operational-home #exchange-mobile-trigger.exchange-banner .operational-rate-intro .exchange-collection-note{flex-basis:100%;margin:0;padding:0;border:0;font-size:11px;line-height:1.4}.operational-rate-intro{gap:5px 8px}@media(max-width:650px){.operational-home #exchange-mobile-trigger.exchange-banner .operational-rate-intro .exchange-collection-note{font-size:10px}}
 
-/* The two operational workspaces use the entire available desktop rail. */
+/* Shared operational header and exchange rate layout. */
 .dashboard.worker-role-home{width:100%;max-width:none;margin:0}
-.worker-role-home .operational-welcome{min-height:168px;margin-bottom:20px}
-.worker-role-home .operational-banner-art{width:150px;height:150px;top:9px}
-.worker-role-home #exchange-mobile-trigger.exchange-banner{width:100%;max-width:none;min-height:102px;background:linear-gradient(120deg,#075a47,#087d5d 74%,#0c986b);border-color:#6ae2ae65;box-shadow:inset 0 1px #ffffff25,0 4px #043d2e,0 8px 18px #0003}
-.worker-role-home #exchange-mobile-trigger #exchange-mobile-date{color:#c8ebe0}
-.worker-role-home #exchange-mobile-trigger.exchange-banner .exchange-collection-note{color:#d0ebe4}
+:is(.worker-role-home,.area-chief-home) .operational-welcome{min-height:168px;margin-bottom:20px}
+:is(.worker-role-home,.area-chief-home) .operational-banner-art{width:150px;height:150px;top:9px}
+:is(.worker-role-home,.area-chief-home) #exchange-mobile-trigger.exchange-banner{width:100%;max-width:none;min-height:102px;background:linear-gradient(120deg,#075a47,#087d5d 74%,#0c986b);border-color:#6ae2ae65;box-shadow:inset 0 1px #ffffff25,0 4px #043d2e,0 8px 18px #0003}
+:is(.worker-role-home,.area-chief-home) #exchange-mobile-trigger #exchange-mobile-date{color:#c8ebe0}
+:is(.worker-role-home,.area-chief-home) #exchange-mobile-trigger.exchange-banner .exchange-collection-note{color:#d0ebe4}
 .worker-summary{margin:0 0 30px}
 .worker-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
 .worker-summary-heading h2{font-size:21px;margin:0}
@@ -55,4 +55,4 @@
 .worker-role-home .operational-shortcuts>p{display:none}
 .worker-role-home .operational-shortcuts h2{margin-bottom:14px}
 @media(max-width:900px){.worker-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.worker-role-home .operational-welcome{min-height:165px}.worker-role-home .operational-banner-art{width:105px;height:115px;top:22px}.worker-charts{grid-template-columns:1fr}.worker-metrics{gap:9px}.worker-metric{padding:14px 12px}.worker-summary-heading h2{font-size:18px}.worker-summary-refresh{font-size:12px;padding:8px 10px}.worker-role-home #exchange-mobile-trigger #exchange-mobile-usd{white-space:normal}}
+@media(max-width:650px){:is(.worker-role-home,.area-chief-home) .operational-welcome{min-height:165px}:is(.worker-role-home,.area-chief-home) .operational-banner-art{width:105px;height:115px;top:22px}.worker-charts{grid-template-columns:1fr}.worker-metrics{gap:9px}.worker-metric{padding:14px 12px}.worker-summary-heading h2{font-size:18px}.worker-summary-refresh{font-size:12px;padding:8px 10px}:is(.worker-role-home,.area-chief-home) #exchange-mobile-trigger #exchange-mobile-usd{white-space:normal}}
