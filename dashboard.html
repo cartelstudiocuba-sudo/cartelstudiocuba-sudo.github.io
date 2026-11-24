@@ -171,9 +171,11 @@ if(window.top===window&&(navigator.standalone||matchMedia('(display-mode: standa
  .dashboard[data-admin-home]:not(.operational-home) .modules{grid-template-columns:repeat(2,minmax(0,1fr))}
  .dashboard[data-admin-home]:not(.operational-home) .module.inv{grid-column:1/-1}
  .dashboard[data-admin-home]:not(.operational-home) .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
- body:has(.dashboard[data-admin-home]:not(.operational-home)) #worker-mobile-sheet[data-inventory-menu][open]{
-  position:fixed;inset:auto 0 var(--worker-nav-space,94px);margin:0 auto;
-  width:min(420px,calc(100% - 32px));max-height:calc(100dvh - var(--worker-nav-space,94px) - 16px);
+ html.inventory-admin-home,html.inventory-admin-home body{overscroll-behavior-y:none}
+ html.inventory-admin-home #worker-mobile-sheet[data-inventory-menu][open]{
+  position:fixed;top:auto;bottom:var(--worker-nav-space,94px);left:16px;right:16px;
+  margin:0 auto;width:min(420px,calc(100% - 32px));
+  max-height:calc(100dvh - var(--worker-nav-space,94px) - 16px);overflow-y:auto;overscroll-behavior-y:contain;
  }
 
 }
@@ -221,7 +223,10 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   if(data.is_owner){window.cartelPersonalNavigationReady=true;window.dispatchEvent(new Event('cartel-navigation-ready'));return;}
   const chiefHome=['jefe_audiovisuales','jefe_grafica'].includes(data.home_role);
   const views=Array.isArray(data.views)?data.views:[];
-  if(!chiefHome&&views.some(view=>view.code==='inventory_admin'))document.querySelector('.workspace .dashboard')?.setAttribute('data-admin-home','');
+  if(!chiefHome&&views.some(view=>view.code==='inventory_admin')){
+   document.documentElement.classList.add('inventory-admin-home');
+   document.querySelector('.workspace .dashboard')?.setAttribute('data-admin-home','');
+  }
   const catalog=JSON.parse(document.getElementById('personal-view-registry').textContent);
   nav.querySelectorAll(':scope > *').forEach(node=>{if(!node.matches('[data-home]'))node.hidden=true});
   const grouped=new Map();
