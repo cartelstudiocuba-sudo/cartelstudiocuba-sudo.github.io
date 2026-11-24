@@ -202,7 +202,7 @@
   const converted=equivalents(calculate(values.items),values.details.exchange_rate),totals=calculate(values.items);
   const cost=node('section','','confirmation-section confirmation-finance'),columns=node('div','','confirmation-totals'),original=node('div','','confirmation-original'),equivalent=node('div','','confirmation-equivalent');
   original.append(node('small','Importes originales'),node('strong',format(totals.CUP||0,'CUP')+' + '+format(totals.USD||0,'USD')));
-  equivalent.append(node('small','Totales equivalentes'),node('strong',converted?format(converted.CUP,'CUP'):'—'),node('strong',converted?format(converted.USD,'USD'):'—'));
+  equivalent.append(node('small','Totales equivalentes'),node('strong',converted?format(converted.CUP,'CUP'):'—'),node('strong',converted?'o '+format(converted.USD,'USD'):'—'));
   columns.append(original,equivalent);
   const rate=node('div','','confirmation-rate');rate.append(confirmationIcon('rate'),document.createTextNode('Tasa utilizada · 1 USD = '+values.details.exchange_rate+' CUP'));
   cost.append(confirmationHeading('Resumen de totales','calculator'),columns,rate);
