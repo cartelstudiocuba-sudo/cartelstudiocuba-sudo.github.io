@@ -101,7 +101,17 @@
   const badge=node('span',request.status==='chief_pending'?'En revisión':request.status==='manager_pending'?'En trámite':state.detail,'badge request-status');badge.style.setProperty('--state',state.color);badge.title=state.detail;
   const amounts=node('span','','request-amount request-column');const totals=requestTotals(request);const original=['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' + ');
   amounts.append(node('small','Importe original','request-label'),node('strong',original||'—'));
-  header.append(category,requester,date,priority,badge,amounts);card.append(header);
+  if((caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner){
+   card.classList.add('budget-review-card');
+   const reviewTitle=node('span','','budget-review-title'),reviewIcon=node('span','','budget-review-icon');
+   reviewIcon.setAttribute('aria-hidden','true');reviewIcon.innerHTML=icon.innerHTML;
+   reviewTitle.append(reviewIcon,node('strong',request.product||request.kind||'Solicitud de presupuesto'));
+   const reviewStatus=node('span',badge.textContent,'budget-review-state');reviewStatus.style.setProperty('--state',state.color);
+   const reviewDate=node('time',new Date(request.created_at).toLocaleDateString('es-CU'),'budget-review-date');reviewDate.dateTime=request.created_at;
+   const needsReview=request.requester!==user.id&&request.status==='chief_pending';
+   header.append(reviewTitle,node('span',request.requester_name||'—','budget-review-person'),reviewDate,reviewStatus,node('span',needsReview?'Revisar solicitud':'Ver solicitud','budget-review-action'));
+  }else header.append(category,requester,date,priority,badge,amounts);
+  card.append(header);
   const body=node('div','','request-body');labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
   if(request.items) itemSummary(body,request.items);
   else labeled(body,'Cantidad',String(request.quantity));

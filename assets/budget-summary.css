@@ -18,3 +18,19 @@
 .area-chief-metric{color:#f3f4f5;text-align:left;font-weight:400}
 .area-chief-metric[aria-pressed=true]{border-color:var(--area-accent)}
 @media(max-width:540px){.budget-chief-view .budget>.hero{flex-wrap:wrap}.area-chief-columns{grid-template-columns:1fr}.area-chief-metric{padding:11px;gap:9px}.area-chief-metric svg{width:25px;height:25px}.area-chief-graph{padding:10px}.area-chief-ring{width:104px}}
+
+/* The single request list uses the former pending-review card design for area chiefs. */
+.request.budget-review-card{border-color:#4c5c6a;border-radius:12px;background:linear-gradient(135deg,#344656,#223342)}
+.request.budget-review-card button.request-visual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;align-items:center;padding:13px 15px;border-radius:12px;font-size:14px}
+.request.budget-review-card button.request-visual-row::after{content:none;display:none}
+.budget-review-title{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-width:0}
+.budget-review-title strong{overflow-wrap:anywhere;font-size:15px}
+.budget-review-icon{display:grid;place-items:center;flex:none;width:35px;height:35px;border-radius:9px;color:#ffda03;background:#ffda0321}
+.budget-review-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.budget-review-person{grid-column:1;min-width:0;overflow-wrap:anywhere}
+.budget-review-date{grid-column:2;justify-self:start}
+.budget-review-state{grid-column:1;justify-self:start;border-radius:20px;padding:5px 10px;background:color-mix(in srgb,var(--state) 28%,#263746);color:var(--state);font-size:12px}
+.budget-review-action{grid-column:2;justify-self:end;border:1px solid #ffe56c;border-radius:9px;background:linear-gradient(#ffe75d,#ffda03);color:#171910;padding:10px 13px;font-size:12px;font-weight:750;white-space:normal;text-align:center}
+.request.budget-review-card button.request-visual-row:hover{background:#ffffff0b}
+@media(min-width:1201px){.request.budget-review-card button.request-visual-row{grid-template-columns:minmax(0,1.7fr) minmax(0,1.1fr) auto auto auto}.budget-review-title,.budget-review-person,.budget-review-date,.budget-review-state,.budget-review-action{grid-column:auto}}
+@media(max-width:420px){.request.budget-review-card button.request-visual-row{padding:12px;gap:9px}.budget-review-title strong{font-size:14px}}
