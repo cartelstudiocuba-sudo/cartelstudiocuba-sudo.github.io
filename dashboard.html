@@ -196,7 +196,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
   const client=sb;
   const {data:{user}}=await client.auth.getUser();if(!user)return;
   const {data,error}=await CartelLoad.read('personal_navigation',()=>client.rpc('system_my_navigation'));if(error||!data)return;
-  window.cartelFridgeOperatorAccess=data.is_owner===true||(data.fridge_audiovisual===true&&data.fridge_limited!==true);
+  window.cartelFridgeOperatorAccess=data.is_owner===true||(data.fridge_audiovisual===true&&data.fridge_limited!==true&&data.fridge_technical!==true);
   if(data.finance_cost_sheets===true){document.querySelector('[data-finance-cost-menu]')?.removeAttribute('hidden');const card=document.querySelector('.module.fin');if(card){card.style.removeProperty('display');card.onclick=()=>showModule('/fichas-costo.html',document.querySelector('.personal-nav-group a[href="/fichas-costo.html"]')||document.querySelector('[data-finance-cost-menu]'));}}
   if(data.is_owner){window.cartelPersonalNavigationReady=true;window.dispatchEvent(new Event('cartel-navigation-ready'));return;}
   const views=Array.isArray(data.views)?data.views:[];
@@ -239,7 +239,7 @@ document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{if(b.dataset.
    wrap.append(parent,sub);nav.appendChild(wrap);
   });
   if(data.fridge_audiovisual===true){
-   const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
+   const card=document.querySelector('.module.inv');if(card){card.style.removeProperty('display');card.querySelector('small').textContent=data.fridge_technical===true?'Nevera audiovisual · Resumen y Existencias':data.fridge_limited===true?'Nevera audiovisual · Venta, Cuentas e Inventario':'Insumos y Nevera audiovisual';card.onclick=()=>showModule('/nevera-audiovisual.html',document.querySelector('.personal-nav-group a[href="/nevera-audiovisual.html"]'));}
   }
   const homeRole=data.home_role||(data.fridge_limited===true?'gestor_operativo_audiovisual':null);
   const homeProfiles={manager_general:['Manager General','Dirección Operativa'],jefe_audiovisuales:['Jefe de Área','Departamento Audiovisual'],jefe_grafica:['Jefe de Área','Departamento de Gráfica'],gestor_comercial_grafica:['Gestor Operativo','Departamento de Gráfica'],gestor_operativo_audiovisual:['Gestor Operativo','Departamento Audiovisual']};
