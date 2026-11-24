@@ -8,8 +8,10 @@ function decorate(){
   let badge=link.querySelector(':scope > [data-budget-badge]');
   if(!count){badge?.remove();continue;}
   if(!badge){badge=document.createElement('small');badge.className='inventory-notice-badge';badge.dataset.budgetBadge='true';badge.setAttribute('role','status');link.append(badge);}
-  badge.textContent=count>99?'99+':String(count);
-  badge.setAttribute('aria-label',`${count} solicitudes de presupuesto pendientes de aprobación`);
+  const value=count>99?'99+':String(count);
+  const label=`${count} solicitudes de presupuesto pendientes de aprobación`;
+  if(badge.textContent!==value)badge.textContent=value;
+  if(badge.getAttribute('aria-label')!==label)badge.setAttribute('aria-label',label);
  }
 }
 async function refresh(){
