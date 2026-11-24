@@ -111,6 +111,7 @@
    decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});detailDialog.close();await load();report('Decisión guardada.');});};
    body.append(decision);
   }
+  card.dataset.requestId=request.id;
   header.onclick=()=>{ $('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal(); };return card;
  }
  async function load() {
@@ -304,5 +305,11 @@
   caps=await rpc('purchase_budget_capabilities');
   if(!Object.values(caps).some(Boolean)){report('Tu rol no tiene acceso a las solicitudes de presupuesto.');return;}
   $('budget-new').hidden=!canSubmit();$('budget-list').hidden=false;await load();
+  const requestedId=new URLSearchParams(location.search).get('request');
+  const requested=requests.find(request=>request.id===requestedId);
+  if(requested){
+   const row=Array.from($('budget-requests').querySelectorAll('[data-request-id]')).find(card=>card.dataset.requestId===requested.id)||renderRequest(requested);
+   row.querySelector('.request-visual-row').click();
+  }
  });
 })();
