@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/assets/purchase-budget.css?v=5-circular-steps">
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
-<script defer src="/assets/purchase-budget.js?v=4-automatic-area"></script>
+<script defer src="/assets/purchase-budget.js?v=5-expense-types"></script>
 </head>
 <body>
 <main class="budget">
@@ -32,7 +32,7 @@
 <div class="identity-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="9" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v10M5 17v-5h14v5"/></svg><div><strong id="budget-area-label"></strong><small>Área asignada automáticamente</small></div></div>
 <div class="identity-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><rect x="9" y="2" width="6" height="6" rx="1"/><circle cx="12" cy="13" r="3"/><path d="M7 20c0-5 10-5 10 0"/></svg><div><strong id="budget-role-label"></strong><small>Solicitante</small></div></div>
 </div>
-<div class="fields expense-fields"><label>Tipo de gasto<span class="select-decoration"><svg id="expense-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/></svg><select name="kind" required><option value="">Seleccionar tipo de gasto</option><option>Abastecimiento de Nevera Audiovisual</option><option>Compra de herramientas</option><option>Materiales de mantenimiento</option><option>Materias primas e insumos</option><option>Equipos y accesorios</option><option>Repuestos y componentes</option><option>Reparaciones y servicios técnicos</option><option>Otros gastos</option></select></span></label>
+<div class="fields expense-fields"><label>Tipo de gasto<span class="select-decoration"><svg id="expense-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/></svg><select name="kind" required><option value="">Seleccionar tipo de gasto</option><option>Abastecimiento de nevera</option><option>Materiales e insumos</option><option>Equipos y herramientas</option><option>Mantenimiento y reparación</option><option>Otros gastos</option></select></span></label>
 <label>Prioridad<span class="select-decoration"><span id="priority-dot" class="priority-dot" data-priority="Normal" aria-hidden="true"></span><select name="priority"><option>Normal</option><option>Urgente</option><option>Crítica</option></select></span></label>
 <label id="concept-wrap" hidden>Especificar concepto<input name="concept" maxlength="160"></label></div>
 <label>Justificación<textarea name="reason" required maxlength="1500" rows="3" placeholder="Explica brevemente el objetivo de esta compra"></textarea></label></section>
