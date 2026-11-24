@@ -70,10 +70,20 @@
  }
  function renderRequest(request) {
   const card=node('details','','request'),header=node('summary'),state=statuses[request.status];
-  const title=node('span',request.product,'request-title');title.append(node('small',request.area+' · '+request.requester_name,'request-meta'));
-  const date=node('span',new Date(request.created_at).toLocaleDateString('es-CU'),'date request-meta');
-  const badge=node('span',state.detail,'badge');badge.style.setProperty('--state',state.color);
-  header.append(title,date,node('span',moneyText(requestTotals(request)),'amount'),badge);card.append(header);
+  header.className='request-visual-row';
+  const category=node('span','','request-category'),icon=node('span','','request-category-icon'),title=node('span',request.product,'request-title');
+  const legacyKinds={'Abastecimiento de Nevera Audiovisual':'Abastecimiento de nevera','Compra de herramientas':'Equipos y herramientas','Equipos y accesorios':'Equipos y herramientas','Materiales de mantenimiento':'Materiales e insumos','Materias primas e insumos':'Materiales e insumos','Repuestos y componentes':'Mantenimiento y reparación','Reparaciones y servicios técnicos':'Mantenimiento y reparación'};
+  const kind=legacyKinds[request.kind]||request.kind;
+  icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24">'+(expenseIcons[kind]||confirmationIcons.type)+'</svg>';
+  if(request.kind==='Otros gastos'&&request.product!=='Otros gastos')title.append(node('small','Otros gastos','request-meta'));
+  category.append(icon,title);
+  const requester=node('span','','request-person request-column');requester.append(node('small','Solicitante','request-label'),node('strong',request.requester_name||'—'),node('small',request.area||'','request-meta'));
+  const date=node('span','','request-date request-column');date.append(node('small','Fecha','request-label'),node('strong',new Date(request.created_at).toLocaleDateString('es-CU')));
+  const priority=node('span',request.priority||'Sin prioridad','request-priority');priority.dataset.priority=request.priority||'';
+  const badge=node('span',request.status==='chief_pending'?'En revisión':request.status==='manager_pending'?'En trámite':state.detail,'badge request-status');badge.style.setProperty('--state',state.color);badge.title=state.detail;
+  const amounts=node('span','','request-amount request-column');const totals=requestTotals(request);const original=['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' + ');
+  amounts.append(node('small','Importe original','request-label'),node('strong',original||'—'));
+  header.append(category,requester,date,priority,badge,amounts);card.append(header);
   const body=node('div','','request-body');labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
   if(request.items) itemSummary(body,request.items);
   else labeled(body,'Cantidad',String(request.quantity));
