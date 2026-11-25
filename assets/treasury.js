@@ -74,9 +74,25 @@
  return '('+sign+money(currency==='CUP'?Math.abs(amount)/rate:Math.abs(amount)*rate,currency==='CUP'?'USD':'CUP')+')';
  }
  function updateHistoryEquivalents(){
- for(const value of $('treasury-history').querySelectorAll('.history-equivalent')){
+ for(const value of document.querySelectorAll('.history-equivalent')){
  value.textContent=movementEquivalent(Number(value.dataset.amount),value.dataset.currency);
  }
+ }
+ function movementCard(r,global=false){
+ const amount=Number(r.amount),type=r.source==='transfer'?'transfer':amount>0?'income':amount<0?'expense':'neutral';
+ const row=el('article','','history-movement '+type),info=el('div','','history-movement-info');
+ const title=el('strong',r.concept);
+ const detail=[r.area,sourceLabels[r.source]||r.source].filter(Boolean);
+ if(global){
+ const badge=el('span',r.fund_label,'activity-fund');badge.style.setProperty('--fund-color',colors[r.fund]||'#a8bdcc');
+ const meta=el('div','','activity-meta');meta.append(badge,el('small',detail.join(' · ')));info.append(title,meta);
+ const date=r.source==='excel'?dateLabel(r.occurred_on):new Date(r.created_at).toLocaleString('es-CU',{timeZone:'America/Havana',dateStyle:'medium',timeStyle:'short'});
+ info.append(el('small',[date,r.actor_name||(r.source==='excel'?'Importación histórica':'Usuario sin nombre registrado')].join(' · ')));
+ }else info.append(title,el('small',detail.join(' · ')));
+ const amounts=el('div','','history-amounts'),reference=el('small',movementEquivalent(amount,r.currency),'history-equivalent');
+ reference.dataset.amount=String(amount);reference.dataset.currency=r.currency;
+ amounts.append(el('strong',(amount>0?'+':amount<0?'−':'')+money(Math.abs(amount),r.currency),'history-amount'),reference);
+ row.append(info,amounts);return row;
  }
  function dateLabel(date){return date?new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z')):'Sin fecha';}
  async function history(){
@@ -91,13 +107,7 @@
  body.replaceChildren();let lastDate,group;
  for(const r of rows.slice(0,100)){
  if(!group||r.occurred_on!==lastDate){lastDate=r.occurred_on;group=el('section','','history-day');group.append(el('h4',dateLabel(lastDate),'history-date'));body.append(group);}
- const amount=Number(r.amount),row=el('article','','history-movement '+(amount>0?'income':amount<0?'expense':'neutral'));
- const info=el('div','','history-movement-info');info.append(el('strong',r.concept),el('small',[r.area,sourceLabels[r.source]||r.source].filter(Boolean).join(' · ')));
- const amounts=el('div','','history-amounts');
- const reference=el('small',movementEquivalent(amount,r.currency),'history-equivalent');
- reference.dataset.amount=String(amount);reference.dataset.currency=r.currency;
- amounts.append(el('strong',(amount>0?'+':amount<0?'−':'')+money(Math.abs(amount),r.currency),'history-amount'),reference);
- row.append(info,amounts);group.append(row);
+ group.append(movementCard(r));
  }
  if(!rows.length)body.append(el('p','Sin movimientos para este filtro.','history-empty'));
  $('history-prev').disabled=offset===0;$('history-next').disabled=rows.length<=100;
@@ -107,7 +117,45 @@
  for(const button of historyKinds)button.onclick=()=>{historyKind=button.dataset.kind;for(const item of historyKinds)item.setAttribute('aria-pressed',String(item===button));changeHistoryFilter();};
  historyMonth.onchange=historyYear.onchange=historyCurrency.onchange=changeHistoryFilter;
  resetHistoryFilters();
- async function refresh(){state=await rpc('treasury_state');render();await history();if(!workers)await loadFlow();await refreshRate();}
+ const activityDialog=$('activity-dialog'),activityMonth=$('activity-month'),activityYear=$('activity-year');
+ let activityOffset=0,activityRequest=0,recentRequest=0,recentLoading=false,recentSignature='';
+ $('treasury-activity').hidden=workers;
+ for(const option of chartMonth.options)activityMonth.append(option.cloneNode(true));
+ for(const option of chartYear.options)activityYear.append(option.cloneNode(true));
+ activityYear.value=String(currentYear);activityYear.disabled=true;
+ function populateActivityFunds(){
+ const select=$('activity-fund');if(select.options.length>1)return;
+ for(const fund of state.funds){const option=el('option',fund.label);option.value=fund.code;select.append(option);}
+ }
+ function activityArgs(offset,limit,filtered){
+ return {p_offset:offset,p_limit:limit,p_fund:filtered?$('activity-fund').value||null:null,p_kind:filtered?$('activity-kind').value:'all',p_currency:filtered?$('activity-currency').value:'all',p_month:filtered&&activityMonth.value!=='all'?activityYear.value+'-'+activityMonth.value.padStart(2,'0')+'-01':null};
+ }
+ function renderActivity(target,rows){target.replaceChildren();for(const r of rows)target.append(movementCard(r,true));if(!rows.length)target.append(el('p','Sin movimientos para este filtro.','history-empty'));}
+ async function refreshActivity(){
+ if(workers||recentLoading)return;
+ recentLoading=true;const request=++recentRequest;
+ try{
+ const rows=await rpc('treasury_activity',activityArgs(0,10,false));
+ if(request!==recentRequest)return;
+ const signature=JSON.stringify(rows);
+ if(signature!==recentSignature){recentSignature=signature;renderActivity($('activity-recent'),rows);}
+ $('activity-status').textContent='● Actualizado · '+new Date().toLocaleTimeString('es-CU',{timeZone:'America/Havana',hour:'2-digit',minute:'2-digit'});
+ }catch(e){$('activity-status').textContent='Actualización pendiente · reintentando';if(!recentSignature)$('activity-recent').textContent=e.message||'No se pudo cargar la actividad.';}finally{recentLoading=false;}
+ }
+ async function loadActivityHistory(){
+ const request=++activityRequest,target=$('activity-history');target.textContent='Consultando movimientos…';
+ $('activity-prev').disabled=$('activity-next').disabled=true;
+ try{const rows=await rpc('treasury_activity',activityArgs(activityOffset,51,true));if(request!==activityRequest||!activityDialog.open)return;renderActivity(target,rows.slice(0,50));$('activity-prev').disabled=activityOffset===0;$('activity-next').disabled=rows.length<=50;}
+ catch(e){if(request===activityRequest){target.textContent=e.message||'No se pudo cargar el historial.';$('activity-prev').disabled=activityOffset===0;}}
+ }
+ $('activity-open').onclick=()=>{populateActivityFunds();activityOffset=0;activityDialog.showModal();loadActivityHistory();};
+ $('activity-close').onclick=()=>activityDialog.close();
+ activityDialog.addEventListener('close',()=>{activityRequest++;});
+ for(const id of ['activity-fund','activity-kind','activity-currency','activity-month','activity-year'])$(id).onchange=()=>{activityYear.disabled=activityMonth.value==='all';activityOffset=0;loadActivityHistory();};
+ $('activity-prev').onclick=()=>{activityOffset=Math.max(0,activityOffset-50);loadActivityHistory();};
+ $('activity-next').onclick=()=>{activityOffset+=50;loadActivityHistory();};
+ function startActivityUpdates(){if(workers)return;setInterval(()=>{if(!document.hidden)refreshActivity();},5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshActivity();});}
+ async function refresh(){state=await rpc('treasury_state');render();await history();if(!workers){await loadFlow();await refreshActivity();}await refreshRate();}
  async function refreshRate(){try{const ref=await CartelExchangeRates.read(client);rate=Number(ref.value);rateDate=ref.source_date||new Date(ref.fetched_at).toLocaleDateString('es-CU');$('treasury-rate').textContent='Referencia del día · 1 USD = '+rate+' CUP · '+CartelExchangeRates.label(ref);}catch{rate=null;rateDate=null;$('treasury-rate').textContent='Tasa del día no disponible.';}render();updateHistoryEquivalents();if(!workers&&flowMonth===period())renderFlow();}
 
  function renderOverview(funds){
@@ -150,5 +198,5 @@
  }
  $('fund-in').onclick=()=>move(1);$('fund-out').onclick=()=>move(-1);$('fund-dispatch').onclick=()=>open('Preparar cuadre con el CEO',d=>rpc('treasury_dispatch',{p_id:requestId,p_cup:Number(d.get('cup')||0),p_usd:Number(d.get('usd')||0),p_note:d.get('note')}),[input('Importe CUP','number','cup',{min:'0',step:'0.01',value:'0'}),input('Importe USD','number','usd',{min:'0',step:'0.01',value:'0'}),input('Observación','text','note',{maxlength:'500'})]);
  $('treasury-form').onsubmit=e=>{e.preventDefault();run(async()=>{await action(new FormData(e.target));$('treasury-dialog').close();$('treasury-message').textContent='Movimiento registrado.';await refresh();});};$('treasury-close').onclick=$('treasury-cancel').onclick=()=>{if(!busy)$('treasury-dialog').close();};$('treasury-dialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('treasury-refresh').onclick=()=>run(refresh);$('history-next').onclick=()=>run(async()=>{offset+=100;await history();});$('history-prev').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await history();});
- run(async()=>{const {data}=await client.auth.getUser();if(!data.user){location.href='/';return;}await refresh();if(workers){selected='workers';resetHistoryFilters();render();$('treasury-detail').showModal();await history();}});
+ run(async()=>{const {data}=await client.auth.getUser();if(!data.user){location.href='/';return;}await refresh();startActivityUpdates();if(workers){selected='workers';resetHistoryFilters();render();$('treasury-detail').showModal();await history();}});
 })();
