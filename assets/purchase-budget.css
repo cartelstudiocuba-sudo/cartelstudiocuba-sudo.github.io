@@ -202,3 +202,7 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 @media(max-width:720px){.manager-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-analytics{grid-template-columns:minmax(0,1fr)}.budget-manager-view .budget-search-row{grid-template-columns:1fr}.budget-manager-view .request button.request-visual-row{grid-template-columns:repeat(2,minmax(0,1fr))}.budget-manager-view .request-category{grid-column:1/-1;grid-row:auto}.budget-manager-view .request-person,.budget-manager-view .request-date,.budget-manager-view .request-priority,.budget-manager-view .request-status,.budget-manager-view .request-amount,.budget-manager-action{grid-column:auto;grid-row:auto}.budget-manager-action{justify-self:end}}
 
 @media(max-width:720px){.budget-manager-view .request button.request-visual-row .request-status{grid-column:auto;grid-row:auto}.budget-manager-view .request-amount{border:0;padding:0}}
+
+.treasury-budget-funding,.treasury-budget-delivery{display:grid;gap:12px}.treasury-budget-funding h3,.treasury-budget-delivery h3{margin:0}.treasury-signature{display:block;width:100%;max-height:200px;background:white;border:1px solid #758595;border-radius:10px;touch-action:none;margin-top:8px}
+
+.treasury-evidence img{display:block;max-width:100%;max-height:400px;object-fit:contain;background:white;border-radius:8px}

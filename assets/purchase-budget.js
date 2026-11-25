@@ -198,15 +198,20 @@
   const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
   const manager=request.status==='manager_pending'&&caps.manager&&request.chief_by!==user.id;
   if(request.requester!==user.id&&(chief||manager)){
-   const decision=node('form','','decision'),note=node('textarea');note.rows=2;note.maxLength=1500;note.placeholder='Observación (obligatoria para rechazar)';note.setAttribute('aria-label','Observación de la decisión');
+   const decision=node('form','','decision'),note=node('textarea');decision.noValidate=true;note.rows=2;note.maxLength=1500;note.placeholder='Observación (obligatoria para rechazar)';note.setAttribute('aria-label','Observación de la decisión');
+   const funding=manager?window.CartelBudgetTreasury.approval(request,requestTotals):null;
+   if(funding){decision.append(funding.panel);funding.panel.addEventListener('treasury-balances',event=>funding.setBalances(event.detail));}
    const actions=node('div','','decision-actions');
    const approve=node('button',chief?'Aprobar y pasar al Manager General':'Aprobar presupuesto','success'),reject=node('button','Rechazar','secondary');
    actions.append(reject,approve);decision.append(note,actions);
-   decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});detailDialog.close();await load();report('Decisión guardada.');});};
+   decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:note.value});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});detailDialog.close();await load();report('Decisión guardada.');});};
    body.append(decision);
   }
   card.dataset.requestId=request.id;
-  header.onclick=()=>{ $('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal(); };return card;
+  header.onclick=()=>{ $('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal();
+   if(request.status==='manager_pending'&&caps.manager){void rpc('treasury_state').then(data=>{if(detailDialog.open&&body.isConnected){const list=body.querySelector('.treasury-budget-funding');if(list){const event=new CustomEvent('treasury-balances',{detail:data.funds});list.dispatchEvent(event);}}}).catch(e=>report(e.message));}
+   if(request.status==='approved'&&(caps.manager||caps.owner||request.requester===user.id))void rpc('treasury_budget_reservation',{p_id:request.id}).then(reservation=>{if(reservation&&detailDialog.open&&body.isConnected)body.append(window.CartelBudgetTreasury.delivery({request:{...request,canReceive:request.requester===user.id},reservation,rpc,run,refresh:async()=>{detailDialog.close();await load();report('Recibido confirmado.');}}));}).catch(e=>report(e.message));
+  };return card;
  }
  async function load() {
   const rows=[];const size=250;
