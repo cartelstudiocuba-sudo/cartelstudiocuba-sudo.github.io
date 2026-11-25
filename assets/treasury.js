@@ -1,6 +1,7 @@
 (()=>{'use strict';
  const $=id=>document.getElementById(id),client=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});
  const el=(tag,t='',c='')=>{const n=document.createElement(tag);n.textContent=t;if(c)n.className=c;return n;};
+ const numberAmount=amount=>new Intl.NumberFormat('es-CU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(amount||0));
  const money=(amount,c)=>new Intl.NumberFormat('es-CU',{style:'currency',currency:c,currencyDisplay:'code'}).format(Number(amount||0));
  let state,selected=null,rate=null,rateDate=null,offset=0,busy=false,action=null,requestId=null;
  const workers=new URLSearchParams(location.search).get('tab')==='workers';
@@ -22,7 +23,32 @@
  const icons={fixed:'▤',investment:'↗',supplies:'◇',stimulus:'★',profit:'$',surplus:'＋',workers:'♙'};
  async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
  async function run(fn){if(busy)return;busy=true;$('treasury-save').disabled=true;try{await fn();}catch(e){$( $('treasury-dialog').open?'treasury-error':'treasury-message').textContent=e.message||'No se pudo completar';}finally{busy=false;$('treasury-save').disabled=false;}}
- function render(){const cards=$('treasury-funds');cards.replaceChildren();const funds=state.funds.filter(f=>Boolean(f.worker)===workers);for(const f of funds){const b=el('button','','treasury-card');b.type='button';b.style.setProperty('--fund-color',colors[f.code]);b.setAttribute('aria-pressed',String(selected===f.code));const title=el('div','','treasury-card-title');title.append(el('span',icons[f.code]),el('strong',f.label));const amounts=el('div','','treasury-card-amounts');for(const c of ['CUP','USD']){const value=el('div');value.append(el('small',c),el('strong',money(f[c],c),Number(f[c])<0?'negative':''),el('small','Disponible: '+money(f['available_'+c],c)));amounts.append(value);}b.append(title,amounts,el('small',rate?'Equivalente: '+money(Number(f.CUP)+Number(f.USD)*rate,'CUP')+' o '+money(Number(f.USD)+Number(f.CUP)/rate,'USD'):'Equivalente no disponible'));if(f.code==='investment'&&(Number(f.CUP)<0||Number(f.USD)<0))b.append(el('small','Saldo negativo: capital pendiente de recuperar del CEO'));b.onclick=()=>run(async()=>{selected=f.code;offset=0;render();$('treasury-detail').showModal();await history();});cards.append(b);}
+ function render(){
+ const cards=$('treasury-funds');cards.replaceChildren();
+ const funds=state.funds.filter(f=>Boolean(f.worker)===workers);
+ for(const f of funds){
+ const cup=Number(f.CUP),usd=Number(f.USD),negative=cup<0||usd<0;
+ const b=el('button','','treasury-card');b.type='button';
+ b.style.setProperty('--fund-color',negative?'#ff727d':colors[f.code]);
+ b.setAttribute('aria-pressed',String(selected===f.code));
+ const title=el('div','','treasury-card-title');
+ title.append(el('span',icons[f.code]),el('strong',f.label));
+ const amounts=el('div','','treasury-card-amounts');
+ for(const c of ['CUP','USD']){
+ const value=el('div','','fund-currency');
+ value.append(el('small',c==='USD'?'USD (saldo)':'CUP'),el('strong',numberAmount(f[c]),Number(f[c])<0?'negative':''));
+ const available=el('small','','fund-available');
+ available.append(el('span','Disponible'),el('b',money(Math.max(0,Number(f['available_'+c])),c)));
+ value.append(available);amounts.append(value);
+ }
+ const body=el('div','','fund-card-body');body.append(amounts);
+ if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','fund-debt'));
+ const footer=el('div','','fund-equivalent');
+ footer.append(el('span','Equivalente total'),el('strong',rate>0?money(usd+cup/rate,'USD'):'—'),el('small',rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible'));
+ b.append(title,body,footer);
+ b.onclick=()=>run(async()=>{selected=f.code;offset=0;render();$('treasury-detail').showModal();await history();});
+ cards.append(b);
+ }
  const f=funds.find(f=>f.code===selected);if(!workers)renderOverview(funds);if(!f)return;$('fund-title').textContent=f.label;$('fund-balance').textContent='Disponible · '+money(f.available_CUP,'CUP')+' · '+money(f.available_USD,'USD');$('fund-dispatch').hidden=f.code!=='profit'||state.owner;$('treasury-dispatches').hidden=f.code!=='profit';renderDispatches();}
  function renderDispatches(){const target=$('treasury-dispatches');target.replaceChildren();if(selected!=='profit')return;target.append(el('h3','Cuadres con el CEO'));for(const d of state.dispatches){const row=el('div','','treasury-dispatch');row.append(el('strong',money(d.cup,'CUP')+' + '+money(d.usd,'USD')),el('p',new Date(d.created_at).toLocaleString('es-CU')+' · '+(d.status==='pending'?'Pendiente de recibido':'Recibido confirmado')),el('p',d.note));if(state.owner&&d.status==='pending'){const b=el('button','Confirmar recibido','primary');b.onclick=()=>{open('Confirmar recibido del CEO',()=>rpc('treasury_confirm_dispatch',{p_id:d.id}),[el('p','Confirmas haber recibido '+money(d.cup,'CUP')+' y '+money(d.usd,'USD')+'.')]);};row.append(b);}if(d.status==='confirmed'){const b=el('button','Imprimir comprobante','secondary');b.onclick=()=>printDispatch(d);row.append(b);}target.append(row);}if(!state.dispatches.length)target.append(el('p','Todavía no hay cuadres.'));}
  function printDispatch(d){const w=window.open('','_blank');if(!w){$('treasury-message').textContent='Permite la ventana emergente para imprimir.';return;}const doc=w.document;doc.title='Comprobante de utilidad';const style=doc.createElement('style');style.textContent='@page{size:80mm auto;margin:4mm}body{font:12px Arial;width:72mm;margin:0}h2{text-align:center}p{overflow-wrap:anywhere}';doc.head.append(style);for(const t of ['EL CARTEL STUDIO','Comprobante de utilidad','Recibido confirmado',money(d.cup,'CUP'),money(d.usd,'USD'),new Date(d.confirmed_at).toLocaleString('es-CU'),d.note||'','Firma del CEO: __________________']){const p=doc.createElement('p');p.textContent=t;doc.body.append(p);}w.print();}
