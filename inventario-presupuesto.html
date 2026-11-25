@@ -8,9 +8,9 @@
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
 <script defer src="/assets/exchange-rates.js?v=1-official-api"></script>
-<link rel="stylesheet" href="/assets/budget-summary.css?v=4-layout">
-<script defer src="/assets/budget-summary.js?v=3-layout"></script>
-<script defer src="/assets/purchase-budget.js?v=17-layout"></script>
+<link rel="stylesheet" href="/assets/budget-summary.css?v=5-unified">
+<script defer src="/assets/budget-summary.js?v=4-unified"></script>
+<script defer src="/assets/purchase-budget.js?v=18-unified"></script>
 <link rel="stylesheet" href="/assets/inventory-portrait.css?v=1"><script defer src="/assets/inventory-portrait.js?v=1"></script></head>
 <body>
 <main class="budget">
@@ -25,7 +25,7 @@
 <div class="list-heading"><h2>Solicitudes</h2><span id="budget-count"></span></div>
 <div id="budget-requests"></div>
 <button id="budget-more" class="secondary" hidden>Ver más solicitudes</button>
-</div><section class="area-chief-card" id="budget-chief-graph" hidden aria-label="Estado de solicitudes"></section></div>
+</div></div>
 </section>
 <dialog id="budget-detail-dialog" class="budget-detail-dialog" aria-labelledby="budget-detail-title"><header class="hero modal-hero"><span class="hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><h2 id="budget-detail-title">Detalle de solicitud</h2><button type="button" class="close" id="budget-detail-close" aria-label="Cerrar">×</button></header><div id="budget-detail-body"></div><p id="budget-detail-message" role="alert"></p></dialog>
 <dialog id="budget-dialog" aria-labelledby="budget-dialog-title">

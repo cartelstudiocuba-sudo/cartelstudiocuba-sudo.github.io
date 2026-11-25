@@ -36,14 +36,16 @@
  function moneyText(totals) {
   return ['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' · ');
  }
+ function isChiefBudgetView(){return !!(caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner;}
  function updateStats() {
   const stats=$('budget-stats'),filters=$('budget-filters');stats.replaceChildren();filters.replaceChildren();
-  const chief=!!(caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner;
-  $('budget-chief-summary').hidden=!chief;$('budget-chief-graph').hidden=!chief;stats.hidden=chief;
+  const chief=isChiefBudgetView();
+  $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
-   const team=requests.filter(r=>r.requester!==user.id&&((r.area==='Audiovisual'&&caps.audiovisual)||(r.area==='Gráfica'&&caps.graphics)));
-   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),graphContainer:$('budget-chief-graph'),requests:team,selectFilter:setFilter,selected:filter});
+   filter='all';
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests});
+   return;
   }
 
   const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);
@@ -57,10 +59,17 @@
  }
  function setFilter(next){filter=next;limit=25;updateStats();renderList();}
  function renderList() {
-  const query=normalize($('budget-search').value);
-  const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
+  const chief=isChiefBudgetView();
+  const query=chief?'':normalize($('budget-search').value);
+  const visible=requests.filter(r=>(chief||filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
+  if(chief){
+   target.append(...visible.slice(0,limit).map(renderRequest));
+   if(!visible.length)target.append(node('p','No hay solicitudes registradas.','empty'));
+   $('budget-more').hidden=visible.length<=limit;
+   return;
+  }
   const own=visible.filter(request=>request.requester===user.id),incoming=visible.filter(request=>request.requester!==user.id);
   const groups=[];
   if(caps.audiovisual||caps.graphics||caps.manager||caps.owner||incoming.length)groups.push(['Solicitudes de subordinados',incoming]);
@@ -101,15 +110,22 @@
   const badge=node('span',request.status==='chief_pending'?'En revisión':request.status==='manager_pending'?'En trámite':state.detail,'badge request-status');badge.style.setProperty('--state',state.color);badge.title=state.detail;
   const amounts=node('span','','request-amount request-column');const totals=requestTotals(request);const original=['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' + ');
   amounts.append(node('small','Importe original','request-label'),node('strong',original||'—'));
-  if((caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner){
+  if(isChiefBudgetView()){
    card.classList.add('budget-review-card');
-   const reviewTitle=node('span','','budget-review-title'),reviewIcon=node('span','','budget-review-icon');
+   const reviewIcon=node('span','','budget-review-icon');
    reviewIcon.setAttribute('aria-hidden','true');reviewIcon.innerHTML=icon.innerHTML;
-   reviewTitle.append(reviewIcon,node('strong',request.product||request.kind||'Solicitud de presupuesto'));
-   const reviewStatus=node('span',badge.textContent,'budget-review-state');reviewStatus.style.setProperty('--state',state.color);
-   const reviewDate=node('time',new Date(request.created_at).toLocaleDateString('es-CU'),'budget-review-date');reviewDate.dateTime=request.created_at;
-   const needsReview=request.requester!==user.id&&request.status==='chief_pending';
-   header.append(reviewTitle,node('span',request.requester_name||'—','budget-review-person'),reviewDate,reviewStatus,node('span',needsReview?'Revisar solicitud':'Ver solicitud','budget-review-action'));
+   const reviewCopy=node('span','','budget-review-copy'),meta=node('span','','budget-review-meta');
+   const person=node('span','','budget-review-person');
+   const personIcon=confirmationIcon('person');personIcon.className='budget-review-calendar';
+   person.append(personIcon,document.createTextNode(request.requester_name||'—'));
+   const reviewDate=node('time','','budget-review-date');reviewDate.dateTime=request.created_at;
+   const calendar=node('span','','budget-review-calendar');calendar.setAttribute('aria-hidden','true');calendar.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-14 4h2m3 0h2m3 0h2"/></svg>';
+   reviewDate.append(calendar,document.createTextNode(new Date(request.created_at).toLocaleDateString('es-CU')));
+   meta.append(person,reviewDate);reviewCopy.append(node('strong',request.product||request.kind||'Solicitud de presupuesto','budget-review-title'),meta);
+   const reviewStatus=node('span',badge.textContent,'budget-review-state');reviewStatus.style.setProperty('--state',state.color);reviewStatus.dataset.status=request.status;
+   const reviewActions=node('span','','budget-review-actions');
+   const action=node('span','Ver solicitud','budget-review-action');action.append(node('span','›','budget-review-chevron'));
+   reviewActions.append(reviewStatus,action);header.append(reviewIcon,reviewCopy,reviewActions);
   }else header.append(category,requester,date,priority,badge,amounts);
   card.append(header);
   const body=node('div','','request-body');labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
@@ -322,6 +338,7 @@
   const result=await client.auth.getUser();user=result.data.user;if(!user){location.href='/';return;}
   caps=await rpc('purchase_budget_capabilities');
   if(!Object.values(caps).some(Boolean)){report('Tu rol no tiene acceso a las solicitudes de presupuesto.');return;}
+  if(isChiefBudgetView())$('budget-count').after($('budget-refresh'));
   $('budget-new').hidden=!canSubmit();$('budget-list').hidden=false;await load();
   const requestedId=new URLSearchParams(location.search).get('request');
   const requested=requests.find(request=>request.id===requestedId);
