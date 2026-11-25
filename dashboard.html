@@ -162,6 +162,11 @@ if(window.top===window&&(navigator.standalone||matchMedia('(display-mode: standa
 .nav a[href="/inventario-presupuesto.html"]{min-width:0;overflow-wrap:normal}
 .nav a[data-budget-count]{display:grid!important;grid-template-columns:minmax(0,1fr) 24px;align-items:center;gap:5px;min-width:0;line-height:1.25;font-size:12px;white-space:normal;overflow-wrap:anywhere}
 .nav a[data-budget-count]::after{content:attr(data-budget-count);display:grid;place-items:center;width:24px;height:24px;box-sizing:border-box;border-radius:50%;background:#e44450;color:#fff;font:700 11px/1 system-ui;justify-self:end}
+
+@media(min-width:901px){
+ .nav a[data-budget-count],.nav a:has(> .inventory-notice-badge){display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;min-width:0;white-space:normal;overflow-wrap:normal;line-height:1.3;text-align:left}
+ .nav a:has(> .inventory-notice-badge)> .inventory-notice-badge,.nav a[data-budget-count]::after{position:static;justify-self:end;align-self:center;min-width:24px;width:auto;height:24px;margin:0;padding:0 5px;border:0;border-radius:999px;flex:none;transform:none;box-shadow:none}
+}
 </style><style id="administrator-tablet-portrait">
 @media(min-width:600px) and (max-width:900px) and (orientation:portrait){
  html.worker-mobile-ready .workspace.embedded[data-tablet-inventory]{position:fixed;inset:0 0 var(--worker-nav-space,94px);width:100%;height:auto;min-height:0;overflow:hidden}
