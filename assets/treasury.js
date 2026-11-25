@@ -58,13 +58,17 @@
  offset=0;historyKind='all';historyMonth.value=String(currentMonth);historyYear.value=String(currentYear);historyYear.disabled=false;historyCurrency.value='all';$('history-search').value='';$('history-area').replaceChildren(new Option('Todas las áreas',''));
  for(const button of historyKinds)button.setAttribute('aria-pressed',String(button.dataset.kind==='all'));
  }
+ function combinedAmount(cup,usd){
+ const block=el('div','','combined-amount');
+ const total=rate>0?usd+cup/rate:null;
+ block.append(el('strong',total===null?'—':money(total,'USD')),el('small',rate>0?'('+money(cup+usd*rate,'CUP')+')':'CUP '+numberAmount(cup)+' · USD '+numberAmount(usd)));
+ return block;
+ }
  function renderFundBalance(f){
- const target=$('fund-balance');target.replaceChildren();target.style.setProperty('--fund-color',colors[f.code]);
- const icon=el('span',icons[f.code],'fund-modal-icon');icon.setAttribute('aria-hidden','true');
- const balances=el('div','','fund-modal-currencies');
- for(const c of ['CUP','USD']){const item=el('div');item.append(el('small','Saldo '+c),el('strong',money(f[c],c),Number(f[c])<0?'negative':''));balances.append(item);}
- const eq=el('div','','fund-modal-equivalent');eq.append(el('span',rate>0?'Equivalente · '+money(Number(f.USD)+Number(f.CUP)/rate,'USD'):'Equivalente no disponible'),el('small',rate>0?'Tasa · '+rateDate:''));
- target.append(icon,balances,eq);
+ const target=$('fund-balance');target.replaceChildren();
+ const body=el('div','','fund-balance-main'),amount=combinedAmount(Number(f.CUP),Number(f.USD));
+ body.append(el('small','Saldo actual · equivalente USD'),amount,el('small',rate>0?'Tasa de referencia · 1 USD = '+rate+' CUP · '+rateDate:'Tasa de referencia no disponible'));
+ const icon=el('span','','fund-balance-glyph');icon.append(fundGlyph(f.code));icon.setAttribute('aria-hidden','true');target.append(body,icon);
  }
  const sourceLabels={excel:'Histórico Excel',bar:'Cuadre de nevera',manual:'Manual',budget:'Solicitud de presupuesto',ceo_dispatch:'Cuadre CEO',transfer:'Traspaso entre fondos'};
  function movementEquivalent(amount,currency){
@@ -95,7 +99,7 @@
  const amounts=el('div','','history-amounts'),reference=el('small',movementEquivalent(amount,r.currency),'history-equivalent');
  reference.dataset.amount=String(amount);reference.dataset.currency=r.currency;
  amounts.append(el('strong',(amount>0?'+':amount<0?'−':'')+money(Math.abs(amount),r.currency),'history-amount'),reference);
- row.append(info,amounts);return row;
+ if(!global){const arrow=el('span',type==='income'?'↓':type==='expense'?'↑':type==='transfer'?'⇄':'·','history-direction');arrow.setAttribute('aria-hidden','true');row.append(arrow);}row.append(info,amounts);return row;
  }
  function dateLabel(date){return date?new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z')):'Sin fecha';}
  let summaryData=null,summaryFund=null,summaryRequest=0;
@@ -110,20 +114,19 @@
  const now=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit'}).formatToParts(new Date()),year=Number(now.find(p=>p.type==='year').value),m=Number(now.find(p=>p.type==='month').value),end=year*12+m-1;
  const historicalOutlier=selected==='fixed'&&summaryData.first_date&&summaryData.first_date<'2023-01-01';
  const first=historicalOutlier?'2023-01-06':summaryData.first_date,start=first?monthIndex(first)+(first.slice(8,10)==='01'?0:1):end,months=Math.max(0,end-start);
- const rows=summaryData.months||[],currencies=historyCurrency.value==='all'?['CUP','USD']:[historyCurrency.value];
- const sum=(list,key)=>list.reduce((n,r)=>n+Number(r[key]),0);
- const group=el('div','','fund-summary-grid');
- for(const c of currencies){
- const all=rows.filter(r=>r.currency===c),periodRows=all.filter(r=>!month||r.month===month),past=all.filter(r=>monthIndex(r.month)>=start&&monthIndex(r.month)<end);
- const income=sum(periodRows,'income'),expense=sum(periodRows,'expense'),avgIn=months?sum(past,'income')/months:null,avgOut=months?sum(past,'expense')/months:null;
- const panel=el('article','','fund-summary-currency');panel.append(el('h4',c));
- const max=Math.max(1,income,expense,avgIn||0,avgOut||0);
- function bar(name,value,color){const row=el('div','','fund-stat-row'),track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=(value===null?0:value/max*100)+'%';fill.style.background=color;track.append(fill);row.append(el('span',name),track,el('strong',value===null?'—':money(value,c)));return row;}
- panel.append(bar('Ingresos',income,'#58e0a0'),bar('Gastos',expense,'#ff9292'));
- const net=el('div','','fund-stat-net');net.append(el('span','Resultado neto'),el('strong',money(income-expense,c),income-expense<0?'negative':''));panel.append(net);
- panel.append(el('h4','Promedio mensual histórico','fund-average-heading'),bar('Ingresos',avgIn,'#58e0a0'),bar('Gastos',avgOut,'#ff9292'));
- const avg=el('div','','fund-stat-net');avg.append(el('span','Neto promedio'),el('strong',months?money(avgIn-avgOut,c):'—',months&&avgIn-avgOut<0?'negative':''));panel.append(avg);group.append(panel);}
- target.append(group,el('small',months?months+' meses completos · incluye meses sin actividad · excluye mes actual y mes inicial si es parcial.':'Aún no hay meses completos para calcular el promedio.','chart-caption'));
+ const rows=summaryData.months||[],periodRows=rows.filter(r=>!month||r.month===month),past=rows.filter(r=>monthIndex(r.month)>=start&&monthIndex(r.month)<end);
+ function totals(list,key,divisor=1){return ['CUP','USD'].map(c=>list.filter(r=>r.currency===c).reduce((n,r)=>n+Number(r[key]),0)/divisor);}
+ const income=totals(periodRows,'income'),expense=totals(periodRows,'expense'),avgIn=months?totals(past,'income',months):null,avgOut=months?totals(past,'expense',months):null;
+ const inUsd=a=>rate>0?a[1]+a[0]/rate:null;
+ function netBlock(label,income,expense){const row=el('div','','fund-result'),net=income&&expense?[income[0]-expense[0],income[1]-expense[1]]:null;const value=net?inUsd(net):null;row.dataset.tone=value===null||value===0?'neutral':value>0?'positive':'negative';row.append(el('span',label),net?combinedAmount(...net):el('strong','—'));return row;}
+ const panel=el('article','','fund-period-card'),max=Math.max(1,inUsd(income)||0,inUsd(expense)||0);
+ function periodBar(name,amount,kind){const row=el('div','','fund-period-row '+kind),track=el('div','','fund-stat-track'),fill=el('span'),title=el('div','','fund-period-title');title.append(el('span',kind==='income'?'↓':'↑','fund-direction'),el('span',name));fill.style.width=(inUsd(amount)||0)/max*100+'%';track.append(fill);row.append(title,track,combinedAmount(...amount));return row;}
+ panel.append(periodBar('Ingresos',income,'income'),periodBar('Gastos',expense,'expense'));target.append(panel,netBlock('Resultado neto',income,expense));
+ const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');heading.append(el('strong','Promedio mensual histórico'),el('small',months?months+' meses completos':'Sin meses completos'));historical.append(heading);
+ const avgGrid=el('div','','fund-average-grid'),avgMax=Math.max(1,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
+ for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){const item=el('div','','fund-average-metric '+kind);item.append(el('small',name),amount?combinedAmount(...amount):el('strong','—'));if(amount&&rate>0){const track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=inUsd(amount)/avgMax*100+'%';fill.style.background=kind==='income'?'#58e0a0':'#ff9292';track.append(fill);item.append(track);}avgGrid.append(item);}
+ historical.append(avgGrid,netBlock('Promedio neto',avgIn,avgOut));target.append(historical);
+ target.append(el('small','Equivalentes calculados a la tasa de referencia del día. El resumen incluye ambas monedas; los filtros inferiores se aplican al historial. Los promedios incluyen meses sin actividad y excluyen el actual y el inicial si es parcial.','chart-caption'));
  if(historicalOutlier)target.append(el('small','Promedios desde febrero de 2023. Dos registros aislados de 2004 se mantienen en el historial y quedan fuera del promedio.','chart-caption'));
  if(summaryData.undated)target.append(el('small','Movimientos sin fecha excluidos del resumen: '+summaryData.undated,'chart-caption'));
  }
@@ -197,7 +200,7 @@
  $('activity-next').onclick=()=>{activityOffset+=50;loadActivityHistory();};
  function startActivityUpdates(){if(workers)return;setInterval(()=>{if(!document.hidden)refreshActivity();},5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshActivity();});}
  async function refresh(){state=await rpc('treasury_state');render();await Promise.all([history(),selected?loadFundStatistics(selected):Promise.resolve()]);if(!workers){await loadFlow();await refreshActivity();}await refreshRate();}
- async function refreshRate(){try{const ref=await CartelExchangeRates.read(client);rate=Number(ref.value);rateDate=ref.source_date||new Date(ref.fetched_at).toLocaleDateString('es-CU');$('treasury-rate').textContent='Referencia del día · 1 USD = '+rate+' CUP · '+CartelExchangeRates.label(ref);}catch{rate=null;rateDate=null;$('treasury-rate').textContent='Tasa del día no disponible.';}render();updateHistoryEquivalents();if(!workers&&flowMonth===period())renderFlow();}
+ async function refreshRate(){try{const ref=await CartelExchangeRates.read(client);rate=Number(ref.value);rateDate=ref.source_date||new Date(ref.fetched_at).toLocaleDateString('es-CU');$('treasury-rate').textContent='Referencia del día · 1 USD = '+rate+' CUP · '+CartelExchangeRates.label(ref);}catch{rate=null;rateDate=null;$('treasury-rate').textContent='Tasa del día no disponible.';}render();updateHistoryEquivalents();if(selected)renderFundStatistics();if(!workers&&flowMonth===period())renderFlow();}
 
  function renderOverview(funds){
  const target=$('treasury-kpis');target.replaceChildren();
