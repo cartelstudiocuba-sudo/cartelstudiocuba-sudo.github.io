@@ -331,10 +331,14 @@
   field('area').value=caps.request_area||'';
   $('budget-area-label').textContent=caps.request_area||'Sin área asignada';
   $('budget-role-label').textContent=caps.request_role_title||'Solicitante';
-  const fridge=[...field('kind').options].find(option=>option.value==='Abastecimiento de nevera');
-  fridge.disabled=field('area').value!=='Audiovisual';fridge.hidden=fridge.disabled;
+  const kind=field('kind');
+  const fridge=[...kind.options].find(option=>option.value==='Abastecimiento de nevera');
+  if(fridge)fridge.remove();
+  if(field('area').value==='Audiovisual')kind.add(new Option('Abastecimiento de nevera','Abastecimiento de nevera'),1);
+  kind.value='';
  }
  const expenseIcons={
+  'Inversión':'<path d="M3 20h18M5 17v-5m5 5V9m5 8V6m5 11V3M4 9l6-4 5 1 5-4"/>',
   'Abastecimiento de nevera':'<path d="M3 10h18l-2 11H5L3 10ZM8 10l4-7 4 7M9 14v4m6-4v4"/>',
   'Materiales e insumos':'<path d="m12 3 9 5-9 5-9-5Zm-9 5v11l9 5 9-5V8M12 13v11"/>',
   'Equipos y herramientas':'<rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 22h8m-4-4v4"/>',
