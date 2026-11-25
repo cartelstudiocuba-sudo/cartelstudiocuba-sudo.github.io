@@ -46,3 +46,7 @@
 .history-movement.income{--movement-color:#58e0a0}.history-movement.expense{--movement-color:#ff9292}
 .history-movement-info{display:grid;gap:2px;min-width:0;overflow-wrap:anywhere}.history-movement-info strong{font-size:14px;line-height:1.25}.history-movement-info small{font-size:11px;color:#c0cfe0}.history-amount{color:var(--movement-color);font-size:clamp(12px,1.9vw,17px);text-align:right;overflow-wrap:anywhere;max-width:40vw;font-variant-numeric:tabular-nums}.history-empty{padding:18px;text-align:center;color:#c4d2e0}
 @media(max-width:460px){#treasury-detail{padding:12px}.fund-modal-balance{padding:10px;gap:6px 9px}.fund-modal-icon{width:30px;font-size:21px}.fund-modal-currencies strong{font-size:14px}.history-movement{padding:8px;gap:7px}.history-filters{grid-template-columns:1fr 1fr}.history-filters select:last-child{grid-column:1/-1}}
+
+.history-amounts{display:flex;align-items:baseline;justify-content:flex-end;flex-wrap:wrap;gap:2px 7px;min-width:0;max-width:46vw;text-align:right}
+.history-equivalent{font-size:12px;color:#c5d4e4;font-weight:500;white-space:normal;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+@media(max-width:600px){.history-amounts{display:grid;justify-items:end;gap:2px}.history-equivalent{font-size:11px}}
