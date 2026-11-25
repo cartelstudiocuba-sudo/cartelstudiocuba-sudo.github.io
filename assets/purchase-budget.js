@@ -90,17 +90,46 @@
   }
   $('budget-more').hidden=groups.every(([,rows])=>rows.length<=limit);
  }
- function labeled(parent,label,value) {
-  if(!value)return;
-  const line=node('p');line.append(node('strong',label+' · '),document.createTextNode(value));parent.append(line);
- }
- function itemSummary(parent,items) {
-  const lines=node('div','','summary-lines');
-  for(const item of items){
-   const row=node('div','','summary-line');row.append(node('strong',format(item.subtotal,item.currency)));
-   row.append(document.createTextNode(item.name+' · '+item.quantity+(item.unit&&item.unit!=='unidad'?' '+item.unit:'')));lines.append(row);
+ function detailSections(body,request,state) {
+  const details=request.details||{};
+  const info=node('section','','confirmation-section budget-detail-info'),grid=node('div','','confirmation-grid');
+  const status=confirmationField('Estado',state.detail,'destination');
+  status.querySelector('strong').style.color=state.color;
+  const reason=confirmationField('Justificación',request.reason||'—','note');
+  reason.classList.add('budget-detail-wide');
+  grid.append(confirmationField('Solicitante',request.requester_name||'—','person'),
+   confirmationField('Área',request.area||'—','area'),
+   confirmationField('Fecha',new Date(request.created_at).toLocaleDateString('es-CU'),'calendar'),
+   status,confirmationField('Prioridad',request.priority||'—',null,true),reason);
+  for(const [label,value] of [['Proveedor',details.supplier],['Fecha requerida',details.needed_on],['Observaciones',details.observations],['Referencia',details.reference],['Observación jefe de área',request.chief_note],['Observación Manager General',request.manager_note]]){
+   if(value){const field=confirmationField(label,value,'note');field.classList.add('budget-detail-wide');grid.append(field);}
   }
-  parent.append(lines);
+  info.append(confirmationHeading('Información de la solicitud','person'),grid);
+  const products=node('section','','confirmation-section'),table=node('table','','budget-detail-table');
+  const head=node('thead'),heading=node('tr');
+  for(const label of ['Producto o servicio','Cantidad','Precio unitario','Importe']){const th=node('th',label);th.scope='col';heading.append(th);}
+  head.append(heading);table.append(head);
+  const rows=node('tbody');
+  const items=request.items?.length?request.items:[{name:request.product,quantity:request.quantity,currency:request.currency,subtotal:request.amount}];
+  for(const item of items){
+   const row=node('tr');
+   const unitPrice=item.unit_price??(Number(item.quantity)>0?Number(item.subtotal)/Number(item.quantity):null);
+   const values=[item.name,String(item.quantity??'—')+(item.unit&&item.unit!=='unidad'?' '+item.unit:''),unitPrice!=null?format(unitPrice,item.currency):'—',format(item.subtotal,item.currency)];
+   for(const [index,value] of values.entries()){const cell=node('td',value);cell.dataset.label=heading.children[index].textContent;row.append(cell);}
+   rows.append(row);
+  }
+  table.append(rows);products.append(confirmationHeading('Productos y servicios','cart'),table);
+  const cost=node('section','','confirmation-section confirmation-finance'),columns=node('div','','confirmation-totals');
+  const original=node('div','','confirmation-original'),equivalent=node('div','','confirmation-equivalent');
+  const totals=requestTotals(request),rate=Number(details.exchange_rate),converted=equivalents(totals,rate);
+  original.append(node('small','Importes originales'),node('strong',format(totals.CUP||0,'CUP')+' + '+format(totals.USD||0,'USD')));
+  equivalent.append(node('small','Totales equivalentes'),node('strong',converted?format(converted.CUP,'CUP'):'—'));
+  if(converted)equivalent.append(node('strong','o '+format(converted.USD,'USD')));
+  columns.append(original,equivalent);
+  const rateLine=node('div','','confirmation-rate');
+  rateLine.append(confirmationIcon('rate'),document.createTextNode(converted?'Tasa utilizada · 1 USD = '+rate+' CUP':'Tasa de cambio no registrada'));
+  cost.append(confirmationHeading('Resumen de inversión','calculator'),columns,rateLine);
+  body.append(info,products,cost);
  }
  function renderRequest(request) {
   const card=node('article','','request'),header=node('button'),state=statuses[request.status];header.type='button';header.setAttribute('aria-haspopup','dialog');
@@ -141,13 +170,9 @@
    reviewActions.append(reviewStatus,action);header.append(reviewIcon,reviewCopy,reviewActions);
   }else header.append(category,requester,date,priority,badge,amounts);
   card.append(header);
-  const body=node('div','','request-body');if(isChiefBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
-  if(request.items) itemSummary(body,request.items);
-  else labeled(body,'Cantidad',String(request.quantity));
-  const details=request.details||{};
-  if(validRate(Number(details.exchange_rate))){labeled(body,'Tasa utilizada','1 USD = '+details.exchange_rate+' CUP');const totals=node('div','','budget-converted budget-confirm-totals');totalsView(totals,requestTotals(request),Number(details.exchange_rate));body.append(totals);}
-  labeled(body,'Proveedor',details.supplier);labeled(body,'Fecha requerida',details.needed_on);labeled(body,'Observaciones',details.observations);labeled(body,'Referencia',details.reference);
-  labeled(body,'Observación jefe de área',request.chief_note);labeled(body,'Observación Manager General',request.manager_note);
+  const body=node('div','','request-body');
+  if(isChiefBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));
+  detailSections(body,request,state);
   const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
   const manager=request.status==='manager_pending'&&caps.manager&&request.chief_by!==user.id;
   if(request.requester!==user.id&&(chief||manager)){
@@ -231,6 +256,7 @@
    details:{concept:field('concept').value.trim(),exchange_rate:Number(field('exchange_rate').value),exchange_rate_source:rateSource==='reference'?'reference':'manual',exchange_rate_date:rateDate}};
  }
  const confirmationIcons={
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-14 4h2m3 0h2m3 0h2"/>',
   person:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/>',
   area:'<path d="m12 3 10 5-10 5L2 8Zm-10 9 10 5 10-5M2 16l10 5 10-5"/>',
   type:'<path d="M3 12 12 3h8v8l-9 9Z"/><circle cx="16.5" cy="6.5" r="1"/>',
