@@ -26,6 +26,8 @@ async function refresh(){
   for(const target of [link,...document.querySelectorAll('#worker-mobile-sheet-content [data-budget-notice]')]){
    if(count&&target.dataset.budgetCount!==value)target.dataset.budgetCount=value;
    else if(!count&&target.hasAttribute('data-budget-count'))target.removeAttribute('data-budget-count');
+   const badge=target.querySelector?.('.budget-mobile-count');
+   if(badge){badge.hidden=!count;badge.textContent=count?value:'';}
    if(target.getAttribute('aria-label')!==label)target.setAttribute('aria-label',label);
   }
  }catch(error){console.warn('Contador de presupuesto no disponible',error.code||error.message);}

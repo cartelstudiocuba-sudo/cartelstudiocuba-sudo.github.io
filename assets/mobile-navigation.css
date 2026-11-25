@@ -22,4 +22,6 @@
 /* Nevera phone navigation 2 owns the single dock after its ready handshake. */
 @media(max-width:900px){html.worker-mobile-ready.fridge-workspace-active.fridge-mobile-unified{--worker-nav-space:0px}html.fridge-mobile-unified #worker-mobile-nav{display:none}html.worker-mobile-ready.fridge-workspace-active.fridge-mobile-unified .app,html.worker-mobile-ready.fridge-workspace-active.fridge-mobile-unified .module-frame{height:100dvh!important}html.fridge-mobile-unified #worker-mobile-sheet{margin-bottom:calc(92px + env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 125px)}}
 
-#worker-mobile-sheet-content>button[data-budget-notice][data-budget-count]::after{content:attr(data-budget-count);display:grid;place-items:center;flex:0 0 auto;box-sizing:border-box;min-width:24px;height:24px;padding:0 5px;margin-left:auto;margin-right:0;border:0;transform:none;border-radius:999px;background:#e44450;color:#fff;font:700 11px/1 system-ui}
+#worker-mobile-sheet-content>button[data-budget-notice][data-budget-count]::after{content:none!important;display:none!important}
+#worker-mobile-sheet-content>button>.budget-mobile-count{display:inline-grid;place-items:center;flex:0 0 auto;box-sizing:border-box;min-width:24px;height:24px;padding:0 5px;margin-left:auto;border:0;transform:none;border-radius:999px;background:#e44450;color:#fff;font:700 11px/1 system-ui;white-space:nowrap}
+#worker-mobile-sheet-content>button>.budget-mobile-count[hidden]{display:none!important}
