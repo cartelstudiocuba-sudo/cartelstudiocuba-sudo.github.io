@@ -2,12 +2,16 @@
  'use strict';
  const root=document.documentElement;
  let viewport;
+ const supplies=location.pathname==='/inventario-insumos.html';
  try{
-  if(window.parent!==window&&window.parent.location.origin===location.origin&&window.parent.document.documentElement.classList.contains('inventory-admin-home'))viewport=window.parent.matchMedia('(min-width:600px) and (max-width:900px) and (orientation:portrait)');
+  if(window.parent!==window&&window.parent.location.origin===location.origin){
+   if(supplies)viewport=window.parent.matchMedia('(max-width:900px)');
+   else if(window.parent.document.documentElement.classList.contains('inventory-admin-home'))viewport=window.parent.matchMedia('(min-width:600px) and (max-width:900px) and (orientation:portrait)');
+  }
  }catch{}
  if(!viewport)return;
- const update=()=>root.classList.toggle('inventory-compact-viewport',viewport.matches);
- update();window.addEventListener('resize',update);
+ const update=()=>{root.classList.toggle('inventory-compact-viewport',viewport.matches);root.classList.toggle('inventory-mobile-scroll',supplies&&viewport.matches);};
+ update();window.addEventListener('resize',update);viewport.addEventListener?.('change',update);
  const modalSelector='dialog[open],.modal-backdrop.open,.report-overlay:not([hidden]),.weekly-export-backdrop:not([hidden]),.inventory-suppliers-modal:not([hidden]),#inventory-product-editor:not([hidden])';
  let touch=null;
  document.addEventListener('touchstart',event=>{

@@ -13,3 +13,9 @@ html.inventory-compact-viewport body{overflow:visible}
 .inventory-compact-viewport :is(.report-overlay,.modal-sheet,.inventory-suppliers-card,.inventory-editor-card,.weekly-export-dialog,dialog[open]) :is(.table-scroll,.table-wrap){max-width:100%;overscroll-behavior:contain}
 .inventory-compact-viewport #reconcile-view-back{position:sticky;top:0;right:auto}
 html.inventory-compact-viewport:has(dialog[open],.modal-backdrop.open,.report-overlay:not([hidden]),.weekly-export-backdrop:not([hidden]),.inventory-suppliers-modal:not([hidden]),#inventory-product-editor:not([hidden])){overflow:hidden}
+
+/* iOS embedded inventory: one bounded scroll container above the shared dock. */
+html.inventory-mobile-scroll{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
+html.inventory-mobile-scroll body{height:100%;min-height:0;max-height:100%;margin:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+html.inventory-mobile-scroll body .shell{min-width:0;max-width:100%;width:100%}
+html.inventory-mobile-scroll:has(dialog[open],.modal-backdrop.open,.report-overlay:not([hidden]),.weekly-export-backdrop:not([hidden]),.inventory-suppliers-modal:not([hidden]),#inventory-product-editor:not([hidden])) body{overflow:hidden}
