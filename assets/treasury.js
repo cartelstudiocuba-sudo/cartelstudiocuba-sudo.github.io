@@ -15,10 +15,6 @@
  function period(){return chartYear.value+'-'+chartMonth.value.padStart(2,'0');}
  function setPeriod(year,month){chartYear.value=String(year);chartMonth.value=String(month);$('chart-prev').disabled=year===1900&&month===1;$('chart-next').disabled=year===currentYear+1&&month===12;}
  setPeriod(currentYear,currentMonth);
- function equivalent(cup,usd){
- const line=el('div','','treasury-equivalent');
- line.append(el('small','Equivalente total en USD'),el('strong',rate>0?money(usd+cup/rate,'USD'):'—'),el('small',rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible'));return line;
- }
  $('treasury-overview').hidden=workers;
  const icons={fixed:'▤',investment:'↗',supplies:'◇',stimulus:'★',profit:'$',surplus:'＋',workers:'♙'};
  async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
@@ -165,13 +161,19 @@
  function renderOverview(funds){
  const target=$('treasury-kpis');target.replaceChildren();
  const sum=(c,fn)=>funds.reduce((total,f)=>total+fn(Number(f[c]),Number(f['available_'+c]),f),0);
- for(const [label,color,fn] of [
- ['Saldos positivos','#ffda03',(balance)=>Math.max(0,balance)],
- ['Disponible','#58e0a0',(_,available)=>Math.max(0,available)],
- ['Comprometido','#65c9ff',(balance,available)=>Math.max(0,balance-available)],
- ['Capital pendiente del CEO','#ff9292',(balance,_,f)=>f.code==='investment'?Math.max(0,-balance):0]]){
- const card=el('article','','treasury-kpi');card.style.setProperty('--accent',color);
- const cup=sum('CUP',fn),usd=sum('USD',fn);card.append(el('small',label),el('strong',money(cup,'CUP')),equivalent(cup,usd),el('small','Saldo registrado en USD · '+money(usd,'USD')));target.append(card);}
+ const positive=c=>sum(c,b=>Math.max(0,b));
+ const available=c=>sum(c,(_,a)=>Math.max(0,a));
+ const committed=c=>sum(c,(b,a)=>Math.max(0,b-a));
+ const debt=c=>sum(c,(b,_,f)=>f.code==='investment'?Math.max(0,-b):0);
+ const summary=el('div','','treasury-summary');
+ const primary=el('div','','summary-primary');
+ primary.append(el('small',rate>0?'Saldo disponible total':'Saldo disponible en CUP'),el('strong',rate>0?money(available('USD')+available('CUP')/rate,'USD'):money(available('CUP'),'CUP')),el('span',rate>0?'Equivalente en USD · '+rateDate:'Tasa de referencia no disponible','summary-reference'));
+ const balances=el('div','','summary-balances');balances.append(el('span',money(available('CUP'),'CUP')),el('span',money(available('USD'),'USD')));primary.append(balances);
+ const secondary=el('div','','summary-secondary');
+ for(const [label,color,fn] of [['Saldo total de fondos positivos','#d5dfe8',positive],['Comprometido','#65c9ff',committed],['Capital pendiente del CEO','#ff9292',debt]]){
+ const row=el('div','','summary-line'),info=el('div'),value=el('div','','summary-value');
+ info.append(el('small',label));value.append(el('strong',rate>0?money(fn('USD')+fn('CUP')/rate,'USD'):money(fn('CUP'),'CUP')),el('small',money(fn('CUP'),'CUP')+' · '+money(fn('USD'),'USD')));value.style.color=color;row.append(info,value);secondary.append(row);}
+ summary.append(primary,secondary);target.append(summary);
  const c=chartCurrency.value,distribution=$('treasury-distribution');distribution.replaceChildren();
  const total=sum(c,b=>Math.max(0,b));for(const f of funds){const amount=Math.max(0,Number(f[c])),pct=total?amount/total*100:0;const row=el('div','','distribution-row'),track=el('div','','distribution-track'),bar=el('span');bar.style.width=pct+'%';bar.style.background=colors[f.code];track.append(bar);row.append(el('span',f.label),el('strong',pct.toFixed(1)+'% · '+money(amount,c)),track);distribution.append(row);}
  distribution.append(el('p','Saldos positivos por fondo · '+c,'chart-caption'));

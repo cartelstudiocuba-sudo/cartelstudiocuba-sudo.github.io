@@ -74,3 +74,28 @@
 #treasury-dialog[data-move] #treasury-save{background:var(--move-color);color:#12202a;border-color:var(--move-color)}
 .history-receipt{min-height:26px;justify-self:start;padding:3px 8px;font-size:11px}
 @media(max-width:460px){#treasury-dialog[data-move] .treasury-fields{padding:10px}.move-grid{padding:9px;gap:8px}.move-conversion strong{font-size:16px}.move-balance strong{font-size:14px}}
+
+/* Fund access is primary; the consolidated balance reads as one financial summary. */
+#treasury-rate[hidden]{display:none!important}
+#treasury-overview{margin-top:24px}
+.treasury-kpis{display:block}
+.treasury-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);border:1px solid #49545e;border-radius:15px;background:linear-gradient(115deg,#26332e,#1d252e 54%,#1a222b);overflow:hidden}
+.summary-primary{padding:20px 23px;display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0}
+.summary-primary>small{font-size:14px;color:#c9d8d2;font-weight:650}
+.summary-primary>strong{font-size:clamp(26px,3vw,38px);line-height:1.2;color:#82e5aa;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.summary-reference{font-size:11px;color:#b4c2c2}
+.summary-balances{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:5px;font-size:13px;color:#e9eef1}
+.summary-balances>span+span{padding-left:14px;border-left:1px solid #ffffff28}
+.summary-secondary{padding:9px 20px;border-left:1px solid #ffffff16;min-width:0}
+.summary-line{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #ffffff12}
+.summary-line:last-child{border-bottom:0}
+.summary-line>div:first-child{min-width:0;color:#d4dce5}
+.summary-value{text-align:right;min-width:0;flex-shrink:1}
+.summary-value strong{display:block;font-size:18px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.summary-value small{display:block;color:#aebbc5;font-size:10px;overflow-wrap:anywhere}
+#treasury-activity{background:linear-gradient(145deg,#202930,#192127);border-color:#3d4952}
+#treasury-activity .history-movement{background:#202a32;border:1px solid #3c4954;border-left:3px solid color-mix(in srgb,var(--movement-color) 38%,#45515b);box-shadow:none}
+#treasury-activity .activity-fund{background:transparent;border-color:#53616b;color:#cbd4db}
+#treasury-activity .history-amount{color:color-mix(in srgb,var(--movement-color) 78%,#e1e6eb)}
+#treasury-activity .activity-status{color:#aebdc1}
+@media(max-width:640px){.treasury-summary{grid-template-columns:1fr}.summary-secondary{border-left:0;border-top:1px solid #ffffff16;padding:6px 14px}.summary-primary{padding:16px}.summary-value strong{font-size:16px}}
