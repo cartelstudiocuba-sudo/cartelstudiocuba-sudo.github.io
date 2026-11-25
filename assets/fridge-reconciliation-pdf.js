@@ -24,4 +24,33 @@ if(d.note||d.manager_note){title('OBSERVACIONES');if(d.note)text('Remitente: '+d
 if(d.confirmed_at)text('Recibido confirmado por '+d.confirmed_by_name+' - '+date(d.confirmed_at),9,true);
 const count=pdf.getNumberOfPages();for(let i=1;i<=count;i++){pdf.setPage(i);pdf.setDrawColor(205);pdf.line(L,285,L+W,285);pdf.setFont('helvetica','normal');pdf.setTextColor(95);pdf.setFontSize(8);pdf.text('El Cartel Studio - Cuadre #'+String(d.number).padStart(3,'0'),L,291);pdf.text('Pagina '+i+' de '+count,196,291,{align:'right'});}return pdf;
 }
-globalThis.CartelReconciliationPDF={build};})();
+function buildReceipt(d,PDF,width=80){
+ if(d.status!=='confirmed')throw Error('El cuadre debe estar confirmado.');
+ if(![58,80].includes(width))throw Error('Selecciona el ancho del papel.');
+ const margin=4,usable=width-2*margin,lines=[];
+ const probe=new PDF({unit:'mm',format:[width,200]});
+ const safe=v=>String(v??'').replace(/[\u0000-\u001f]/g,' ');
+ const date=v=>v?new Intl.DateTimeFormat('es-CU',{timeZone:'America/Havana',dateStyle:'short',timeStyle:'short'}).format(new Date(v)):'—';
+ const money=(v,c)=>Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+c;
+ function add(text,size=9,bold=false,align='left'){
+  probe.setFont('helvetica',bold?'bold':'normal');probe.setFontSize(size);
+  for(const line of probe.splitTextToSize(safe(text),usable))lines.push({line,size,bold,align});
+ }
+ add('EL CARTEL STUDIO',11,true,'center');add('COMPROBANTE DE RECIBIDO',10,true,'center');add('Cuadre #'+String(d.number).padStart(3,'0'),11,true,'center');
+ add('Entregado por: '+(d.created_by_name||'—'));add('Corte: '+date(d.snapshot?.as_of||d.created_at));add('Confirmado: '+date(d.confirmed_at));add('Recibido por: '+(d.confirmed_by_name||'—'));
+ add('EFECTIVO RECIBIDO',10,true);
+ const settlement=d.receipt_settlement;
+ if(settlement?.received_by_currency?.length){
+  for(const row of settlement.received_by_currency)add(money(row.amount,row.currency),12,true);
+  add('Tasa: 1 USD = '+settlement.rate+' CUP');
+ }else add('Detalle por moneda no registrado en este cuadre histórico.');
+ const transfers=new Map();for(const p of d.snapshot?.payments||[]){if(p.method!=='transfer')continue;const c=p.collection?.currency||'USD';transfers.set(c,(transfers.get(c)||0)+Number(p.collection?.amount??p.amount??0));}
+ if(!transfers.size)for(const t of d.snapshot?.collection_totals||[])if(t.method==='transfer')transfers.set(t.currency,Number(t.amount));
+ if(transfers.size){add('TRANSFERENCIAS VERIFICADAS',10,true);for(const [c,v] of transfers)add(money(v,c),10,true);}
+ if(settlement?.inventory_confirmed)add('Conteo de insumos confirmado.');
+ add('Estado: RECIBIDO CONFIRMADO',10,true,'center');add('Firma de quien entrega:');add('________________________');add('Firma de quien recibe:');add('________________________');
+ const height=Math.max(110,margin*2+lines.reduce((sum,l)=>sum+l.size*.43+1.5,0)+5),pdf=new PDF({unit:'mm',format:[width,height],orientation:'portrait'});let y=margin+4;
+ for(const l of lines){pdf.setFont('helvetica',l.bold?'bold':'normal');pdf.setFontSize(l.size);pdf.text(l.line,l.align==='center'?width/2:margin,y,{align:l.align});y+=l.size*.43+1.5;}
+ return pdf;
+}
+globalThis.CartelReconciliationPDF={build,buildReceipt};})();

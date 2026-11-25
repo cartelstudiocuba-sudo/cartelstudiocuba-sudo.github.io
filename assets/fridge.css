@@ -249,3 +249,12 @@ html:has(body.recon-manager:not(.recon-inline)){background:#121315}body.recon-ma
  .fridge-left-layout #fr-content>.fr-receipt{width:100%;max-width:none}
  .fridge-left-layout .fr-nav{left:50%}
 }
+
+/* Manager receipt currency equivalents */
+.manager-receipt-panel .recon-conversion-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.manager-receipt-panel .recon-conversion-values p{display:grid;align-content:center;gap:7px;margin:0;padding:13px;border:1px solid #ffda0380;border-radius:12px;background:linear-gradient(145deg,#ffda0329,#ffda0308);min-width:0}
+.manager-receipt-panel .recon-conversion-values p span{font-size:12px;color:#f0e6b5}
+.manager-receipt-panel .recon-conversion-values b{font-size:clamp(17px,2.2vw,26px);font-weight:800;color:#ffda03;text-align:left;overflow-wrap:anywhere}
+#manager-receipt-ticket{width:min(450px,94vw);max-height:90dvh;overflow:auto;padding:20px;border-radius:16px;background:#202933;color:#f4f7fa;border:1px solid #526575}
+#manager-receipt-ticket .fr-actions{margin-top:16px}
+@media(max-width:400px){.manager-receipt-panel .recon-conversion-values{grid-template-columns:1fr}}
