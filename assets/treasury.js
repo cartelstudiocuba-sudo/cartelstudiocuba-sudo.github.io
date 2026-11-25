@@ -36,10 +36,8 @@
  const amounts=el('div','','treasury-card-amounts');
  for(const c of ['CUP','USD']){
  const value=el('div','','fund-currency');
- value.append(el('small',c==='USD'?'USD (saldo)':'CUP'),el('strong',numberAmount(f[c]),Number(f[c])<0?'negative':''));
- const available=el('small','','fund-available');
- available.append(el('span','Disponible'),el('b',money(Math.max(0,Number(f['available_'+c])),c)));
- value.append(available);amounts.append(value);
+ value.append(el('small',c+' (saldo)'),el('strong',numberAmount(f[c]),Number(f[c])<0?'negative':''));
+ amounts.append(value);
  }
  const body=el('div','','fund-card-body');body.append(amounts);
  if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','fund-debt'));

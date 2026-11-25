@@ -13,8 +13,6 @@
 .fund-currency{min-width:0;display:grid;align-content:start;gap:5px;padding-right:10px}
 .fund-currency+ .fund-currency{padding:0 0 0 12px;border-left:1px solid #ffffff2c}
 .treasury-card-amounts strong{font-size:clamp(16px,1.7vw,25px);line-height:1.15;letter-spacing:-.025em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.fund-available{display:grid;gap:2px;font-weight:400}
-.fund-available b{font-size:12px;color:#e6edf4;font-weight:650;overflow-wrap:anywhere}
 .fund-debt{align-self:flex-start;border:1px solid #ff727d80;border-radius:999px;background:#ff727d18;padding:3px 9px;color:#ff9eaa!important;font-weight:650}
 .fund-equivalent{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:3px 8px;padding:10px 12px;text-align:center;background:linear-gradient(100deg,color-mix(in srgb,var(--fund-color) 22%,#1c2731),color-mix(in srgb,var(--fund-color) 13%,#17232e));border-top:1px solid color-mix(in srgb,var(--fund-color) 55%,transparent);color:#eef6fc;font-size:13px}
 .fund-equivalent strong{color:var(--fund-color);font-size:clamp(15px,1.5vw,20px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
