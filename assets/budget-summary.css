@@ -64,3 +64,7 @@
 .budget-timeline-step strong,.budget-timeline-step span:not(.budget-timeline-marker),.budget-timeline-step small{display:block;overflow-wrap:anywhere;font-size:12px;line-height:1.4}
 .budget-timeline-step small{font-size:10px;color:#aebbc7}
 @media(max-width:520px){.budget-finance-grid{grid-template-columns:1fr}.budget-chief-view .budget-search-row{grid-template-columns:1fr}.budget-timeline-steps{grid-template-columns:1fr;gap:12px}.budget-timeline-step{grid-template-columns:auto 1fr;text-align:left;justify-items:start}.budget-timeline-step:not(:last-child)::after{width:2px;height:calc(100% + 12px);left:12px;top:14px}.budget-last-activity{text-align:left}}
+
+.budget-review-person-copy{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.budget-review-person-copy strong{font-size:inherit;font-weight:600}
+.budget-review-role{font-size:11px;color:#c0d3e1;font-weight:500}

@@ -60,7 +60,7 @@
  function renderList() {
   const chief=isChiefBudgetView();
   const query=normalize($('budget-search').value);
-  const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
+  const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,requesterRole(r),r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
   if(chief){
    const order=$('budget-sort').value;
    const newest=(a,b)=>new Date(b.created_at)-new Date(a.created_at);
@@ -131,6 +131,10 @@
   cost.append(confirmationHeading('Resumen de inversión','calculator'),columns,rateLine);
   body.append(info,products,cost);
  }
+ function requesterRole(request) {
+  if(request.direct_to_manager)return request.area==='Generales'?'Administrador':'Jefe de Área';
+  return 'Gestor Técnico';
+ }
  function renderRequest(request) {
   const card=node('article','','request'),header=node('button'),state=statuses[request.status];header.type='button';header.setAttribute('aria-haspopup','dialog');
   header.className='request-visual-row';
@@ -153,7 +157,9 @@
    const reviewCopy=node('span','','budget-review-copy'),meta=node('span','','budget-review-meta');
    const person=node('span','','budget-review-person');
    const personIcon=confirmationIcon('person');personIcon.className='budget-review-calendar';
-   person.append(personIcon,document.createTextNode(request.requester_name||'—'));
+   const personCopy=node('span','','budget-review-person-copy');
+   personCopy.append(node('strong',request.requester_name||'—'),node('small',requesterRole(request),'budget-review-role'));
+   person.append(personIcon,personCopy);
    const reviewDate=node('time','','budget-review-date');reviewDate.dateTime=request.created_at;
    const calendar=node('span','','budget-review-calendar');calendar.setAttribute('aria-hidden','true');calendar.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-14 4h2m3 0h2m3 0h2"/></svg>';
    reviewDate.append(calendar,document.createTextNode(new Date(request.created_at).toLocaleDateString('es-CU')));
