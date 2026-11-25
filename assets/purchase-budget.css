@@ -173,3 +173,7 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
  .budget-detail-table td:first-child{grid-column:1/-1;font-weight:750;font-size:14px}
  .budget-detail-table td:not(:first-child)::before{content:attr(data-label);display:block;font-size:10px;color:#c4cbd1;font-weight:400;margin-bottom:4px}
 }
+
+.budget-detail-justification{display:flex;align-items:flex-start;gap:9px;margin:9px 0 0;padding:12px 0 0;border-top:1px solid #ffffff24;font-size:13px;line-height:1.5;color:#e1e9ef}
+.budget-detail-justification>span:last-child{min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.budget-detail-justification strong{color:#ffda03}

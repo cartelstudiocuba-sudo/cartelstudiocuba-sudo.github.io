@@ -95,12 +95,10 @@
   const info=node('section','','confirmation-section budget-detail-info'),grid=node('div','','confirmation-grid');
   const status=confirmationField('Estado',state.detail,'destination');
   status.querySelector('strong').style.color=state.color;
-  const reason=confirmationField('Justificación',request.reason||'—','note');
-  reason.classList.add('budget-detail-wide');
   grid.append(confirmationField('Solicitante',request.requester_name||'—','person'),
    confirmationField('Área',request.area||'—','area'),
    confirmationField('Fecha',new Date(request.created_at).toLocaleDateString('es-CU'),'calendar'),
-   status,confirmationField('Prioridad',request.priority||'—',null,true),reason);
+   status,confirmationField('Prioridad',request.priority||'—',null,true));
   for(const [label,value] of [['Proveedor',details.supplier],['Fecha requerida',details.needed_on],['Observaciones',details.observations],['Referencia',details.reference],['Observación jefe de área',request.chief_note],['Observación Manager General',request.manager_note]]){
    if(value){const field=confirmationField(label,value,'note');field.classList.add('budget-detail-wide');grid.append(field);}
   }
@@ -118,7 +116,11 @@
    for(const [index,value] of values.entries()){const cell=node('td',value);cell.dataset.label=heading.children[index].textContent;row.append(cell);}
    rows.append(row);
   }
-  table.append(rows);products.append(confirmationHeading('Productos y servicios','cart'),table);
+  table.append(rows);
+  const reason=node('p','','budget-detail-justification'),reasonText=node('span');
+  reasonText.append(node('strong','Justificación. '),document.createTextNode(request.reason||'—'));
+  reason.append(confirmationIcon('note'),reasonText);
+  products.append(confirmationHeading('Productos y servicios','cart'),table,reason);
   const cost=node('section','','confirmation-section confirmation-finance'),columns=node('div','','confirmation-totals');
   const original=node('div','','confirmation-original'),equivalent=node('div','','confirmation-equivalent');
   const totals=requestTotals(request),rate=Number(details.exchange_rate),converted=equivalents(totals,rate);
