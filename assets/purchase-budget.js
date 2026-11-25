@@ -43,8 +43,7 @@
   $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
-   filter='all';
-   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests});
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests,selected:filter,selectFilter:key=>setFilter(filter===key?'all':key)});
    return;
   }
 
@@ -61,12 +60,13 @@
  function renderList() {
   const chief=isChiefBudgetView();
   const query=chief?'':normalize($('budget-search').value);
-  const visible=requests.filter(r=>(chief||filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
+  const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
   if(chief){
+   document.querySelector('.list-heading h2').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'?'Por aprobar':statuses[filter].label);
    target.append(...visible.slice(0,limit).map(renderRequest));
-   if(!visible.length)target.append(node('p','No hay solicitudes registradas.','empty'));
+   if(!visible.length)target.append(node('p',filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
    return;
   }

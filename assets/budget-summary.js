@@ -14,14 +14,14 @@
  };
  const icon=name=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths[name]+'</svg>';
  const make=(tag,text='',className='')=>Object.assign(document.createElement(tag),{textContent:text,className});
- function renderSummary({container,requests}){
+ function renderSummary({container,requests,selected,selectFilter}){
   const panel=make('section','','area-chief-panel');
   panel.setAttribute('aria-label','Resumen de solicitudes de presupuesto');
   panel.innerHTML='<div class="area-chief-metrics"></div>';
   container.replaceChildren(panel);
   const metrics=panel.querySelector('.area-chief-metrics');
   const values=stages.map(([key,label,color,symbol])=>{
-   const card=make('div','','area-chief-metric');card.style.setProperty('--area-accent',color);
+   const card=make('button','','area-chief-metric');card.type='button';card.setAttribute('aria-pressed',String(selected===key));card.title=selected===key?'Mostrar todas las solicitudes':'Mostrar '+label.toLowerCase();card.onclick=()=>selectFilter(key);card.style.setProperty('--area-accent',color);
    card.innerHTML=icon(symbol)+'<div><span>'+label+'</span><strong>—</strong></div>';metrics.append(card);
    return card.querySelector('strong');
   });
