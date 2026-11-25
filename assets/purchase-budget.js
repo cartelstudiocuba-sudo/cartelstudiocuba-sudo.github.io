@@ -43,7 +43,7 @@
   $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
-   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests,selected:filter,selectFilter:key=>setFilter(filter===key?'all':key)});
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests,totals:requestTotals,selected:filter,selectFilter:key=>setFilter(filter===key?'all':key)});
    return;
   }
 
@@ -59,14 +59,21 @@
  function setFilter(next){filter=next;limit=25;updateStats();renderList();}
  function renderList() {
   const chief=isChiefBudgetView();
-  const query=chief?'':normalize($('budget-search').value);
+  const query=normalize($('budget-search').value);
   const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
+  if(chief){
+   const order=$('budget-sort').value;
+   const newest=(a,b)=>new Date(b.created_at)-new Date(a.created_at);
+   if(order==='oldest')visible.sort((a,b)=>-newest(a,b));
+   else if(order==='urgent')visible.sort((a,b)=>(b.priority==='Urgente')-(a.priority==='Urgente')||newest(a,b));
+   else visible.sort(newest);
+  }
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
   if(chief){
    document.querySelector('.list-heading h2').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'?'Por aprobar':statuses[filter].label);
    target.append(...visible.slice(0,limit).map(renderRequest));
-   if(!visible.length)target.append(node('p',filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
+   if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
    return;
   }
@@ -121,14 +128,20 @@
    const reviewDate=node('time','','budget-review-date');reviewDate.dateTime=request.created_at;
    const calendar=node('span','','budget-review-calendar');calendar.setAttribute('aria-hidden','true');calendar.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-14 4h2m3 0h2m3 0h2"/></svg>';
    reviewDate.append(calendar,document.createTextNode(new Date(request.created_at).toLocaleDateString('es-CU')));
-   meta.append(person,reviewDate);reviewCopy.append(node('strong',request.product||request.kind||'Solicitud de presupuesto','budget-review-title'),meta);
+   meta.append(person,reviewDate);
+   const age=Math.floor(Math.max(0,Date.now()-new Date(request.created_at).getTime())/86400000);
+   const tags=node('span','','budget-review-tags');
+   if(request.priority==='Urgente')tags.append(node('span','Urgente','budget-urgent-tag'));
+   if(Number.isFinite(age))tags.append(node('span',age===0?'Hoy':age===1?'Hace 1 día':'Hace '+age+' días','budget-age-tag'));
+   reviewCopy.append(node('strong',request.product||request.kind||'Solicitud de presupuesto','budget-review-title'),meta,tags);
+
    const reviewStatus=node('span',badge.textContent,'budget-review-state');reviewStatus.style.setProperty('--state',state.color);reviewStatus.dataset.status=request.status;
    const reviewActions=node('span','','budget-review-actions');
    const action=node('span','Ver solicitud','budget-review-action');action.append(node('span','›','budget-review-chevron'));
    reviewActions.append(reviewStatus,action);header.append(reviewIcon,reviewCopy,reviewActions);
   }else header.append(category,requester,date,priority,badge,amounts);
   card.append(header);
-  const body=node('div','','request-body');labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
+  const body=node('div','','request-body');if(isChiefBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));labeled(body,'Solicitante',request.requester_name);labeled(body,'Área',request.area);labeled(body,'Fecha',new Date(request.created_at).toLocaleDateString('es-CU'));labeled(body,'Estado',state.detail);labeled(body,'Prioridad',request.priority);labeled(body,'Justificación',request.reason);
   if(request.items) itemSummary(body,request.items);
   else labeled(body,'Cantidad',String(request.quantity));
   const details=request.details||{};
@@ -333,7 +346,7 @@
   finally{$('budget-send').disabled=false;}
  });};
  $('budget-detail-close').onclick=()=>{if(!busy)detailDialog.close();};detailDialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
- $('budget-search').oninput=()=>{limit=25;renderList();};$('budget-refresh').onclick=()=>run(load);$('budget-more').onclick=()=>{limit+=25;renderList();};
+ $('budget-search').oninput=()=>{limit=25;renderList();};$('budget-sort').onchange=()=>{limit=25;renderList();};$('budget-refresh').onclick=()=>run(load);$('budget-more').onclick=()=>{limit+=25;renderList();};
  run(async()=>{
   const result=await client.auth.getUser();user=result.data.user;if(!user){location.href='/';return;}
   caps=await rpc('purchase_budget_capabilities');
