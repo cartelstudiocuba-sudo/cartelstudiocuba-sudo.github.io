@@ -151,6 +151,8 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 /* Independent detail blocks, scoped to the review dialog. */
 .budget-detail-dialog .request-body{gap:13px}
 .budget-detail-dialog .budget-timeline{margin-bottom:0}
+.budget-detail-dialog .confirmation-section:not(.confirmation-finance){border-color:#4f6070;background:linear-gradient(145deg,#293b4a,#18252f)}
+.budget-detail-dialog .budget-detail-info .confirmation-field{border-color:#4f6070;background:linear-gradient(145deg,#ffffff09,#101c2526)}
 .budget-detail-dialog .budget-detail-wide{grid-column:1/-1}
 .budget-detail-dialog .confirmation-field{align-items:flex-start}
 .budget-detail-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px}
