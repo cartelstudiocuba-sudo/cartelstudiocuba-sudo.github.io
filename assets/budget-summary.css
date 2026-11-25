@@ -1,4 +1,4 @@
-.area-chief-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:stretch}
+.area-chief-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-content:stretch;margin-bottom:17px}
 .area-chief-metric{display:flex;min-width:0;align-items:center;gap:13px;padding:16px;border:1px solid #506274;border-radius:15px;background:radial-gradient(ellipse at 110% 140%,var(--area-accent),transparent 53%),linear-gradient(145deg,#263746,#172430);box-shadow:inset 0 1px #ffffff18,0 5px 12px #0003}
 .area-chief-metric svg{width:34px;height:34px;flex:none;color:var(--area-accent)}
 .area-chief-metric span{display:block;font-size:14px;line-height:1.24;overflow-wrap:anywhere}
@@ -17,7 +17,7 @@
 .budget-chief-view .budget>.hero .hero-icon,.budget-chief-view .budget>.hero small{display:none}
 .area-chief-metric{color:#f3f4f5;text-align:left;font-weight:400}
 .area-chief-metric[aria-pressed=true]{border-color:var(--area-accent)}
-@media(max-width:540px){.budget-chief-view .budget>.hero{flex-wrap:wrap}.area-chief-columns{grid-template-columns:1fr}.area-chief-metric{padding:11px;gap:9px}.area-chief-metric svg{width:25px;height:25px}.area-chief-graph{padding:10px}.area-chief-ring{width:104px}}
+@media(max-width:540px){.budget-chief-view .budget>.hero{flex-wrap:wrap}.area-chief-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.area-chief-metric{padding:11px;gap:9px}.area-chief-metric svg{width:25px;height:25px}.area-chief-graph{padding:10px}.area-chief-ring{width:104px}}
 
 /* The single request list uses the former pending-review card design for area chiefs. */
 .request.budget-review-card{border-color:#4c5c6a;border-radius:12px;background:linear-gradient(135deg,#344656,#223342)}
@@ -32,5 +32,13 @@
 .budget-review-state{grid-column:1;justify-self:start;border-radius:20px;padding:5px 10px;background:color-mix(in srgb,var(--state) 28%,#263746);color:var(--state);font-size:12px}
 .budget-review-action{grid-column:2;justify-self:end;border:1px solid #ffe56c;border-radius:9px;background:linear-gradient(#ffe75d,#ffda03);color:#171910;padding:10px 13px;font-size:12px;font-weight:750;white-space:normal;text-align:center}
 .request.budget-review-card button.request-visual-row:hover{background:#ffffff0b}
-@media(min-width:1201px){.request.budget-review-card button.request-visual-row{grid-template-columns:minmax(0,1.7fr) minmax(0,1.1fr) auto auto auto}.budget-review-title,.budget-review-person,.budget-review-date,.budget-review-state,.budget-review-action{grid-column:auto}}
+@container budget-requests (min-width:650px){.request.budget-review-card button.request-visual-row{grid-template-columns:minmax(0,1.7fr) minmax(0,1.1fr) auto auto auto}.budget-review-title,.budget-review-person,.budget-review-date,.budget-review-state,.budget-review-action{grid-column:auto}}
 @media(max-width:420px){.request.budget-review-card button.request-visual-row{padding:12px;gap:9px}.budget-review-title strong{font-size:14px}}
+
+.budget-chief-view .budget-list-layout{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(200px,1fr);gap:12px;align-items:start}
+.budget-chief-view .budget-list-content{min-width:0;padding:12px;border:1px solid #415366;border-radius:16px;background:linear-gradient(150deg,#1c2c3a,#101c27);container:budget-requests / inline-size}
+.budget-chief-view .budget-list-content .toolbar{margin:0 0 12px}
+.budget-chief-view #budget-chief-graph{min-height:240px}
+.budget-chief-view .area-chief-graph{padding:20px 12px}
+.budget-chief-view .area-chief-ring{width:min(100%,190px)}
+@media(max-width:680px){.area-chief-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.budget-chief-view .budget-list-layout{grid-template-columns:1fr}.budget-chief-view #budget-chief-graph{grid-row:1;min-height:0}.budget-chief-view .area-chief-ring{width:120px}.budget-chief-view .area-chief-graph{padding:12px}}

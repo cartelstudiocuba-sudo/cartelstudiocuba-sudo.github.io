@@ -39,11 +39,11 @@
  function updateStats() {
   const stats=$('budget-stats'),filters=$('budget-filters');stats.replaceChildren();filters.replaceChildren();
   const chief=!!(caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner;
-  $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
+  $('budget-chief-summary').hidden=!chief;$('budget-chief-graph').hidden=!chief;stats.hidden=chief;
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
    const team=requests.filter(r=>r.requester!==user.id&&((r.area==='Audiovisual'&&caps.audiovisual)||(r.area==='Gráfica'&&caps.graphics)));
-   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),requests:team,selectFilter:setFilter,selected:filter});
+   window.CartelBudgetSummary.renderSummary({container:$('budget-chief-summary'),graphContainer:$('budget-chief-graph'),requests:team,selectFilter:setFilter,selected:filter});
   }
 
   const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);
