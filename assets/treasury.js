@@ -19,6 +19,11 @@
  const icons={fixed:'▤',investment:'↗',supplies:'◇',stimulus:'★',profit:'$',surplus:'＋',workers:'♙'};
  async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
  async function run(fn){if(busy)return;busy=true;$('treasury-save').disabled=true;try{await fn();}catch(e){$( $('treasury-dialog').open?'treasury-error':'treasury-message').textContent=e.message||'No se pudo completar';}finally{busy=false;$('treasury-save').disabled=false;}}
+ function fundGlyph(code){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+ const paths={fixed:'M3 6c0-2 4-3 9-3s9 1 9 3-4 3-9 3-9-1-9-3Zm0 0v5c0 2 4 3 9 3s9-1 9-3V6M3 11v5c0 2 4 3 9 3s9-1 9-3v-5',investment:'M4 20v-6m5 6V9m5 11V5m5 15V2',profit:'m3 17 6-6 4 4 8-10m-6 0h6v6',stimulus:'M3 10h18v11H3zM2 6h20v4H2zM12 6v15M12 6C6 6 5 2 8 2c2 0 4 4 4 4Zm0 0c6 0 7-4 4-4-2 0-4 4-4 4Z',supplies:'m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 10v10M3 7l9 5 9-5',surplus:'m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5',workers:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-3a8 8 0 0 1 16 0v3'};
+ const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',paths[code]||paths.fixed);svg.append(path);return svg;
+ }
  function render(){
  const cards=$('treasury-funds');cards.replaceChildren();
  const funds=state.funds.filter(f=>Boolean(f.worker)===workers);
@@ -27,19 +32,17 @@
  const b=el('button','','treasury-card');b.type='button';
  b.style.setProperty('--fund-color',negative?'#ff727d':colors[f.code]);
  b.setAttribute('aria-pressed',String(selected===f.code));
- const title=el('div','','treasury-card-title');
- title.append(el('span',icons[f.code]),el('strong',f.label));
- const amounts=el('div','','treasury-card-amounts');
- for(const c of ['CUP','USD']){
- const value=el('div','','fund-currency');
- value.append(el('small',c+' (saldo)'),el('strong',numberAmount(f[c]),Number(f[c])<0?'negative':''));
- amounts.append(value);
- }
- const body=el('div','','fund-card-body');body.append(amounts);
- if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','fund-debt'));
- const footer=el('div','','fund-equivalent');
- footer.append(el('span','Equivalente total'),el('strong',rate>0?money(usd+cup/rate,'USD'):'—'),el('small',rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible'));
- b.append(title,body,footer);
+ const icon=el('span','','compact-fund-icon');
+ icon.append(fundGlyph(f.code));icon.setAttribute('aria-hidden','true');
+ const body=el('div','','compact-fund-body');body.append(el('strong',f.label,'compact-fund-title'));
+ for(const c of ['CUP','USD'])body.append(el('span',money(f[c],c),Number(f[c])<0?'negative':''));
+ if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','compact-fund-debt'));
+ const converted=rate>0?usd+cup/rate:null;
+ const equivalent=el('div','','compact-fund-equivalent');
+ equivalent.append(el('small','Equiv. USD'),el('strong',converted===null?'—':numberAmount(converted),converted!==null&&converted<0?'negative':''));
+ equivalent.title=rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible';
+ const arrow=el('span','›','compact-fund-arrow');arrow.setAttribute('aria-hidden','true');
+ b.append(icon,body,equivalent,arrow);
  b.onclick=()=>run(async()=>{selected=f.code;resetHistoryFilters();render();$('treasury-detail').showModal();await history();});
  cards.append(b);
  }

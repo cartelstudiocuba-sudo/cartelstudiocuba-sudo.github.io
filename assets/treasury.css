@@ -99,3 +99,20 @@
 #treasury-activity .history-amount{color:color-mix(in srgb,var(--movement-color) 78%,#e1e6eb)}
 #treasury-activity .activity-status{color:#aebdc1}
 @media(max-width:640px){.treasury-summary{grid-template-columns:1fr}.summary-secondary{border-left:0;border-top:1px solid #ffffff16;padding:6px 14px}.summary-primary{padding:16px}.summary-value strong{font-size:16px}}
+
+/* Compact wallet-style fund access. */
+.treasury-grid{gap:11px}
+.treasury-card{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(0,.72fr) 12px;gap:10px;align-items:center;min-height:100px;padding:12px;border:1px solid #414d58;border-radius:13px;background:linear-gradient(145deg,#28313a,#1c252e);box-shadow:inset 0 1px #ffffff0a,0 3px 9px #0002}
+.compact-fund-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:11px;background:linear-gradient(145deg,color-mix(in srgb,var(--fund-color) 24%,#273039),color-mix(in srgb,var(--fund-color) 9%,#1b242c));color:var(--fund-color);box-shadow:inset 0 1px #ffffff14,0 3px 8px #0002}
+.compact-fund-icon svg{width:25px;height:25px}
+.compact-fund-body{display:grid;gap:3px;min-width:0;align-content:center;font-size:12px;font-weight:550;color:#d7dfe7;font-variant-numeric:tabular-nums}
+.compact-fund-body>span{overflow-wrap:anywhere}
+.compact-fund-title{font-size:15px;font-weight:750;color:#f4f7fa;line-height:1.2;overflow-wrap:anywhere}
+.compact-fund-debt{font-size:10px!important;color:#ffb1b7!important;font-weight:500}
+.compact-fund-equivalent{border-left:1px solid #ffffff22;padding-left:10px;min-width:0;display:grid;gap:4px;align-content:center}
+.compact-fund-equivalent small{font-size:11px;color:#c5ced7;font-weight:500}
+.compact-fund-equivalent strong{color:#ffda03;font-size:clamp(16px,1.8vw,24px);line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.compact-fund-equivalent .negative{color:#ff9292}
+.compact-fund-arrow{font-size:24px;color:#d3dbe4;line-height:1}
+@media(max-width:1050px){.treasury-card{grid-template-columns:35px minmax(0,1fr) minmax(0,.74fr) 9px;gap:7px;padding:10px}.compact-fund-icon{width:35px;height:35px}.compact-fund-icon svg{width:22px;height:22px}.compact-fund-equivalent{padding-left:7px}}
+@media(max-width:620px){.treasury-grid{grid-template-columns:1fr}.treasury-card{grid-template-columns:44px minmax(0,1fr) minmax(0,.7fr) 12px;gap:10px;min-height:88px;padding:10px 13px}.compact-fund-icon{width:44px;height:44px}.compact-fund-equivalent strong{font-size:20px}}
