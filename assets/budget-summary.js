@@ -25,32 +25,6 @@
   for(const currency of currencies){const item=make('div');item.append(make('span',currency),make('strong',currencyFormat(sum[currency],currency)));amounts.append(item);}
   card.append(amounts);return card;
  }
- function categoryChart(rows,totals){
-  const section=make('section','','budget-category-panel');
-  section.append(make('h3','Gastos pendientes por categoría'));
-  const groups=new Map();
-  for(const request of rows){
-   const category=request.kind||request.product||'Otros gastos';
-   if(!groups.has(category))groups.set(category,[]);
-   groups.get(category).push(request);
-  }
-  const data=[...groups].map(([name,items])=>({name,amounts:sumAmounts(items,totals)}));
-  if(!data.length){section.append(make('p','No hay importes pendientes.','budget-summary-empty'));return section;}
-  const totalsByCurrency=sumAmounts(rows,totals);
-  const columns=make('div','','budget-category-columns');
-  for(const currency of currencies){
-   const column=make('div','','budget-category-currency');
-   column.append(make('strong',currency));
-   if(!totalsByCurrency[currency]){column.append(make('p','Sin importes','budget-summary-empty'));columns.append(column);continue;}
-   for(const item of data.filter(item=>item.amounts[currency]>0).sort((a,b)=>b.amounts[currency]-a.amounts[currency])){
-    const line=make('div','','budget-category-line'),caption=make('div','','budget-category-caption');
-    caption.append(make('span',item.name),make('strong',currencyFormat(item.amounts[currency],currency)));
-    const track=make('div','','budget-category-track'),bar=make('span');bar.style.width=(item.amounts[currency]/totalsByCurrency[currency]*100)+'%';track.append(bar);line.append(caption,track);column.append(line);
-   }
-   columns.append(column);
-  }
-  section.append(columns);return section;
- }
  function dateLabel(value){const d=new Date(value);return value&&Number.isFinite(d.getTime())?d.toLocaleString('es-CU',{dateStyle:'short',timeStyle:'short'}):'';}
  function renderTimeline(request){
   const block=make('section','','budget-timeline');block.append(make('h3','Seguimiento de la solicitud'));
@@ -88,7 +62,7 @@
   stages.forEach(([key],index)=>{values[index].textContent=counts[key];});
   const pending=requests.filter(pendingStatus),approved=requests.filter(r=>r.status==='approved');
   const finance=make('div','','budget-finance-grid');finance.append(financeCard('Importes pendientes',pending,totals,'pending'),financeCard('Importes aprobados',approved,totals,'approved'));
-  panel.append(finance,categoryChart(pending,totals));
+  panel.append(finance);
   const dates=requests.flatMap(r=>[r.created_at,r.chief_at,r.manager_at]).filter(Boolean).map(d=>new Date(d).getTime()).filter(Number.isFinite);
   if(dates.length){const activity=make('p','Última actividad · '+dateLabel(new Date(dates.reduce((a,b)=>Math.max(a,b),0))),'budget-last-activity');panel.append(activity);}
 

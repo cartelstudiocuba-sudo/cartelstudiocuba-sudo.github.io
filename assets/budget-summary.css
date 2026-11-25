@@ -20,14 +20,14 @@
 .budget-review-person,.budget-review-date{display:inline-flex;gap:6px;align-items:center;min-width:0;overflow-wrap:anywhere}
 .budget-review-meta svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7}
 .budget-review-calendar{display:flex}
-.budget-review-actions{display:grid;gap:8px;justify-items:end}
-.budget-review-state{border:1px solid color-mix(in srgb,var(--state) 55%,#3b5368);border-radius:20px;padding:5px 10px;background:color-mix(in srgb,var(--state) 17%,#223c52);color:var(--state);font-size:12px;white-space:nowrap}
+.budget-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-items:stretch}
+.budget-review-state{border:1px solid color-mix(in srgb,var(--state) 55%,#3b5368);border-radius:9px;padding:5px 8px;background:color-mix(in srgb,var(--state) 17%,#223c52);color:var(--state);font-size:12px;white-space:nowrap;display:flex;align-items:center;justify-content:center;min-height:30px;line-height:1.2;text-align:center}
 .budget-review-state[data-status=chief_pending]{--state:#70b8ff!important}
-.budget-review-action{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #ffe56c;border-radius:9px;background:linear-gradient(#ffe75d,#ffda03);color:#171910;padding:9px 13px;font-size:13px;font-weight:750;white-space:nowrap}
-.budget-review-chevron{font-size:22px;line-height:1}
+.budget-review-action{display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid #ffe56c;border-radius:9px;background:linear-gradient(#ffe75d,#ffda03);color:#171910;padding:5px 8px;font-size:12px;font-weight:750;white-space:nowrap;min-height:30px;line-height:1.2}
+.budget-review-chevron{font-size:16px;line-height:1}
 .request.budget-review-card button.request-visual-row:hover{background:#ffffff0b}
 @media(max-width:680px){.area-chief-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.area-chief-metric{padding:11px;gap:9px}.area-chief-metric svg{width:25px;height:25px}}
-@media(max-width:520px){.request.budget-review-card button.request-visual-row{grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px}.budget-review-icon{width:43px;height:43px}.budget-review-copy{padding-left:10px}.budget-review-actions{grid-column:2;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.budget-review-action{padding:8px 9px;font-size:12px}}
+@media(max-width:520px){.request.budget-review-card button.request-visual-row{grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px}.budget-review-icon{width:43px;height:43px}.budget-review-copy{padding-left:10px}.budget-review-actions{grid-column:1/-1;justify-self:end;max-width:100%}.budget-review-action,.budget-review-state{white-space:normal}}
 
 .area-chief-metric{cursor:pointer}
 .area-chief-metric:hover{border-color:var(--area-accent)}
@@ -37,23 +37,15 @@
 .budget-chief-view .budget-search-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.38fr);gap:10px;margin:14px 0 0}
 .budget-chief-view #budget-sort{display:block;margin:0;min-width:0}
 .budget-finance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 13px}
-.budget-finance-card,.budget-category-panel{min-width:0;border:1px solid #465d70;border-radius:14px;padding:15px;background:linear-gradient(145deg,#273b4b,#162632);box-shadow:inset 0 1px #ffffff15}
+.budget-finance-card{min-width:0;border:1px solid #465d70;border-radius:14px;padding:15px;background:linear-gradient(145deg,#273b4b,#162632);box-shadow:inset 0 1px #ffffff15}
 .budget-finance-card.pending{border-color:#918044;background:radial-gradient(ellipse at 100% 100%,#ffda0320,transparent 65%),linear-gradient(145deg,#30392e,#182632)}
 .budget-finance-card.approved{border-color:#3e8d6e;background:radial-gradient(ellipse at 100% 100%,#54df8b20,transparent 65%),linear-gradient(145deg,#223d36,#142b30)}
-.budget-finance-card h3,.budget-category-panel h3{font-size:16px;margin:0 0 13px}
+.budget-finance-card h3{font-size:16px;margin:0 0 13px}
 .budget-finance-amounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .budget-finance-amounts>div+div{border-left:1px solid #6b7c874d;padding-left:12px}
 .budget-finance-amounts span{display:block;font-size:12px;color:#cbd6df}
 .budget-finance-amounts strong{display:block;font-size:clamp(15px,2.2vw,25px);overflow-wrap:anywhere;line-height:1.35}
-.budget-category-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.budget-category-currency>strong{color:#d6e1eb;font-size:13px}
-.budget-category-line{margin:10px 0}
-.budget-category-caption{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
-.budget-category-caption span{overflow-wrap:anywhere;min-width:0}
-.budget-category-caption strong{white-space:nowrap}
-.budget-category-track{height:7px;overflow:hidden;background:#0b1822;border-radius:5px;margin-top:5px}
-.budget-category-track span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#ffda03,#ffe565)}
-.budget-summary-empty,.budget-last-activity{font-size:12px;color:#b5c4d1;margin:8px 0}
+.budget-last-activity{font-size:12px;color:#b5c4d1;margin:8px 0}
 .budget-last-activity{text-align:right}
 .budget-review-tags{display:flex;gap:8px;flex-wrap:wrap}
 .budget-urgent-tag,.budget-age-tag{border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700}
@@ -71,4 +63,4 @@
 .budget-timeline-step[data-state=rejected] .budget-timeline-marker{border-color:#ff707d;color:#ff707d}
 .budget-timeline-step strong,.budget-timeline-step span:not(.budget-timeline-marker),.budget-timeline-step small{display:block;overflow-wrap:anywhere;font-size:12px;line-height:1.4}
 .budget-timeline-step small{font-size:10px;color:#aebbc7}
-@media(max-width:520px){.budget-finance-grid,.budget-category-columns{grid-template-columns:1fr}.budget-chief-view .budget-search-row{grid-template-columns:1fr}.budget-timeline-steps{grid-template-columns:1fr;gap:12px}.budget-timeline-step{grid-template-columns:auto 1fr;text-align:left;justify-items:start}.budget-timeline-step:not(:last-child)::after{width:2px;height:calc(100% + 12px);left:12px;top:14px}.budget-last-activity{text-align:left}}
+@media(max-width:520px){.budget-finance-grid{grid-template-columns:1fr}.budget-chief-view .budget-search-row{grid-template-columns:1fr}.budget-timeline-steps{grid-template-columns:1fr;gap:12px}.budget-timeline-step{grid-template-columns:auto 1fr;text-align:left;justify-items:start}.budget-timeline-step:not(:last-child)::after{width:2px;height:calc(100% + 12px);left:12px;top:14px}.budget-last-activity{text-align:left}}
