@@ -285,8 +285,9 @@ async function configurePersonalNavigation(){
    const {data:budget,error:budgetError}=await client.rpc('purchase_budget_capabilities');
    if(!budgetError&&budget&&Object.values(budget).some(Boolean)){
     window.cartelBudgetNoticeContext={userId:user.id,caps:budget};
-    if(!grouped.has('Inventario'))grouped.set('Inventario',[]);
-    grouped.get('Inventario').push({group:'Inventario',title:'Solicitud de presupuesto',url:'/inventario-presupuesto.html',icon:'◇'});
+    const budgetGroup=budget.manager?'Finanzas':'Inventario';
+    if(!grouped.has(budgetGroup))grouped.set(budgetGroup,[]);
+    grouped.get(budgetGroup).unshift({group:budgetGroup,title:'Solicitud de presupuesto',url:'/inventario-presupuesto.html',icon:'◇'});
    }
   }catch(e){console.warn('Solicitudes de presupuesto no disponibles',e);}
   if(data.fridge_audiovisual===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}

@@ -36,10 +36,18 @@
  function moneyText(totals) {
   return ['CUP','USD'].filter(currency=>Number(totals[currency])>0).map(currency=>format(totals[currency],currency)).join(' · ');
  }
+ function isManagerBudgetView(){return !!caps.manager;}
  function isChiefBudgetView(){return !!(caps.audiovisual||caps.graphics)&&!caps.manager&&!caps.owner;}
  function updateStats() {
   const stats=$('budget-stats'),filters=$('budget-filters');stats.replaceChildren();filters.replaceChildren();
-  const chief=isChiefBudgetView();
+  const chief=isChiefBudgetView(),manager=isManagerBudgetView();
+  $('budget-manager-summary').hidden=!manager;
+  document.documentElement.classList.toggle('budget-manager-view',manager);
+  if(manager){
+   stats.hidden=true;$('budget-chief-summary').hidden=true;
+   window.CartelBudgetManager.render({container:$('budget-manager-summary'),requests,totals:requestTotals,selected:filter,selectFilter:key=>setFilter(filter===key?'all':key),onChange:()=>{limit=25;updateStats();renderList();}});
+   return;
+  }
   $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
   document.documentElement.classList.toggle('budget-chief-view',chief);
   if(chief){
@@ -58,20 +66,20 @@
  }
  function setFilter(next){filter=next;limit=25;updateStats();renderList();}
  function renderList() {
-  const chief=isChiefBudgetView();
+  const chief=isChiefBudgetView(),manager=isManagerBudgetView();
   const query=normalize($('budget-search').value);
-  const visible=requests.filter(r=>(filter==='all'||r.status===filter)&&normalize([r.product,r.area,r.requester_name,requesterRole(r),r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
-  if(chief){
+  const visible=(manager?window.CartelBudgetManager.filtered(requests):requests).filter(r=>(filter==='all'||r.status===filter||(filter==='pending'&&['chief_pending','manager_pending'].includes(r.status)))&&normalize([r.product,r.area,r.requester_name,requesterRole(r),r.reason,moneyText(requestTotals(r)),...(r.items||[]).map(item=>item.name)].join(' ')).includes(query));
+  if(chief||manager){
    const order=$('budget-sort').value;
    const newest=(a,b)=>new Date(b.created_at)-new Date(a.created_at);
    if(order==='oldest')visible.sort((a,b)=>-newest(a,b));
-   else if(order==='urgent')visible.sort((a,b)=>(b.priority==='Urgente')-(a.priority==='Urgente')||newest(a,b));
+   else if(order==='urgent')visible.sort((a,b)=>(['Urgente','Crítica'].includes(b.priority))-(['Urgente','Crítica'].includes(a.priority))||newest(a,b));
    else visible.sort(newest);
   }
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
-  if(chief){
-   document.querySelector('.list-heading h2').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'?'Por aprobar':statuses[filter].label);
+  if(chief||manager){
+   document.querySelector('.list-heading h2').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'||filter==='pending'?'Por aprobar':statuses[filter].label);
    target.append(...visible.slice(0,limit).map(renderRequest));
    if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
@@ -176,10 +184,16 @@
    const reviewActions=node('span','','budget-review-actions');
    const action=node('span','Ver solicitud','budget-review-action');action.append(node('span','›','budget-review-chevron'));
    reviewActions.append(reviewStatus,action);header.append(reviewIcon,reviewCopy,reviewActions);
-  }else header.append(category,requester,date,priority,badge,amounts);
+  }else {
+   if(isManagerBudgetView()){
+    requester.append(node('small',requesterRole(request),'request-meta'));
+    if(request.status==='manager_pending')badge.textContent='Por aprobar';
+    header.append(category,requester,date,priority,badge,amounts,node('span','Ver solicitud','budget-manager-action'));
+   }else header.append(category,requester,date,priority,badge,amounts);
+  }
   card.append(header);
   const body=node('div','','request-body');
-  if(isChiefBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));
+  if(isChiefBudgetView()||isManagerBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));
   detailSections(body,request,state);
   const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
   const manager=request.status==='manager_pending'&&caps.manager&&request.chief_by!==user.id;
@@ -389,7 +403,8 @@
   const result=await client.auth.getUser();user=result.data.user;if(!user){location.href='/';return;}
   caps=await rpc('purchase_budget_capabilities');
   if(!Object.values(caps).some(Boolean)){report('Tu rol no tiene acceso a las solicitudes de presupuesto.');return;}
-  if(isChiefBudgetView())$('budget-count').after($('budget-refresh'));
+  if(isChiefBudgetView()||isManagerBudgetView())$('budget-count').after($('budget-refresh'));
+  if(isManagerBudgetView())document.querySelector('.budget>.hero small').textContent='EL CARTEL STUDIO · FINANZAS';
   $('budget-new').hidden=!canSubmit();$('budget-list').hidden=false;await load();
   const requestedId=new URLSearchParams(location.search).get('request');
   const requested=requests.find(request=>request.id===requestedId);

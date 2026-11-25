@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Solicitudes de presupuesto · El Cartel Studio</title>
-<link rel="stylesheet" href="/assets/purchase-budget.css?v=14-justification-note">
+<link rel="stylesheet" href="/assets/purchase-budget.css?v=15-manager">
 <script defer src="/assets/vendor/supabase-2.117.3.min.js"></script>
 <script defer src="/assets/loading-runtime.js"></script>
 <script defer src="/assets/exchange-rates.js?v=1-official-api"></script>
 <link rel="stylesheet" href="/assets/budget-summary.css?v=12-requester-role">
 <script defer src="/assets/budget-summary.js?v=7-no-category"></script>
-<script defer src="/assets/purchase-budget.js?v=24-investment"></script>
+<script defer src="/assets/budget-manager.js?v=1"></script>
+<script defer src="/assets/purchase-budget.js?v=25-manager"></script>
 <link rel="stylesheet" href="/assets/inventory-portrait.css?v=1"><script defer src="/assets/inventory-portrait.js?v=1"></script></head>
 <body>
 <main class="budget">
@@ -18,6 +19,7 @@
 <p id="budget-message" role="status" aria-live="polite"></p>
 <section id="budget-list" hidden>
 <div id="budget-chief-summary" hidden></div>
+<div id="budget-manager-summary" hidden></div>
 <div id="budget-stats" class="stats" aria-label="Estados de solicitudes"></div>
 <div class="budget-list-layout"><div class="budget-list-content">
 <div class="toolbar"><nav id="budget-filters" class="filters" aria-label="Filtrar solicitudes"></nav><button id="budget-refresh" class="secondary">↻ Actualizar</button></div>
