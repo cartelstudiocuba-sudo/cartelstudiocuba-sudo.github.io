@@ -340,12 +340,12 @@ async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
  try{
   onStage('Comprobando limpieza automática del fondo…');
   const headers=await inventoryPhotoAuthHeaders();
-  if(!inventoryPhotoAiAvailability||Date.now()-inventoryPhotoAiAvailability.at>20000){
+  if(!inventoryPhotoJobs.has(file)&&(!inventoryPhotoAiAvailability||Date.now()-inventoryPhotoAiAvailability.at>20000)){
    const status=await fetch(inventoryPhotoAiEndpoint,{headers,cache:'no-store',signal:AbortSignal.timeout(15000)});
    if(!status.ok)throw Error('Servicio no disponible');
    const result=await status.json();inventoryPhotoAiAvailability={at:Date.now(),available:result.available===true};
   }
-  if(!inventoryPhotoAiAvailability.available)throw Error('Limpieza no disponible');
+  if(!inventoryPhotoJobs.has(file)&&!inventoryPhotoAiAvailability?.available)throw Error('Limpieza no disponible');
   onStage('Preparando foto para limpiar el fondo…');
   let requestId=inventoryPhotoJobs.get(file);
   if(!requestId){
@@ -359,7 +359,8 @@ async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
   while(Date.now()<deadline){
    if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
    const headers=await inventoryPhotoAuthHeaders();
-   const response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});
+   let response;
+   try{response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});}catch(error){if(!isCurrent())throw error;await new Promise(resolve=>setTimeout(resolve,3000));continue;}
    if(!response.ok){if(response.status===404){inventoryPhotoJobs.delete(file);throw Error('No se encontró la foto');}if(response.status===429||response.status>=500){await new Promise(resolve=>setTimeout(resolve,3000));continue;}throw Error('No se pudo consultar la foto');}
    const state=await response.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
    if(state.state==='failed'){inventoryPhotoJobs.delete(file);throw Error('No se pudo limpiar el fondo');}
