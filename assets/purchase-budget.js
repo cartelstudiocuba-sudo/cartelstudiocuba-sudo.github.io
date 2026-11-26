@@ -94,7 +94,7 @@
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
   if(chief||manager){
-   $('budget-list-title').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'||filter==='pending'?'Por aprobar':statuses[filter].label);
+   $('budget-list-title').textContent=filter==='all'?'Todas las solicitudes':(filter==='pending'?'Solicitudes pendientes':filter==='chief_pending'?'Por aprobar':statuses[filter].label);
    target.append(...visible.slice(0,limit).map(renderRequest));
    if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
@@ -230,14 +230,14 @@
     const rejected=event.submitter===confirmReject&&!reason.hidden;
     if(!approved&&!rejected)return;
     if(rejected&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}
-    run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:''});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:rejected?note.value.trim():''});detailDialog.close();if(isManagerBudgetView())filter='pending';await load();report('Decisión guardada.');});
+    run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:''});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:rejected?note.value.trim():''});detailDialog.close();if(isManagerBudgetView()||isChiefBudgetView())filter='pending';await load();report('Decisión guardada.');});
    };
    body.append(decision);
   }
   card.dataset.requestId=request.id;
   header.onclick=()=>{ resetRejection();$('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal();
    if(request.status==='manager_pending'&&caps.manager){void rpc('treasury_state').then(data=>{if(detailDialog.open&&body.isConnected){const list=body.querySelector('.treasury-budget-funding');if(list){const event=new CustomEvent('treasury-balances',{detail:data.funds});list.dispatchEvent(event);}}}).catch(e=>report(e.message));}
-   if(request.status==='approved'&&(caps.manager||caps.owner||request.requester===user.id))void rpc('treasury_budget_reservation',{p_id:request.id}).then(reservation=>{if(reservation&&detailDialog.open&&body.isConnected)body.append(window.CartelBudgetTreasury.delivery({request:{...request,canReceive:request.requester===user.id},reservation,rpc,run,refresh:async()=>{detailDialog.close();await load();report('Recibido confirmado.');}}));}).catch(e=>report(e.message));
+   if(request.status==='approved'&&(caps.manager||caps.owner||request.requester===user.id))void rpc('treasury_budget_reservation',{p_id:request.id}).then(reservation=>{if(reservation&&detailDialog.open&&body.isConnected)body.append(window.CartelBudgetTreasury.approved({request,reservation,rpc,run}));}).catch(e=>report(e.message));
   };return card;
  }
  async function load() {
@@ -436,8 +436,13 @@
   caps=await rpc('purchase_budget_capabilities');
   if(!Object.values(caps).some(Boolean)){report('Tu rol no tiene acceso a las solicitudes de presupuesto.');return;}
   if(isChiefBudgetView()||isManagerBudgetView())$('budget-count').after($('budget-refresh'));
+  if(isChiefBudgetView())filter='pending';
   if(isManagerBudgetView()){filter='pending';document.querySelector('.budget>.hero small').textContent='EL CARTEL STUDIO · FINANZAS';}
   $('budget-new').hidden=!canSubmit();$('budget-list').hidden=false;await load();
+  function refreshPending(){if(!document.hidden&&!busy&&!dialog.open&&!detailDialog.open)void run(load);}
+  window.addEventListener('focus',refreshPending);
+  document.addEventListener('visibilitychange',refreshPending);
+  setInterval(refreshPending,30000);
   const requestedId=new URLSearchParams(location.search).get('request');
   const requested=requests.find(request=>request.id===requestedId);
   if(requested){
