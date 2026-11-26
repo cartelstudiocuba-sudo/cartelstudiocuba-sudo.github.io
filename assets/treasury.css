@@ -583,3 +583,4 @@
 .audit-snapshot .history-amounts { justify-content:flex-start; text-align:left; max-width:none; --movement-color:#e2e9ef; }
 @media(max-width:460px){.history-kinds button{font-size:12px;padding:4px}.audit-snapshot .history-amounts{justify-items:start}}
 .audit-history-note { color:#b9c5ce; font-size:12px; padding:4px 2px 7px; }
+#treasury-dialog[data-move] .move-balance-equivalent { color:#bdc8d1; font-size:11px; margin-top:3px; overflow-wrap:anywhere; }

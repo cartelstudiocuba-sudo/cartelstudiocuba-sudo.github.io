@@ -77,18 +77,17 @@
  const cards=$('treasury-funds');cards.replaceChildren();
  const funds=state.funds.filter(f=>Boolean(f.worker)===workers);
  for(const f of funds){
- const cup=Number(f.CUP),usd=Number(f.USD),negative=cup<0||usd<0;
+ const cup=Number(f.CUP),usd=Number(f.USD),converted=rate>0?usd+cup/rate:null,negative=converted===null?cup<0||usd<0:converted<0;
  const b=el('button','','treasury-card');b.type='button';
  b.style.setProperty('--fund-color',negative?'#ff727d':colors[f.code]);
  b.setAttribute('aria-pressed',String(selected===f.code));
  const icon=el('span','','compact-fund-icon');
  icon.append(fundGlyph(f.code));icon.setAttribute('aria-hidden','true');
  const body=el('div','','compact-fund-body');body.append(el('strong',f.label,'compact-fund-title'));
- for(const c of ['CUP','USD'])body.append(amountCounter('span',Number(f[c]),c,Number(f[c])<0?'negative':''));
+ if(converted!==null)body.append(amountCounter('span',cup+usd*rate,'CUP',negative?'negative':''));else for(const c of ['CUP','USD'])body.append(amountCounter('span',Number(f[c]),c,Number(f[c])<0?'negative':''));
  if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','compact-fund-debt'));
- const converted=rate>0?usd+cup/rate:null;
  const equivalent=el('div','','compact-fund-equivalent');
- equivalent.append(el('small','Equiv. USD'),converted===null?el('strong','—'):counter('strong',p=>numberAmount(converted*p),converted<0?'negative':''));
+ equivalent.append(el('small','Saldo USD'),converted===null?el('strong','—'):counter('strong',p=>numberAmount(converted*p),converted<0?'negative':''));
  equivalent.title=rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible';
  const arrow=el('span','›','compact-fund-arrow');arrow.setAttribute('aria-hidden','true');
  b.append(icon,body,equivalent,arrow);
@@ -356,22 +355,28 @@
  function renderOverview(funds){
  stopMotion($('treasury-kpis'));stopMotion($('treasury-distribution'));
  const target=$('treasury-kpis');target.replaceChildren();
- const sum=(c,fn)=>funds.reduce((total,f)=>total+fn(Number(f[c]),Number(f['available_'+c]),f),0);
+ const balanceFor=(f,c,available=false)=>{
+ const prefix=available?'available_':'';
+ if(!(rate>0))return Number(f[prefix+c]);
+ const cup=Number(f[prefix+'CUP']),usd=Number(f[prefix+'USD']);
+ return c==='USD'?usd+cup/rate:cup+usd*rate;
+ };
+ const sum=(c,fn)=>funds.reduce((total,f)=>total+fn(balanceFor(f,c),balanceFor(f,c,true),f),0);
  const positive=c=>sum(c,b=>Math.max(0,b));
  const available=c=>sum(c,(_,a)=>Math.max(0,a));
  const committed=c=>sum(c,(b,a)=>Math.max(0,b-a));
  const debt=c=>sum(c,(b,_,f)=>f.code==='investment'?Math.max(0,-b):0);
  const summary=el('div','','treasury-summary');
  const primary=el('div','','summary-primary');
- primary.append(el('small',rate>0?'Saldo disponible total':'Saldo disponible en CUP'),amountCounter('strong',rate>0?available('USD')+available('CUP')/rate:available('CUP'),rate>0?'USD':'CUP'),el('span',rate>0?'Equivalente en USD · '+rateDate:'Tasa de referencia no disponible','summary-reference'));
+ primary.append(el('small',rate>0?'Saldo disponible total':'Saldo disponible en CUP'),amountCounter('strong',rate>0?available('USD'):available('CUP'),rate>0?'USD':'CUP'),el('span',rate>0?'Equivalente en USD · '+rateDate:'Tasa de referencia no disponible','summary-reference'));
  const balances=el('div','','summary-balances');balances.append(amountCounter('span',available('CUP'),'CUP'),amountCounter('span',available('USD'),'USD'));primary.append(balances);
  const secondary=el('div','','summary-secondary');
  for(const [label,color,fn] of [['Saldo total de fondos positivos','#d5dfe8',positive],['Comprometido','#65c9ff',committed],['Capital pendiente del CEO','#ff9292',debt]]){
  const row=el('div','','summary-line'),info=el('div'),value=el('div','','summary-value'),cup=fn('CUP'),usd=fn('USD');
- info.append(el('small',label));value.append(amountCounter('strong',rate>0?usd+cup/rate:cup,rate>0?'USD':'CUP'),counter('small',p=>money(cup*p,'CUP')+' · '+money(usd*p,'USD')));value.style.color=color;row.append(info,value);secondary.append(row);}
+ info.append(el('small',label));value.append(amountCounter('strong',rate>0?usd:cup,rate>0?'USD':'CUP'),counter('small',p=>money(cup*p,'CUP')+' · '+money(usd*p,'USD')));value.style.color=color;row.append(info,value);secondary.append(row);}
  summary.append(primary,secondary);target.append(summary);
  const c=chartCurrency.value,distribution=$('treasury-distribution');distribution.replaceChildren();
- const total=sum(c,b=>Math.max(0,b));for(const f of funds){const amount=Math.max(0,Number(f[c])),pct=total?amount/total*100:0;const row=el('div','','distribution-row'),track=el('div','','distribution-track'),bar=el('span');bar.style.width=pct+'%';bar.style.background=colors[f.code];track.append(bar);row.append(el('span',f.label),counter('strong',p=>(pct*p).toFixed(1)+'% · '+money(amount*p,c)),track);distribution.append(row);}
+ const total=sum(c,b=>Math.max(0,b));for(const f of funds){const amount=Math.max(0,balanceFor(f,c)),pct=total?amount/total*100:0;const row=el('div','','distribution-row'),track=el('div','','distribution-track'),bar=el('span');bar.style.width=pct+'%';bar.style.background=colors[f.code];track.append(bar);row.append(el('span',f.label),counter('strong',p=>(pct*p).toFixed(1)+'% · '+money(amount*p,c)),track);distribution.append(row);}
  distribution.append(el('p','Saldos positivos por fondo · '+c,'chart-caption'));
  }
  let monthly=[],flowMonth=null,flowRequest=0;
@@ -456,14 +461,21 @@
  for(const c of ['CUP','USD']){const label=el('label',c),radio=el('input');radio.type='radio';radio.name='currency';radio.value=c;radio.checked=c==='CUP';label.prepend(radio);currency.append(label);}
  const amount=input('Monto original','number','amount',{required:'',min:'0.01',step:'0.01',inputmode:'decimal',placeholder:'0.00'}),exchange=input('Tasa de cambio · CUP / USD','number','rate',{min:'0.01',max:'1000000',step:'any',inputmode:'decimal'});if(rate>0)exchange.querySelector('input').value=rate;
  amount.classList.add('move-amount-field');exchange.classList.add('move-rate-field');fields.append(amount,currency,exchange);conversion.append(fields,visual);
- const note=el('small','Equivalencia de referencia. El movimiento se registra en la moneda seleccionada.','move-note');conversion.append(note);
+ const note=el('small','El saldo del fondo se calcula en USD y su equivalente en CUP. Se conserva la moneda original del movimiento.','move-note');conversion.append(note);
  const proof=el('section','','move-proof'),proofIcon=el('span','↥','move-proof-icon'),proofText=el('div','','move-proof-text');
  proofIcon.setAttribute('aria-hidden','true');proofText.append(el('strong','Comprobante opcional'),el('small','Adjuntar imagen o PDF, hasta 2 MB'));
  const file=el('label','','move-proof-control'),fileInput=el('input'),fileLabel=el('span','Adjuntar archivo','move-proof-button'),fileName=el('small','','move-proof-name');
  fileInput.type='file';fileInput.name='receipt';fileInput.accept='image/jpeg,image/png,image/webp,application/pdf';fileInput.setAttribute('aria-label','Adjuntar comprobante opcional');
  fileInput.addEventListener('change',()=>{fileName.textContent=fileInput.files[0]?.name||'';});file.append(fileInput,fileLabel,fileName);proof.append(proofIcon,proofText,file);
- const summary=el('div','','move-balance'),before=el('strong'),after=el('strong');const one=el('div'),two=el('div');one.append(el('small','Saldo actual'),before);two.append(el('small','Saldo resultante'),after);summary.append(one,two);
- const update=()=>{const c=currency.querySelector('input:checked').value,n=Number(amount.querySelector('input').value)||0,r=Number(exchange.querySelector('input').value),balance=Number(fund[c]);exchange.querySelector('input').required=c==='CUP';original.textContent=money(n,c);result.textContent=r>0?money(c==='CUP'?n/r:n*r,c==='CUP'?'USD':'CUP'):'—';before.textContent=money(balance,c);after.textContent=money(balance+direction*n,c);};
+ const summary=el('div','','move-balance'),before=el('strong'),after=el('strong'),beforeCup=el('small','','move-balance-equivalent'),afterCup=el('small','','move-balance-equivalent');const one=el('div'),two=el('div');one.append(el('small','Saldo actual'),before,beforeCup);two.append(el('small','Saldo resultante'),after,afterCup);summary.append(one,two);
+ const update=()=>{
+ const c=currency.querySelector('input:checked').value,n=Number(amount.querySelector('input').value)||0,r=Number(exchange.querySelector('input').value),validRate=Number.isFinite(r)&&r>0&&r<=1000000;
+ exchange.querySelector('input').required=true;original.textContent=money(n,c);result.textContent=validRate?money(c==='CUP'?n/r:n*r,c==='CUP'?'USD':'CUP'):'—';
+ if(!validRate){before.textContent=after.textContent='USD —';beforeCup.textContent=afterCup.textContent='Tasa de cambio necesaria';return;}
+ const balance=Number(fund.USD)+Number(fund.CUP)/r,delta=c==='CUP'?n/r:n,next=balance+direction*delta;
+ before.textContent=money(balance,'USD');beforeCup.textContent='('+money(Number(fund.CUP)+Number(fund.USD)*r,'CUP')+')';
+ after.textContent=money(next,'USD');afterCup.textContent='('+money(Number(fund.CUP)+Number(fund.USD)*r+direction*(c==='CUP'?n:n*r),'CUP')+')';
+ };
  conversion.addEventListener('input',update);
  open((income?'Registrar ingreso':'Registrar egreso')+' · '+fund.label,async data=>rpc('treasury_register_movement',{p_id:requestId,p_fund:f,p_currency:data.get('currency'),p_amount:direction*Number(data.get('amount')),p_concept:data.get('concept'),p_date:data.get('date'),p_area:data.get('area'),p_category:data.get('kind')==='transfer'?'Traspaso entre fondos':income?'Ingreso':'Egreso',p_rate:Number(data.get('rate'))||null,p_destination:data.get('kind')==='transfer'?data.get('destination'):null,p_receipt:await readReceipt(data.get('receipt'))}),[conversion,details,proof],{movement:income?'income':'expense',summary});
  update();
