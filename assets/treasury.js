@@ -1,8 +1,52 @@
 (()=>{'use strict';
  const $=id=>document.getElementById(id),client=CartelLoad.createClient('https://jhumvctocphyiwhszeaz.supabase.co','sb_publishable_ZHV-5dlsjfamQpfUOsgumg_G-vN84Gn',{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});
  const el=(tag,t='',c='')=>{const n=document.createElement(tag);n.textContent=t;if(c)n.className=c;return n;};
- const numberAmount=amount=>new Intl.NumberFormat('es-CU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(amount||0));
- const money=(amount,c)=>new Intl.NumberFormat('es-CU',{style:'currency',currency:c,currencyDisplay:'code'}).format(Number(amount||0));
+ const numberFormatter=new Intl.NumberFormat('es-CU',{minimumFractionDigits:2,maximumFractionDigits:2}),currencyFormatters=new Map();
+ const numberAmount=amount=>numberFormatter.format(Number(amount||0));
+ const money=(amount,c)=>{if(!currencyFormatters.has(c))currencyFormatters.set(c,new Intl.NumberFormat('es-CU',{style:'currency',currency:c,currencyDisplay:'code'}));return currencyFormatters.get(c).format(Number(amount||0));};
+ // Presentation only. Each counter keeps its exact final formatted value.
+ const motionValues=new WeakMap(),motionRuns=new Map();
+ const motionPreference=window.matchMedia('(prefers-reduced-motion: reduce)');
+ function motionValue(node,formatter){motionValues.set(node,formatter);return node;}
+ function stopMotion(root){motionRuns.get(root)?.finish();}
+ function animateDashboard(root,{entrance=false}={}){
+  stopMotion(root);
+  if(motionPreference.matches||document.hidden)return;
+  const counters=[...root.querySelectorAll('[data-treasury-counter]')].map(node=>({node,format:motionValues.get(node),final:node.textContent,label:node.getAttribute('aria-label')})).filter(v=>v.format);
+  const bars=[...root.querySelectorAll('.flow-bar,.distribution-track span')];
+  const animations=[];
+  for(const v of counters){v.node.setAttribute('aria-label',v.final);v.node.textContent=v.format(0);}
+  function animate(node,frames,options){if(typeof node.animate==='function')animations.push(node.animate(frames,options));}
+  bars.forEach((bar,index)=>{
+   const vertical=bar.classList.contains('flow-bar');
+   animate(bar,[{transform:vertical?'scaleY(0)':'scaleX(0)',transformOrigin:vertical?'bottom':'left'},{transform:'scale(1)',transformOrigin:vertical?'bottom':'left'}],{duration:850,delay:Math.min(index*36,180),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
+  });
+  if(entrance){
+   [...root.querySelectorAll('.treasury-card,.treasury-summary')].forEach((node,index)=>animate(node,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:500,delay:Math.min(index*45,225),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'}));
+  }
+  let frame=0,start=null;
+  const finish=()=>{
+   cancelAnimationFrame(frame);
+   for(const v of counters){v.node.textContent=v.final;if(v.label===null)v.node.removeAttribute('aria-label');else v.node.setAttribute('aria-label',v.label);}
+   for(const animation of animations)animation.cancel();
+   motionRuns.delete(root);
+  };
+  motionRuns.set(root,{finish});
+  const tick=now=>{
+   if(document.hidden||motionPreference.matches||!root.isConnected){finish();return;}
+   if(start===null)start=now;
+   const time=Math.min(1,(now-start)/1030),progress=1-Math.pow(1-Math.min(1,(now-start)/850),3);
+   for(const v of counters)v.node.textContent=v.format(progress);
+   if(time===1)finish();else frame=requestAnimationFrame(tick);
+  };
+  frame=requestAnimationFrame(tick);
+ }
+ function counter(tag,formatter,cls=''){const node=el(tag,formatter(1),cls);node.dataset.treasuryCounter='';return motionValue(node,formatter);}
+ function amountCounter(tag,value,currency,cls=''){return counter(tag,p=>money(value*p,currency),cls);}
+ function stopDashboardMotion(){for(const root of [...motionRuns.keys()])stopMotion(root);}
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDashboardMotion();});
+ motionPreference.addEventListener?.('change',e=>{if(e.matches)stopDashboardMotion();});
+
  let state,selected=null,rate=null,rateDate=null,offset=0,busy=false,action=null,requestId=null;
  const workers=new URLSearchParams(location.search).get('tab')==='workers';
  if(workers)$('treasury-title').textContent='Pagos a trabajadores';
@@ -25,6 +69,7 @@
  const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',paths[code]||paths.fixed);svg.append(path);return svg;
  }
  function render(){
+ stopDashboardMotion();
  const cards=$('treasury-funds');cards.replaceChildren();
  const funds=state.funds.filter(f=>Boolean(f.worker)===workers);
  for(const f of funds){
@@ -35,11 +80,11 @@
  const icon=el('span','','compact-fund-icon');
  icon.append(fundGlyph(f.code));icon.setAttribute('aria-hidden','true');
  const body=el('div','','compact-fund-body');body.append(el('strong',f.label,'compact-fund-title'));
- for(const c of ['CUP','USD'])body.append(el('span',money(f[c],c),Number(f[c])<0?'negative':''));
+ for(const c of ['CUP','USD'])body.append(amountCounter('span',Number(f[c]),c,Number(f[c])<0?'negative':''));
  if(negative&&f.code==='investment')body.append(el('small','Capital pendiente del CEO','compact-fund-debt'));
  const converted=rate>0?usd+cup/rate:null;
  const equivalent=el('div','','compact-fund-equivalent');
- equivalent.append(el('small','Equiv. USD'),el('strong',converted===null?'—':numberAmount(converted),converted!==null&&converted<0?'negative':''));
+ equivalent.append(el('small','Equiv. USD'),converted===null?el('strong','—'):counter('strong',p=>numberAmount(converted*p),converted<0?'negative':''));
  equivalent.title=rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible';
  const arrow=el('span','›','compact-fund-arrow');arrow.setAttribute('aria-hidden','true');
  b.append(icon,body,equivalent,arrow);
@@ -204,10 +249,17 @@
  $('activity-prev').onclick=()=>{activityOffset=Math.max(0,activityOffset-50);loadActivityHistory();};
  $('activity-next').onclick=()=>{activityOffset+=50;loadActivityHistory();};
  function startActivityUpdates(){if(workers)return;setInterval(()=>{if(!document.hidden)refreshActivity();},5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshActivity();});}
- async function refresh(){state=await rpc('treasury_state');render();await Promise.all([history(),selected?loadFundStatistics(selected):Promise.resolve()]);if(!workers){await loadFlow();await refreshActivity();}await refreshRate();}
- async function refreshRate(){try{const ref=await CartelExchangeRates.read(client);rate=Number(ref.value);rateDate=ref.source_date||new Date(ref.fetched_at).toLocaleDateString('es-CU');$('treasury-rate').textContent='Referencia del día · 1 USD = '+rate+' CUP · '+CartelExchangeRates.label(ref);}catch{rate=null;rateDate=null;$('treasury-rate').textContent='Tasa del día no disponible.';}render();updateHistoryEquivalents();if(selected)renderFundStatistics();if(!workers&&flowMonth===period())renderFlow();}
+ async function refresh(){
+ state=await rpc('treasury_state');await refreshRate();render();
+ if(!workers&&!selected){animateDashboard($('treasury-funds'),{entrance:true});animateDashboard($('treasury-kpis'),{entrance:true});animateDashboard($('treasury-distribution'));}
+ updateHistoryEquivalents();
+ await Promise.all([history(),selected?loadFundStatistics(selected):Promise.resolve()]);
+ if(!workers){await loadFlow(!selected);await refreshActivity();}
+ }
+ async function refreshRate(){try{const ref=await CartelExchangeRates.read(client);rate=Number(ref.value);rateDate=ref.source_date||new Date(ref.fetched_at).toLocaleDateString('es-CU');$('treasury-rate').textContent='Referencia del día · 1 USD = '+rate+' CUP · '+CartelExchangeRates.label(ref);}catch{rate=null;rateDate=null;$('treasury-rate').textContent='Tasa del día no disponible.';}}
 
  function renderOverview(funds){
+ stopMotion($('treasury-kpis'));stopMotion($('treasury-distribution'));
  const target=$('treasury-kpis');target.replaceChildren();
  const sum=(c,fn)=>funds.reduce((total,f)=>total+fn(Number(f[c]),Number(f['available_'+c]),f),0);
  const positive=c=>sum(c,b=>Math.max(0,b));
@@ -216,23 +268,23 @@
  const debt=c=>sum(c,(b,_,f)=>f.code==='investment'?Math.max(0,-b):0);
  const summary=el('div','','treasury-summary');
  const primary=el('div','','summary-primary');
- primary.append(el('small',rate>0?'Saldo disponible total':'Saldo disponible en CUP'),el('strong',rate>0?money(available('USD')+available('CUP')/rate,'USD'):money(available('CUP'),'CUP')),el('span',rate>0?'Equivalente en USD · '+rateDate:'Tasa de referencia no disponible','summary-reference'));
- const balances=el('div','','summary-balances');balances.append(el('span',money(available('CUP'),'CUP')),el('span',money(available('USD'),'USD')));primary.append(balances);
+ primary.append(el('small',rate>0?'Saldo disponible total':'Saldo disponible en CUP'),amountCounter('strong',rate>0?available('USD')+available('CUP')/rate:available('CUP'),rate>0?'USD':'CUP'),el('span',rate>0?'Equivalente en USD · '+rateDate:'Tasa de referencia no disponible','summary-reference'));
+ const balances=el('div','','summary-balances');balances.append(amountCounter('span',available('CUP'),'CUP'),amountCounter('span',available('USD'),'USD'));primary.append(balances);
  const secondary=el('div','','summary-secondary');
  for(const [label,color,fn] of [['Saldo total de fondos positivos','#d5dfe8',positive],['Comprometido','#65c9ff',committed],['Capital pendiente del CEO','#ff9292',debt]]){
- const row=el('div','','summary-line'),info=el('div'),value=el('div','','summary-value');
- info.append(el('small',label));value.append(el('strong',rate>0?money(fn('USD')+fn('CUP')/rate,'USD'):money(fn('CUP'),'CUP')),el('small',money(fn('CUP'),'CUP')+' · '+money(fn('USD'),'USD')));value.style.color=color;row.append(info,value);secondary.append(row);}
+ const row=el('div','','summary-line'),info=el('div'),value=el('div','','summary-value'),cup=fn('CUP'),usd=fn('USD');
+ info.append(el('small',label));value.append(amountCounter('strong',rate>0?usd+cup/rate:cup,rate>0?'USD':'CUP'),counter('small',p=>money(cup*p,'CUP')+' · '+money(usd*p,'USD')));value.style.color=color;row.append(info,value);secondary.append(row);}
  summary.append(primary,secondary);target.append(summary);
  const c=chartCurrency.value,distribution=$('treasury-distribution');distribution.replaceChildren();
- const total=sum(c,b=>Math.max(0,b));for(const f of funds){const amount=Math.max(0,Number(f[c])),pct=total?amount/total*100:0;const row=el('div','','distribution-row'),track=el('div','','distribution-track'),bar=el('span');bar.style.width=pct+'%';bar.style.background=colors[f.code];track.append(bar);row.append(el('span',f.label),el('strong',pct.toFixed(1)+'% · '+money(amount,c)),track);distribution.append(row);}
+ const total=sum(c,b=>Math.max(0,b));for(const f of funds){const amount=Math.max(0,Number(f[c])),pct=total?amount/total*100:0;const row=el('div','','distribution-row'),track=el('div','','distribution-track'),bar=el('span');bar.style.width=pct+'%';bar.style.background=colors[f.code];track.append(bar);row.append(el('span',f.label),counter('strong',p=>(pct*p).toFixed(1)+'% · '+money(amount*p,c)),track);distribution.append(row);}
  distribution.append(el('p','Saldos positivos por fondo · '+c,'chart-caption'));
  }
  let monthly=[],flowMonth=null,flowRequest=0;
- async function loadFlow(){const month=period(),request=++flowRequest;const target=$('treasury-flow');target.textContent='Consultando movimientos…';try{const rows=await rpc('treasury_monthly',{p_month:month+'-01',p_workers:false});if(request!==flowRequest)return;monthly=rows;flowMonth=month;renderFlow();}catch(e){if(request===flowRequest)target.textContent='No se pudieron consultar los movimientos del período. '+e.message;}}
+ async function loadFlow(animate=true){stopMotion($('treasury-flow'));const month=period(),request=++flowRequest;const target=$('treasury-flow');target.textContent='Consultando movimientos…';try{const rows=await rpc('treasury_monthly',{p_month:month+'-01',p_workers:false});if(request!==flowRequest)return;monthly=rows;flowMonth=month;renderFlow();if(animate)animateDashboard(target);}catch(e){if(request===flowRequest)target.textContent='No se pudieron consultar los movimientos del período. '+e.message;}}
  function renderFlow(){
- const c=chartCurrency.value,target=$('treasury-flow');target.replaceChildren();if(flowMonth!==period()){target.textContent='Consultando movimientos…';return;}
+ const c=chartCurrency.value,target=$('treasury-flow');stopMotion(target);target.replaceChildren();if(flowMonth!==period()){target.textContent='Consultando movimientos…';return;}
  const days=new Date(Number(flowMonth.slice(0,4)),Number(flowMonth.slice(5)),0).getDate(),groups=Array.from({length:Math.ceil(days/7)},()=>({income:0,expense:0}));for(const row of monthly){if(row.currency!==c)continue;const g=groups[Math.min(4,Math.floor((Number(row.day.slice(-2))-1)/7))];g.income+=Number(row.income);g.expense+=Number(row.expense);}
- const totals=el('div','','flow-totals');for(const [key,label,color] of [['income','Ingresos','#58e0a0'],['expense','Egresos','#ff9292']]){const item=el('div',label),value=el('strong',money(groups.reduce((n,g)=>n+g[key],0),c));value.style.color=color;item.append(value);if(c==='CUP')item.append(el('small',rate>0?'≈ '+money(groups.reduce((n,g)=>n+g[key],0)/rate,'USD')+' · tasa '+rateDate:'Equivalente USD no disponible','flow-equivalent'));totals.append(item);}target.append(totals);
+ const totals=el('div','','flow-totals');for(const [key,label,color] of [['income','Ingresos','#58e0a0'],['expense','Egresos','#ff9292']]){const item=el('div',label),total=groups.reduce((n,g)=>n+g[key],0),value=amountCounter('strong',total,c);value.style.color=color;item.append(value);if(c==='CUP')item.append(rate>0?counter('small',p=>'≈ '+money(total/rate*p,'USD')+' · tasa '+rateDate,'flow-equivalent'):el('small','Equivalente USD no disponible','flow-equivalent'));totals.append(item);}target.append(totals);
  const max=Math.max(1,...groups.flatMap(g=>[g.income,g.expense])),chart=el('div','','flow-chart'),labels=el('div','','flow-labels');chart.style.gridTemplateColumns=labels.style.gridTemplateColumns='repeat('+groups.length+',minmax(0,1fr))';
  groups.forEach((g,i)=>{const group=el('div','','flow-group');for(const [key,color,label] of [['income','#58e0a0','Ingresos'],['expense','#ff9292','Egresos']]){const bar=el('div','','flow-bar');bar.style.height=(g[key]/max*100)+'%';bar.style.background=color;bar.title=label+' · '+money(g[key],c);group.append(bar);}chart.append(group);labels.append(el('span',(i*7+1)+'–'+Math.min(days,i*7+7)));});target.append(chart,labels,el('p','Movimientos por semana · excluye traspasos internos','chart-caption'));
  }
@@ -240,7 +292,7 @@
  chartMonth.onchange=chartYear.onchange=periodChanged;
  function shiftPeriod(delta){const next=new Date(Date.UTC(Number(chartYear.value),Number(chartMonth.value)-1+delta,1));setPeriod(next.getUTCFullYear(),next.getUTCMonth()+1);loadFlow();}
  $('chart-prev').onclick=()=>shiftPeriod(-1);$('chart-next').onclick=()=>shiftPeriod(1);$('chart-today').onclick=()=>{setPeriod(currentYear,currentMonth);loadFlow();};
- chartCurrency.onchange=()=>{if(state)renderOverview(state.funds.filter(f=>!f.worker));renderFlow();};
+ chartCurrency.onchange=()=>{if(state)renderOverview(state.funds.filter(f=>!f.worker));renderFlow();animateDashboard($('treasury-distribution'));animateDashboard($('treasury-flow'));};
  $('fund-close').onclick=()=>$('treasury-detail').close();
  $('treasury-detail').addEventListener('close',()=>{selected=null;offset=0;if(state)render();});
  function input(label,type,name,opts={}){const l=el('label',label),n=el('input');n.type=type;n.name=name;for(const [k,v] of Object.entries(opts))n.setAttribute(k,v);l.append(n);return l;}
