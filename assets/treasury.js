@@ -21,6 +21,9 @@
    const vertical=bar.classList.contains('flow-bar')||bar.parentElement?.classList.contains('fund-month-track');
    animate(bar,[{transform:vertical?'scaleY(0)':'scaleX(0)',transformOrigin:vertical?'bottom':'left'},{transform:'scale(1)',transformOrigin:vertical?'bottom':'left'}],{duration:850,delay:Math.min(index*36,180),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
   });
+  for(const arc of root.querySelectorAll('.fund-gauge-progress')){
+   animate(arc,[{strokeDashoffset:'100'},{strokeDashoffset:arc.getAttribute('stroke-dashoffset')}],{duration:850,easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
+  }
   if(entrance){
    [...root.querySelectorAll('.treasury-card,.treasury-summary,.fund-main-banner,.treasury-heading,.fund-month-section,.fund-average-card')].forEach((node,index)=>animate(node,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:500,delay:Math.min(index*45,225),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'}));
   }
@@ -181,10 +184,35 @@
  column.append(title,combinedAmount(...amount),track);panel.append(column);
  }
  const monthly=el('section','','fund-month-section');monthly.append(el('h3',month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico','fund-period-heading'),panel,netBlock('Resultado neto',income,expense));target.append(monthly);
- const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');heading.append(el('strong','Promedio mensual histórico'),el('small',months?months+' meses completos':'Sin meses completos'));historical.append(heading);
- const avgGrid=el('div','','fund-average-grid'),avgMax=Math.max(1,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
- for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){const item=el('div','','fund-average-metric '+kind);item.append(el('small',name),amount?combinedAmount(...amount):el('strong','—'));if(amount&&rate>0){const track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=inUsd(amount)/avgMax*100+'%';fill.style.background=kind==='income'?'#58e0a0':'#ff9292';track.append(fill);item.append(track);}avgGrid.append(item);}
- historical.append(avgGrid,netBlock('Promedio neto',avgIn,avgOut));target.append(historical);
+ const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');
+ heading.append(el('strong','Promedio mensual histórico'));historical.append(heading);
+ const avgGrid=el('div','','fund-average-grid');
+ // A common rounded scale gives both semicircles the same reference.
+ const maxAverage=Math.max(0,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
+ const magnitude=maxAverage>0?10**Math.floor(Math.log10(maxAverage)):1;
+ const gaugeMax=maxAverage>0?Math.ceil(maxAverage*2/magnitude)*magnitude:0;
+ for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){
+  const item=el('div','','fund-average-metric '+kind),gauge=el('div','','fund-gauge'),value=el('div','','fund-gauge-value');
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 240 132');svg.setAttribute('aria-hidden','true');
+  const usd=amount?inUsd(amount):null;
+  const percent=usd!==null&&gaugeMax>0?Math.max(0,Math.min(100,100*usd/gaugeMax)):0;
+  for(const className of ['fund-gauge-track','fund-gauge-progress']){
+   if(className==='fund-gauge-progress'&&percent===0)continue;
+   const arc=document.createElementNS('http://www.w3.org/2000/svg','path');
+   arc.setAttribute('class',className);arc.setAttribute('d','M 15 120 A 105 105 0 0 1 225 120');arc.setAttribute('pathLength','100');
+   if(className==='fund-gauge-progress'){arc.setAttribute('stroke-dasharray','100');arc.setAttribute('stroke-dashoffset',String(100-percent));}
+   svg.append(arc);
+  }
+  value.append(el('span','USD'),usd===null?el('strong','—'):counter('strong',p=>numberAmount(usd*p)));
+  if(usd!==null)value.append(counter('small',p=>money((amount[0]+amount[1]*rate)*p,'CUP')));
+  else if(amount)value.append(counter('small',p=>money(amount[0]*p,'CUP')+' · '+money(amount[1]*p,'USD')));
+  gauge.append(svg,value);item.append(gauge,el('span',name,'fund-gauge-label'));avgGrid.append(item);
+ }
+ const avgNet=netBlock('Promedio neto',avgIn,avgOut);avgNet.classList.add('fund-average-net');
+ avgNet.append(el('span',months?months+' meses completos':'Sin meses completos','fund-average-months'));
+ historical.append(avgGrid,avgNet);target.append(historical);
+ if(gaugeMax>0)historical.append(el('small','Escala común de los indicadores · '+money(0,'USD')+' – '+money(gaugeMax,'USD'),'chart-caption'));
  historical.append(el('small','Equivalentes calculados a la tasa de referencia del día. El resumen incluye ambas monedas; los filtros inferiores se aplican al historial. Los promedios incluyen meses sin actividad y excluyen el actual y el inicial si es parcial.','chart-caption'));
  if(historicalOutlier)historical.append(el('small','Promedios desde febrero de 2023. Dos registros aislados de 2004 se mantienen en el historial y quedan fuera del promedio.','chart-caption'));
  if(summaryData.undated)historical.append(el('small','Movimientos sin fecha excluidos del resumen: '+summaryData.undated,'chart-caption'));

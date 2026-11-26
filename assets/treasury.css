@@ -234,3 +234,113 @@
   stroke-width: 2;
   filter: drop-shadow(0 1px 0 #fff0b3) drop-shadow(1px 3px 0 #986118) drop-shadow(0 6px 7px #0009) drop-shadow(0 0 8px #e5aa3945);
 }
+
+/* Historical averages: paired semicircular indicators. */
+#treasury-detail .fund-average-card {
+  padding: 0 14px 12px;
+  border: 1px solid #56616a;
+  border-radius: 15px;
+  background: linear-gradient(150deg, #1b2329, #101519 54%, #151c22);
+}
+#treasury-detail .fund-average-header {
+  margin: 0 -14px 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #414a52;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(125deg,#252e35,#1b2229);
+}
+#treasury-detail .fund-average-header strong {
+  color: #ffda03;
+  font-size: clamp(15px,2.5vw,19px);
+}
+#treasury-detail .fund-average-grid {
+  gap: clamp(8px,3vw,28px);
+  padding: 4px 0 10px;
+}
+#treasury-detail .fund-average-metric {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  justify-items: center;
+  gap: 5px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.fund-gauge {
+  position: relative;
+  width: min(100%,260px);
+  aspect-ratio: 240 / 132;
+  min-width: 0;
+}
+.fund-gauge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.fund-gauge-track, .fund-gauge-progress {
+  fill: none;
+  stroke-width: 21;
+  stroke-linecap: round;
+}
+.fund-gauge-track { stroke: #3c464f; }
+.fund-average-metric.income .fund-gauge-progress { stroke: #47e98e; }
+.fund-average-metric.expense .fund-gauge-progress { stroke: #ff8080; }
+.fund-gauge-value {
+  position: absolute;
+  inset: 43% 13% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+}
+.fund-gauge-value > span { color: #d4dce2; font-size: clamp(10px, 2vw, 15px); }
+#treasury-detail .fund-gauge-value strong {
+  color: #f7f8fa;
+  font-size: clamp(15px,3.5vw,30px);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.fund-gauge-value small { color: #cdd4db; font-size: clamp(9px,1.6vw,13px); max-width:100%; overflow-wrap:anywhere; }
+.fund-gauge-label {
+  max-width: 100%;
+  width: min(100%,236px);
+  padding: 5px 8px;
+  text-align: center;
+  font-size: clamp(11px,1.9vw,14px);
+  color: #f1f4f6;
+  font-weight: 650;
+  border: 1px solid #49555d;
+  border-radius: 25px;
+  background: linear-gradient(180deg,#27333d,#1a242c);
+}
+#treasury-detail .fund-average-net {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr .85fr;
+  gap: 0;
+  padding: 12px 8px;
+  text-align: center;
+  border-radius: 12px;
+}
+.fund-average-net > span:first-child { padding:0 6px; }
+#treasury-detail .fund-average-net .combined-amount {
+  border-inline: 1px solid #a3b4b760;
+  padding: 0 7px;
+  text-align: center;
+}
+#treasury-detail .fund-average-net .combined-amount strong { font-size: clamp(15px,2.7vw,24px); }
+.fund-average-months { color:#e7eaed; font-size:clamp(10px,1.7vw,14px); font-weight:500; padding: 0 6px; }
+@media(max-width: 420px) {
+  #treasury-detail .fund-average-card { padding-inline: 8px; }
+  #treasury-detail .fund-average-header { margin-inline: -8px; padding-inline: 10px; }
+  #treasury-detail .fund-average-grid { gap: 7px; }
+  .fund-gauge-value { inset: 37% 10% 0; gap: 1px; }
+  #treasury-detail .fund-gauge-value strong { font-size: clamp(13px,4.5vw,18px); }
+  #treasury-detail .fund-average-net { grid-template-columns: 1fr 1.15fr .75fr; padding: 9px 2px; font-size: 11px; }
+  #treasury-detail .fund-average-net .combined-amount strong { font-size: 13px; }
+  #treasury-detail .fund-average-net .combined-amount small { font-size: 9px; }
+}
