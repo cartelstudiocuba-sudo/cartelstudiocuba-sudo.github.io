@@ -344,3 +344,42 @@
   #treasury-detail .fund-average-net .combined-amount strong { font-size: 13px; }
   #treasury-detail .fund-average-net .combined-amount small { font-size: 9px; }
 }
+
+/* Monthly cash-flow comparison, with a single proportional rail. */
+#treasury-detail .fund-month-section {
+  padding: 14px 16px 12px;
+  border: 1px solid #56616a;
+  border-radius: 15px;
+  background: linear-gradient(145deg,#1b2329,#101519 58%,#151c22);
+}
+.fund-month-heading { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.fund-month-heading svg { width:24px; height:24px; flex:none; color:#ffda03; }
+#treasury-detail .fund-month-heading .fund-period-heading {
+  margin:0; padding-left:10px; border-left:1px solid #ffda038c;
+  font-size:clamp(16px,2.5vw,20px); line-height:1.2;
+}
+.fund-month-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 0 14px; }
+.fund-month-metric { display:grid; justify-items:center; gap:4px; min-width:0; text-align:center; }
+.fund-month-metric + .fund-month-metric { border-left:1px solid #64717a99; }
+.fund-month-metric .fund-month-column-title { justify-content:center; font-size:14px; }
+#treasury-detail .fund-month-metric .combined-amount strong { font-size:clamp(18px,3.2vw,29px); color:#f3f5f7; }
+#treasury-detail .fund-month-metric .combined-amount small { font-size:clamp(10px,1.8vw,14px); }
+.fund-proportion-rail { height:32px; border-radius:999px; overflow:hidden; background:#313a42; }
+.fund-proportion-fill { display:flex; width:100%; height:100%; }
+.fund-proportion-segment { display:grid; place-items:center; min-width:0; overflow:hidden; }
+.fund-proportion-segment.income { background:linear-gradient(#54ef8e,#1ac55e 46%,#119b43); box-shadow:inset 0 2px 3px #fff4; }
+.fund-proportion-segment.expense { background:linear-gradient(#ff9a91,#fa6f6c 46%,#dc5354); box-shadow:inset 0 2px 3px #fff3; }
+.fund-proportion-percent { color:#fff; font-size:clamp(12px,2vw,18px); font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.fund-month-metric .fund-proportion-percent { color:#c9d4dc; font-size:12px; }
+.fund-proportion-empty { padding:8px; border-radius:20px; background:#262e36; color:#bbc6cf; text-align:center; font-size:12px; }
+#treasury-detail .fund-month-net { justify-content:center; gap:8px; text-align:center; margin-top:14px; }
+#treasury-detail .fund-month-net .combined-amount { display:flex; align-items:baseline; flex-wrap:wrap; justify-content:center; gap:5px 10px; }
+#treasury-detail .fund-month-net .combined-amount strong { font-size:clamp(16px,2.6vw,23px); }
+@media(max-width:460px) {
+  #treasury-detail .fund-month-section { padding:12px 10px; }
+  .fund-month-heading { margin-bottom:12px; }
+  .fund-month-metric .fund-month-column-title { font-size:12px; }
+  #treasury-detail .fund-month-metric .combined-amount strong { font-size:clamp(15px,4.3vw,20px); }
+  .fund-proportion-rail { height:27px; }
+  #treasury-detail .fund-month-net { flex-wrap:wrap; padding:8px; }
+}

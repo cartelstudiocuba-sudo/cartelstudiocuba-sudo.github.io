@@ -21,6 +21,7 @@
    const vertical=bar.classList.contains('flow-bar')||bar.parentElement?.classList.contains('fund-month-track');
    animate(bar,[{transform:vertical?'scaleY(0)':'scaleX(0)',transformOrigin:vertical?'bottom':'left'},{transform:'scale(1)',transformOrigin:vertical?'bottom':'left'}],{duration:850,delay:Math.min(index*36,180),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
   });
+  for(const rail of root.querySelectorAll('.fund-proportion-fill'))animate(rail,[{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0 0 0)'}],{duration:850,easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
   for(const arc of root.querySelectorAll('.fund-gauge-progress')){
    animate(arc,[{strokeDashoffset:'100'},{strokeDashoffset:arc.getAttribute('stroke-dashoffset')}],{duration:850,easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
   }
@@ -127,15 +128,19 @@
  $('fund-wallet-rate').textContent=rate>0?'1 USD = '+rate+' CUP · '+rateDate:'Tasa de referencia no disponible';
  }
  const sourceLabels={excel:'Histórico Excel',bar:'Cuadre de nevera',manual:'Manual',budget:'Solicitud de presupuesto',ceo_dispatch:'Cuadre CEO',transfer:'Traspaso entre fondos'};
- function movementEquivalent(amount,currency){
- if(!(rate>0))return '(Tasa no disponible)';
- const sign=amount>0?'+':amount<0?'−':'';
- return '('+sign+money(currency==='CUP'?Math.abs(amount)/rate:Math.abs(amount)*rate,currency==='CUP'?'USD':'CUP')+')';
+ function movementDisplay(amount,currency){
+  const sign=amount>0?'+':amount<0?'−':'',absolute=Math.abs(amount);
+  const validRate=Number.isFinite(rate)&&rate>0;
+  const usd=currency==='USD'?absolute:validRate?absolute/rate:null;
+  const cup=currency==='CUP'?absolute:validRate?absolute*rate:null;
+  return {principal:usd===null?'USD —':sign+money(usd,'USD'),equivalent:cup===null?'(CUP — · tasa no disponible)':'('+sign+money(cup,'CUP')+')'};
  }
  function updateHistoryEquivalents(){
- for(const value of document.querySelectorAll('.history-equivalent')){
- value.textContent=movementEquivalent(Number(value.dataset.amount),value.dataset.currency);
- }
+  for(const value of document.querySelectorAll('.history-equivalent')){
+   const display=movementDisplay(Number(value.dataset.amount),value.dataset.currency);
+   value.textContent=display.equivalent;
+   value.parentElement.querySelector('.history-amount').textContent=display.principal;
+  }
  }
  function movementCard(r,global=false){
  const amount=Number(r.amount),type=r.source==='transfer'?'transfer':amount>0?'income':amount<0?'expense':'neutral';
@@ -152,9 +157,9 @@
  info.append(title,el('small',detail.join(' · ')));
  if(r.has_receipt){const button=el('button','Ver comprobante','secondary history-receipt');button.type='button';button.onclick=()=>run(async()=>{const data=await rpc('treasury_receipt',{p_id:r.id});if(!data)throw Error('Comprobante no disponible.');const bytes=Uint8Array.from(atob(data.content),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:data.mime})),a=el('a');a.href=url;a.download=data.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);});info.append(button);}
  }
- const amounts=el('div','','history-amounts'),reference=el('small',movementEquivalent(amount,r.currency),'history-equivalent');
+ const display=movementDisplay(amount,r.currency),amounts=el('div','','history-amounts'),reference=el('small',display.equivalent,'history-equivalent');
  reference.dataset.amount=String(amount);reference.dataset.currency=r.currency;
- amounts.append(el('strong',(amount>0?'+':amount<0?'−':'')+money(Math.abs(amount),r.currency),'history-amount'),reference);
+ amounts.append(el('strong',display.principal,'history-amount'),reference);
  if(!global){const arrow=el('span',type==='income'?'↓':type==='expense'?'↑':type==='transfer'?'⇄':'·','history-direction');arrow.setAttribute('aria-hidden','true');row.append(arrow);}row.append(info,amounts);return row;
  }
  function dateLabel(date){return date?new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z')):'Sin fecha';}
@@ -176,14 +181,29 @@
  const income=totals(periodRows,'income'),expense=totals(periodRows,'expense'),avgIn=months?totals(past,'income',months):null,avgOut=months?totals(past,'expense',months):null;
  const inUsd=a=>rate>0?a[1]+a[0]/rate:null;
  function netBlock(label,income,expense){const row=el('div','','fund-result'),net=income&&expense?[income[0]-expense[0],income[1]-expense[1]]:null;const value=net?inUsd(net):null;row.dataset.tone=value===null||value===0?'neutral':value>0?'positive':'negative';row.append(el('span',label),net?combinedAmount(...net):el('strong','—'));return row;}
- const panel=el('article','','fund-period-card fund-month-chart'),max=Math.max(1,inUsd(income)||0,inUsd(expense)||0);
- for(const [name,amount,kind] of [['Ingresos',income,'income'],['Egresos',expense,'expense']]){
- const column=el('div','','fund-month-column '+kind),title=el('div','','fund-month-column-title'),track=el('div','','fund-month-track'),fill=el('span');
- title.append(el('span',kind==='income'?'↓':'↑','fund-direction'),el('span',name));
- fill.style.height=(inUsd(amount)||0)/max*100+'%';track.append(fill);
- column.append(title,combinedAmount(...amount),track);panel.append(column);
+ const panel=el('article','','fund-month-proportional'),metrics=el('div','','fund-month-metrics');
+ const incomeUsd=inUsd(income),expenseUsd=inUsd(expense),totalUsd=incomeUsd===null||expenseUsd===null?null:incomeUsd+expenseUsd;
+ const incomeShare=totalUsd>0?100*incomeUsd/totalUsd:0,expenseShare=totalUsd>0?100-incomeShare:0;
+ const rail=el('div','','fund-proportion-rail'),fill=el('div','','fund-proportion-fill');
+ for(const [name,amount,kind,share] of [['Ingresos',income,'income',incomeShare],['Egresos',expense,'expense',expenseShare]]){
+  const metric=el('div','','fund-month-metric '+kind),title=el('div','','fund-month-column-title');
+  title.append(el('span',kind==='income'?'↓':'↑','fund-direction'),el('span',name));
+  metric.append(title,combinedAmount(...amount));
+  if(totalUsd>0){
+   const segment=el('div','','fund-proportion-segment '+kind);segment.style.width=share+'%';
+   const percentage=counter('span',p=>(share*p).toFixed(1)+'%','fund-proportion-percent');
+   if(share>=18)segment.append(percentage);else metric.append(percentage);
+   fill.append(segment);
+  }
+  metrics.append(metric);
  }
- const monthly=el('section','','fund-month-section');monthly.append(el('h3',month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico','fund-period-heading'),panel,netBlock('Resultado neto',income,expense));target.append(monthly);
+ panel.append(metrics);
+ if(totalUsd>0){rail.append(fill);panel.append(rail);}
+ else panel.append(el('div',totalUsd===null?'Tasa de referencia no disponible':'Sin movimientos en el período','fund-proportion-empty'));
+ const monthly=el('section','','fund-month-section'),monthHeading=el('div','','fund-month-heading');
+ monthHeading.append(fundGlyph('fixed'),el('h3',month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico','fund-period-heading'));
+ const monthNet=netBlock('Resultado neto',income,expense);monthNet.classList.add('fund-month-net');
+ monthly.append(monthHeading,panel,monthNet);target.append(monthly);
  const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');
  heading.append(el('strong','Promedio mensual histórico'));historical.append(heading);
  const avgGrid=el('div','','fund-average-grid');
