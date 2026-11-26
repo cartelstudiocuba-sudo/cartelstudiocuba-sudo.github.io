@@ -108,6 +108,7 @@
  function monthIndex(date){return Number(date.slice(0,4))*12+Number(date.slice(5,7))-1;}
  function renderFundStatistics(){
  const target=$('fund-statistics'),month=histMonth(),label=$('fund-period-label');
+ $('fund-period-heading').textContent=month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico';
  label.textContent=month?new Intl.DateTimeFormat('es-CU',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'T00:00:00Z')):'Todo el histórico';
  if(!summaryData||summaryFund!==selected){target.textContent='Consultando resumen…';return;}
  target.replaceChildren();
@@ -119,9 +120,14 @@
  const income=totals(periodRows,'income'),expense=totals(periodRows,'expense'),avgIn=months?totals(past,'income',months):null,avgOut=months?totals(past,'expense',months):null;
  const inUsd=a=>rate>0?a[1]+a[0]/rate:null;
  function netBlock(label,income,expense){const row=el('div','','fund-result'),net=income&&expense?[income[0]-expense[0],income[1]-expense[1]]:null;const value=net?inUsd(net):null;row.dataset.tone=value===null||value===0?'neutral':value>0?'positive':'negative';row.append(el('span',label),net?combinedAmount(...net):el('strong','—'));return row;}
- const panel=el('article','','fund-period-card'),max=Math.max(1,inUsd(income)||0,inUsd(expense)||0);
- function periodBar(name,amount,kind){const row=el('div','','fund-period-row '+kind),track=el('div','','fund-stat-track'),fill=el('span'),title=el('div','','fund-period-title');title.append(el('span',kind==='income'?'↓':'↑','fund-direction'),el('span',name));fill.style.width=(inUsd(amount)||0)/max*100+'%';track.append(fill);row.append(title,track,combinedAmount(...amount));return row;}
- panel.append(periodBar('Ingresos',income,'income'),periodBar('Gastos',expense,'expense'));target.append(panel,netBlock('Resultado neto',income,expense));
+ const panel=el('article','','fund-period-card fund-month-chart'),max=Math.max(1,inUsd(income)||0,inUsd(expense)||0);
+ for(const [name,amount,kind] of [['Ingresos',income,'income'],['Egresos',expense,'expense']]){
+ const column=el('div','','fund-month-column '+kind),title=el('div','','fund-month-column-title'),track=el('div','','fund-month-track'),fill=el('span');
+ title.append(el('span',kind==='income'?'↓':'↑','fund-direction'),el('span',name));
+ fill.style.height=(inUsd(amount)||0)/max*100+'%';track.append(fill);
+ column.append(title,combinedAmount(...amount),track);panel.append(column);
+ }
+ target.append(panel,netBlock('Resultado neto',income,expense));
  const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');heading.append(el('strong','Promedio mensual histórico'),el('small',months?months+' meses completos':'Sin meses completos'));historical.append(heading);
  const avgGrid=el('div','','fund-average-grid'),avgMax=Math.max(1,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
  for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){const item=el('div','','fund-average-metric '+kind);item.append(el('small',name),amount?combinedAmount(...amount):el('strong','—'));if(amount&&rate>0){const track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=inUsd(amount)/avgMax*100+'%';fill.style.background=kind==='income'?'#58e0a0':'#ff9292';track.append(fill);item.append(track);}avgGrid.append(item);}
