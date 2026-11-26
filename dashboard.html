@@ -191,7 +191,7 @@ if(window.top===window&&(navigator.standalone||matchMedia('(display-mode: standa
  }
 
 }
-</style><link rel="stylesheet" href="/assets/area-chief-home.css?v=4-shared-rate"><link rel="stylesheet" href="/assets/admin-overview.css?v=1"><link rel="stylesheet" href="/assets/management-notifications.css?v=2"><link rel="stylesheet" href="/assets/staff-knowledge.css?v=2-voice"></head><body><div id="dashboardBoot" role="status" aria-live="polite" aria-atomic="true"><div class="platform-splash-brand" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1859" role="img" aria-label="El Cartel Studio">
+</style><link rel="stylesheet" href="/assets/area-chief-home.css?v=4-shared-rate"><link rel="stylesheet" href="/assets/admin-overview.css?v=1"><link rel="stylesheet" href="/assets/management-notifications.css?v=2"><link rel="stylesheet" href="/assets/staff-knowledge.css?v=3-visual"></head><body><div id="dashboardBoot" role="status" aria-live="polite" aria-atomic="true"><div class="platform-splash-brand" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1859" role="img" aria-label="El Cartel Studio">
 <style>
 .ink{fill:#ffda03;fill-rule:evenodd;opacity:0;animation:ink-in .6s ease-out 1.1s forwards,ink-breathe 3s ease-in-out 1.5s infinite}
 .trace{fill:none;stroke:#ffda03;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:signature 1.3s cubic-bezier(.35,0,.15,1) var(--delay) both,trace-out .5s ease-out 1.2s forwards}
@@ -276,6 +276,10 @@ async function configurePersonalNavigation(user,data){
    protocolWrap.innerHTML='<button type="button" class="nav-parent"><span class="ico">▤</span><span>Protocolos</span><span class="chev">⌄</span></button><div class="submenu open"><a href="/protocolos.html" class="personal-view-link">Biblioteca de protocolos</a></div>';
    protocolWrap.querySelector('button').onclick=()=>protocolWrap.querySelector('.submenu').classList.toggle('open');
    protocolWrap.querySelector('a').onclick=e=>{e.preventDefault();showModule('/protocolos.html',e.currentTarget);};nav.append(protocolWrap);
+   const planWrap=document.createElement('div');planWrap.className='personal-nav-group';
+   planWrap.innerHTML='<button type="button" class="nav-parent"><span class="ico">▤</span><span>Organización</span><span class="chev">⌄</span></button><div class="submenu open"><a href="/plan-trabajo.html" class="personal-view-link">Plan de trabajo</a></div>';
+   planWrap.querySelector('button').onclick=()=>planWrap.querySelector('.submenu').classList.toggle('open');
+   planWrap.querySelector('a').onclick=e=>{e.preventDefault();showModule('/plan-trabajo.html',e.currentTarget);};nav.append(planWrap);
    window.cartelPersonalNavigationReady=true;window.dispatchEvent(new Event('cartel-navigation-ready'));return;}
   const chiefHome=['jefe_audiovisuales','jefe_grafica'].includes(data.home_role);
   const views=Array.isArray(data.views)?data.views:[];
@@ -310,6 +314,11 @@ async function configurePersonalNavigation(user,data){
   if(data.fridge_audiovisual===true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Nevera audiovisual',url:'/nevera-audiovisual.html',icon:'◇'});}
   if(data.fridge_manager===true&&data.fridge_audiovisual!==true){if(!grouped.has('Inventario'))grouped.set('Inventario',[]);grouped.get('Inventario').push({group:'Inventario',title:'Cuadre de nevera',url:'/cuadre-nevera.html',icon:'◇'});}
   if(data.finance_cost_sheets===true){if(!grouped.has('Finanzas'))grouped.set('Finanzas',[]);grouped.get('Finanzas').unshift({group:'Finanzas',title:'Tesorería y fondos',url:'/tesoreria.html',icon:'▥'});grouped.get('Finanzas').push({group:'Finanzas',title:'Pagos a trabajadores',url:'/tesoreria.html?tab=workers',icon:'▥'});grouped.get('Finanzas').push({group:'Finanzas',title:'Fichas de costo',url:'/fichas-costo.html',icon:'▥'});}
+  try{
+   const day=new Date().toISOString().slice(0,10);
+   const {data:plan,error:planError}=await client.rpc('work_plan_list',{p_from:day,p_to:day});
+   if(!planError&&plan?.people?.length)grouped.set('Organización',[{group:'Organización',title:'Plan de trabajo',url:'/plan-trabajo.html',icon:'▤'}]);
+  }catch(e){console.warn('Plan de trabajo no disponible',e);}
   grouped.set('Protocolos',[{group:'Protocolos',title:'Biblioteca de protocolos',url:'/protocolos.html',icon:'▤'}]);
   grouped.forEach((items,name)=>{
    const wrap=document.createElement('div');wrap.className='personal-nav-group';
@@ -527,7 +536,7 @@ function prepareSelectionFrame(){
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void load();});
 
 })();
-</script><script src="/assets/mobile-navigation.js?v=20261126-finance-budget"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=2"></script><script src="/assets/budget-sidebar-count.js?v=3-badge-element"></script><script src="/assets/management-notifications.js?v=3"></script><script src="/assets/staff-knowledge.js?v=2-voice"></script><script>
+</script><script src="/assets/mobile-navigation.js?v=20261126-finance-budget"></script><script src="/assets/inventory-notifications.js?v=20261113-requests-menu-1"></script><script src="/assets/fridge-reconciliation-notices.js?v=2"></script><script src="/assets/budget-sidebar-count.js?v=3-badge-element"></script><script src="/assets/management-notifications.js?v=3"></script><script src="/assets/staff-knowledge.js?v=3-visual"></script><script>
 function mountStaffAssistant(){if(!window.cartelPersonalNavigationReady)return;window.CartelKnowledge.mountAssistant(sb,path=>showModule(path,document.querySelector('.nav a[href="/protocolos.html"]')));}
 window.addEventListener('cartel-navigation-ready',mountStaffAssistant);mountStaffAssistant();
 </script></body></html>
