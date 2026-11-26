@@ -131,9 +131,9 @@
  const avgGrid=el('div','','fund-average-grid'),avgMax=Math.max(1,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
  for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){const item=el('div','','fund-average-metric '+kind);item.append(el('small',name),amount?combinedAmount(...amount):el('strong','—'));if(amount&&rate>0){const track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=inUsd(amount)/avgMax*100+'%';fill.style.background=kind==='income'?'#58e0a0':'#ff9292';track.append(fill);item.append(track);}avgGrid.append(item);}
  historical.append(avgGrid,netBlock('Promedio neto',avgIn,avgOut));target.append(historical);
- target.append(el('small','Equivalentes calculados a la tasa de referencia del día. El resumen incluye ambas monedas; los filtros inferiores se aplican al historial. Los promedios incluyen meses sin actividad y excluyen el actual y el inicial si es parcial.','chart-caption'));
- if(historicalOutlier)target.append(el('small','Promedios desde febrero de 2023. Dos registros aislados de 2004 se mantienen en el historial y quedan fuera del promedio.','chart-caption'));
- if(summaryData.undated)target.append(el('small','Movimientos sin fecha excluidos del resumen: '+summaryData.undated,'chart-caption'));
+ historical.append(el('small','Equivalentes calculados a la tasa de referencia del día. El resumen incluye ambas monedas; los filtros inferiores se aplican al historial. Los promedios incluyen meses sin actividad y excluyen el actual y el inicial si es parcial.','chart-caption'));
+ if(historicalOutlier)historical.append(el('small','Promedios desde febrero de 2023. Dos registros aislados de 2004 se mantienen en el historial y quedan fuera del promedio.','chart-caption'));
+ if(summaryData.undated)historical.append(el('small','Movimientos sin fecha excluidos del resumen: '+summaryData.undated,'chart-caption'));
  }
  async function loadFundStatistics(fund){
  const request=++summaryRequest;summaryData=null;summaryFund=fund;renderFundStatistics();
