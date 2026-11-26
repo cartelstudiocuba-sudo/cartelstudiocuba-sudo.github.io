@@ -160,7 +160,14 @@
  const display=movementDisplay(amount,r.currency),amounts=el('div','','history-amounts'),reference=el('small',display.equivalent,'history-equivalent');
  reference.dataset.amount=String(amount);reference.dataset.currency=r.currency;
  amounts.append(el('strong',display.principal,'history-amount'),reference);
- if(!global){const arrow=el('span',type==='income'?'↓':type==='expense'?'↑':type==='transfer'?'⇄':'·','history-direction');arrow.setAttribute('aria-hidden','true');row.append(arrow);}row.append(info,amounts);return row;
+ if(!global){const arrow=el('span',type==='income'?'↓':type==='expense'?'↑':type==='transfer'?'⇄':'·','history-direction');arrow.setAttribute('aria-hidden','true');row.append(arrow);}row.append(info,amounts);
+ if(!global&&['manual','excel'].includes(r.source)){
+  const actions=el('div','','history-correction-actions'),edit=el('button','✎','history-edit'),remove=el('button','×','history-delete');
+  edit.type=remove.type='button';edit.title='Editar movimiento';remove.title='Eliminar movimiento';
+  edit.setAttribute('aria-label','Editar '+r.concept);remove.setAttribute('aria-label','Eliminar '+r.concept);
+  edit.onclick=()=>editMovement(r);remove.onclick=()=>deleteMovement(r);actions.append(edit,remove);row.classList.add('has-corrections');row.append(actions);
+ }
+ return row;
  }
  function dateLabel(date){return date?new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z')):'Sin fecha';}
  let summaryData=null,summaryFund=null,summaryRequest=0,lastSummaryRender=null;
@@ -353,10 +360,30 @@
  chartCurrency.onchange=()=>{if(state)renderOverview(state.funds.filter(f=>!f.worker));renderFlow();animateDashboard($('treasury-distribution'));animateDashboard($('treasury-flow'));};
  $('fund-close').onclick=()=>$('treasury-detail').close();
  $('treasury-detail').addEventListener('close',()=>{stopDashboardMotion();lastSummaryRender=null;selected=null;offset=0;if(state)render();});
+ function correctionExpected(r){return {concept:r.concept,date:r.occurred_on??null,area:r.area??null,currency:r.currency,amount:Number(r.amount),rate:r.declared_rate==null?null:String(r.declared_rate)};}
+ function editMovement(r){
+ const concept=el('label','Concepto'),description=el('textarea');description.name='concept';description.required=true;description.maxLength=500;description.rows=3;description.value=r.concept;concept.append(description);
+ const date=input('Fecha','date','date');date.querySelector('input').value=r.occurred_on||'';date.querySelector('input').required=Boolean(r.occurred_on);
+ const areas=[['AUDIOVISUALES','Audiovisuales'],['GRAFICA','Gráficas'],['GENERAL','Gerencia']];if(!r.area)areas.unshift(['','Sin área']);
+ if(r.area&&!areas.some(([code])=>code===r.area))areas.push([r.area,r.area+' (histórica)']);
+ const area=selectField('Área','area',areas);area.querySelector('select').required=Boolean(r.area);area.querySelector('select').value=r.area||'';
+ const currency=selectField('Moneda original','currency',[['CUP','CUP'],['USD','USD']]);currency.querySelector('select').value=r.currency;
+ const amount=input('Importe original (+ ingreso / − egreso)','number','amount',{required:'',step:'0.01',inputmode:'decimal'});amount.querySelector('input').value=Number(r.amount);
+ const exchange=input('Tasa declarada (CUP/USD)','number','rate',{min:'0.01',max:'1000000',step:'any',inputmode:'decimal'});exchange.querySelector('input').value=r.declared_rate||'';
+ const fields=el('div','','correction-grid');fields.append(date,area,currency,amount,exchange);
+ open('Editar movimiento',data=>rpc('treasury_correct_movement',{p_operation:requestId,p_id:r.id,p_expected:correctionExpected(r),p_delete:false,p_concept:data.get('concept'),p_date:data.get('date')||null,p_area:data.get('area')||(r.area??null),p_currency:data.get('currency'),p_amount:Number(data.get('amount')),p_rate:data.get('rate')?Number(data.get('rate')):null}),[concept,fields,el('small','Los saldos y estadísticas se actualizarán al guardar. El comprobante existente se conserva.','chart-caption')]);
+ $('treasury-save').textContent='Guardar cambios';$('treasury-dialog').dataset.correction='edit';
+ }
+ function deleteMovement(r){
+ const summary=el('div','','correction-delete-summary'),display=movementDisplay(Number(r.amount),r.currency);
+ summary.append(el('strong',r.concept),el('p',display.principal+' '+display.equivalent),el('small',dateLabel(r.occurred_on)));
+ open('Eliminar movimiento',()=>rpc('treasury_correct_movement',{p_operation:requestId,p_id:r.id,p_expected:correctionExpected(r),p_delete:true,p_concept:null,p_date:null,p_area:null,p_currency:null,p_amount:null,p_rate:null}),[summary,el('p','¿Confirmas eliminar este movimiento? Se actualizarán los saldos y estadísticas. La corrección quedará registrada en el historial de auditoría.')]);
+ $('treasury-save').textContent='Eliminar movimiento';$('treasury-dialog').dataset.correction='delete';
+ }
  function input(label,type,name,opts={}){const l=el('label',label),n=el('input');n.type=type;n.name=name;for(const [k,v] of Object.entries(opts))n.setAttribute(k,v);l.append(n);return l;}
  function open(title,fn,fields,{movement,summary}={}){
  const dialog=$('treasury-dialog'),footer=dialog.querySelector('.modal-footer');
- dialog.removeAttribute('data-move');footer.querySelector('.move-balance')?.remove();$('treasury-save').textContent='Confirmar';
+ dialog.removeAttribute('data-move');dialog.removeAttribute('data-correction');footer.querySelector('.move-balance')?.remove();$('treasury-save').textContent='Confirmar';
  if(movement){dialog.dataset.move=movement;$('treasury-save').textContent=movement==='income'?'Confirmar ingreso':'Confirmar egreso';footer.prepend(summary);}
  requestId=crypto.randomUUID();action=fn;$('treasury-form').reset();$('treasury-dialog-title').textContent=title;$('treasury-fields').replaceChildren(...fields);$('treasury-error').textContent='';dialog.showModal();
  if(movement&&!motionPreference.matches&&!document.hidden&&typeof dialog.animate==='function')dialog.animate([{opacity:0,transform:'translateY(9px) scale(.985)'},{opacity:1,transform:'none'}],{duration:280,easing:'cubic-bezier(.22,.7,.25,1)'});
@@ -412,6 +439,6 @@
  update();
  }
  $('fund-in').onclick=()=>move(1);$('fund-out').onclick=()=>move(-1);$('fund-dispatch').onclick=()=>open('Preparar cuadre con el CEO',d=>rpc('treasury_dispatch',{p_id:requestId,p_cup:Number(d.get('cup')||0),p_usd:Number(d.get('usd')||0),p_note:d.get('note')}),[input('Importe CUP','number','cup',{min:'0',step:'0.01',value:'0'}),input('Importe USD','number','usd',{min:'0',step:'0.01',value:'0'}),input('Observación','text','note',{maxlength:'500'})]);
- $('treasury-form').onsubmit=e=>{e.preventDefault();run(async()=>{await action(new FormData(e.target));$('treasury-dialog').close();$('treasury-message').textContent='Movimiento registrado.';await refresh();});};$('treasury-close').onclick=$('treasury-cancel').onclick=()=>{if(!busy)$('treasury-dialog').close();};$('treasury-dialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('treasury-refresh').onclick=()=>run(refresh);$('history-next').onclick=()=>run(async()=>{offset+=100;await history();});$('history-prev').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await history();});
+ $('treasury-form').onsubmit=e=>{e.preventDefault();run(async()=>{await action(new FormData(e.target));const correction=$('treasury-dialog').dataset.correction;$('treasury-dialog').close();$('treasury-message').textContent=correction==='delete'?'Movimiento eliminado.':correction==='edit'?'Movimiento actualizado.':'Movimiento registrado.';await refresh();});};$('treasury-close').onclick=$('treasury-cancel').onclick=()=>{if(!busy)$('treasury-dialog').close();};$('treasury-dialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('treasury-refresh').onclick=()=>run(refresh);$('history-next').onclick=()=>run(async()=>{offset+=100;await history();});$('history-prev').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await history();});
  run(async()=>{const {data}=await client.auth.getUser();if(!data.user){location.href='/';return;}await refresh();startActivityUpdates();if(workers)await openFundDetail('workers');});
 })();

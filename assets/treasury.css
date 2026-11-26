@@ -551,3 +551,19 @@
   #treasury-dialog[data-move] .move-details-fields { grid-template-columns:1fr; }
   #treasury-dialog[data-move] .move-concept-panel textarea { min-height:100px; }
 }
+
+/* Compact correction controls within the movement history. */
+#treasury-detail .history-movement.has-corrections { grid-template-columns:26px minmax(0,1fr) auto auto; }
+.history-correction-actions { display:flex; align-items:center; gap:5px; }
+.history-correction-actions button { min-height:34px; width:34px; padding:0; border:1px solid #4c565e; border-radius:8px; background:linear-gradient(#30383e,#1a2127); font-size:20px; }
+.history-edit { color:#ffda03; }
+.history-delete { color:#ff8989; }
+.correction-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.correction-delete-summary { display:grid; gap:5px; padding:13px; border:1px solid #7d4149; border-radius:10px; background:#2b1b20; }
+#treasury-dialog[data-correction=delete] #treasury-save { background:linear-gradient(#ef7777,#a93845); color:#fff; border-color:#ff9292; box-shadow:none; }
+@media(max-width:460px) {
+  #treasury-detail .history-movement.has-corrections { grid-template-columns:20px minmax(0,1fr) auto; }
+  .history-correction-actions { grid-column:2/-1; justify-content:flex-end; }
+  .history-correction-actions button { min-height:40px; width:40px; }
+  .correction-grid { grid-template-columns:1fr; }
+}
