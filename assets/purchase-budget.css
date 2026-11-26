@@ -229,3 +229,5 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 .budget-rejection-reason{display:block;color:#ff9a9a}
 .budget-rejection-reason[hidden],.decision-actions button[hidden]{display:none!important}
 .decision-actions .danger{background:#b93842;color:white;border-color:#e16068}
+
+.budget-technical-view .stats{grid-template-columns:repeat(5,minmax(0,1fr))}.budget-technical-view .toolbar{display:none}.budget-technical-view .list-heading{gap:10px;flex-wrap:wrap}.budget-technical-view .list-heading h2{flex:1}.budget-technical-view #budget-requests{margin-top:12px}@media(max-width:650px){.budget-technical-view .stats{grid-template-columns:repeat(2,minmax(0,1fr))}.budget-technical-view .stats .stat:first-child{grid-column:1/-1}}
