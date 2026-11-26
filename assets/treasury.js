@@ -107,11 +107,11 @@
  function printDispatch(d){const w=window.open('','_blank');if(!w){$('treasury-message').textContent='Permite la ventana emergente para imprimir.';return;}const doc=w.document;doc.title='Comprobante de utilidad';const style=doc.createElement('style');style.textContent='@page{size:80mm auto;margin:4mm}body{font:12px Arial;width:72mm;margin:0}h2{text-align:center}p{overflow-wrap:anywhere}';doc.head.append(style);for(const t of ['EL CARTEL STUDIO','Comprobante de utilidad','Recibido confirmado',money(d.cup,'CUP'),money(d.usd,'USD'),new Date(d.confirmed_at).toLocaleString('es-CU'),d.note||'','Firma del CEO: __________________']){const p=doc.createElement('p');p.textContent=t;doc.body.append(p);}w.print();}
  const historyMonth=$('history-month'),historyYear=$('history-year'),historyCurrency=$('history-currency');
  const historyKinds=[...$('history-kinds').querySelectorAll('button')];
- let historyKind='all',historyRequest=0;
+ let historyKind='all',historyRequest=0,auditPreviousPeriod=null;
  for(const option of chartMonth.options)historyMonth.append(option.cloneNode(true));
  for(const option of chartYear.options)historyYear.append(option.cloneNode(true));
  function resetHistoryFilters(){
- offset=0;historyKind='all';historyMonth.value=String(currentMonth);historyYear.value=String(currentYear);historyYear.disabled=false;historyCurrency.value='all';$('history-search').value='';$('history-area').replaceChildren(new Option('Todas las áreas',''));
+ offset=0;historyKind='all';auditPreviousPeriod=null;historyMonth.setAttribute('aria-label','Mes de movimientos');historyMonth.value=String(currentMonth);historyYear.value=String(currentYear);historyYear.disabled=false;historyCurrency.value='all';$('history-search').value='';$('history-area').replaceChildren(new Option('Todas las áreas',''));
  for(const button of historyKinds)button.setAttribute('aria-pressed',String(button.dataset.kind==='all'));
  }
  function combinedAmount(cup,usd){
@@ -175,7 +175,7 @@
  function historyArgs(fund,page){return {p_fund:fund,p_offset:page,p_month:histMonth(),p_kind:historyKind,p_currency:historyCurrency.value,p_search:$('history-search').value.trim(),p_area:$('history-area').value};}
  function monthIndex(date){return Number(date.slice(0,4))*12+Number(date.slice(5,7))-1;}
  function renderFundStatistics(){
- const target=$('fund-statistics'),month=histMonth(),label=$('fund-period-label');
+ const target=$('fund-statistics'),month=historyKind==='audit'&&auditPreviousPeriod?(auditPreviousPeriod.month==='all'?null:auditPreviousPeriod.year+'-'+auditPreviousPeriod.month.padStart(2,'0')+'-01'):histMonth(),label=$('fund-period-label');
  label.textContent=month?new Intl.DateTimeFormat('es-CU',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'T00:00:00Z')):'Todo el histórico';
  if(!summaryData||summaryFund!==selected){stopMotion(target);lastSummaryRender=null;target.textContent='Consultando resumen…';return;}
  if(lastSummaryRender?.data===summaryData&&lastSummaryRender.month===month&&lastSummaryRender.rate===rate&&lastSummaryRender.fund===selected)return;
@@ -250,30 +250,60 @@
  try{const data=await rpc('treasury_fund_summary',{p_fund:fund});if(request!==summaryRequest||selected!==fund)return;summaryData=data;const select=$('history-area'),value=select.value;select.replaceChildren(new Option('Todas las áreas',''));for(const area of data.areas||[])select.append(new Option(area,area));select.value=value;if(select.selectedIndex<0)select.selectedIndex=0;renderFundStatistics();}
  catch(e){if(request===summaryRequest&&selected===fund)$('fund-statistics').textContent='No se pudo consultar el resumen. '+e.message;}
  }
- function shiftFundPeriod(delta){const date=new Date(Date.UTC(Number(historyYear.value),Number(historyMonth.value==='all'?currentMonth:historyMonth.value)-1+delta,1));historyYear.value=String(date.getUTCFullYear());historyMonth.value=String(date.getUTCMonth()+1);changeHistoryFilter();}
+ function shiftFundPeriod(delta){if(historyKind==='audit'&&auditPreviousPeriod){const date=new Date(Date.UTC(Number(auditPreviousPeriod.year),Number(auditPreviousPeriod.month==='all'?currentMonth:auditPreviousPeriod.month)-1+delta,1));auditPreviousPeriod={year:String(date.getUTCFullYear()),month:String(date.getUTCMonth()+1)};renderFundStatistics();return;}const date=new Date(Date.UTC(Number(historyYear.value),Number(historyMonth.value==='all'?currentMonth:historyMonth.value)-1+delta,1));historyYear.value=String(date.getUTCFullYear());historyMonth.value=String(date.getUTCMonth()+1);changeHistoryFilter();}
  $('fund-period-prev').onclick=()=>shiftFundPeriod(-1);$('fund-period-next').onclick=()=>shiftFundPeriod(1);
  $('history-area').onchange=()=>{offset=0;history();};let searchTimer;$('history-search').oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{offset=0;history();},250);};
- $('history-export').onclick=()=>run(async()=>{const fund=selected,args=historyArgs(fund,0),rows=[];for(let page=0;;page+=100){const batch=await rpc('treasury_history_search',{...args,p_offset:page});rows.push(...batch.slice(0,100));if(batch.length<=100)break;}const csv=v=>'"'+String(v??'').replace(/^[=+@-](?![0-9])/,"'$&").replace(/"/g,'""')+'"';const data=[['Fecha','Concepto','Área','Importe','Moneda','Origen'],...rows.map(r=>[r.occurred_on,r.concept,r.area,r.amount,r.currency,sourceLabels[r.source]||r.source])].map(r=>r.map(csv).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+data],{type:'text/csv;charset=utf-8'}));const link=el('a');link.href=url;link.download='movimientos-'+fund+'-'+(args.p_month||'historico')+'.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+ function auditArgs(fund,page){const {p_kind,...args}=historyArgs(fund,page);return args;}
+ const auditLabels={created:'Registrado',edited:'Editado',deleted:'Eliminado'};
+ function auditCard(event){
+ const row=el('article','','audit-movement '+event.action),head=el('div','','audit-movement-head'),entry=event.after||event.before;
+ const badge=el('span',auditLabels[event.action]||event.action,'audit-badge');
+ const actor=event.actor_name||(entry.source==='excel'&&event.action==='created'?'Importación histórica':'Usuario sin nombre registrado');
+ head.append(badge,el('small',new Date(event.event_at).toLocaleTimeString('es-CU',{timeZone:'America/Havana',hour:'2-digit',minute:'2-digit'})+' · '+actor));row.append(head);
+ const snapshots=el('div','','audit-snapshots');
+ for(const [label,value] of [[event.action==='deleted'?'Movimiento eliminado':'Antes',event.before],[event.action==='edited'?'Después':'Movimiento registrado',event.after]]){
+  if(!value)continue;
+  const card=el('div','','audit-snapshot'),display=movementDisplay(Number(value.amount),value.currency),amounts=el('div','','history-amounts');
+  const reference=el('small',display.equivalent,'history-equivalent');reference.dataset.amount=String(value.amount);reference.dataset.currency=value.currency;
+  amounts.append(el('strong',display.principal,'history-amount'),reference);
+  card.append(el('small',label,'audit-snapshot-label'),el('strong',value.concept),amounts,el('small',[dateLabel(value.date),value.area,sourceLabels[value.source]||value.source,value.rate?'Tasa '+value.rate+' CUP/USD':null].filter(Boolean).join(' · ')));
+  snapshots.append(card);
+ }
+ row.append(snapshots);return row;
+ }
+ $('history-export').onclick=()=>run(async()=>{
+ const fund=selected,audit=historyKind==='audit',args=audit?auditArgs(fund,0):historyArgs(fund,0),rows=[];
+ for(let page=0;;page+=100){const batch=await rpc(audit?'treasury_movement_history':'treasury_history_search',{...args,p_offset:page});rows.push(...batch.slice(0,100));if(batch.length<=100)break;}
+ const csv=v=>'"'+String(v??'').replace(/^[=+@-](?![0-9])/,"'$&").replace(/"/g,'""')+'"';
+ const data=audit?[['Fecha de registro o corrección','Acción','Usuario','Concepto anterior','Importe anterior','Moneda anterior','Área anterior','Fecha anterior','Concepto posterior','Importe posterior','Moneda posterior','Área posterior','Fecha posterior'],...rows.map(r=>[r.event_at,auditLabels[r.action],r.actor_name,r.before?.concept,r.before?.amount,r.before?.currency,r.before?.area,r.before?.date,r.after?.concept,r.after?.amount,r.after?.currency,r.after?.area,r.after?.date])]:[['Fecha','Concepto','Área','Importe','Moneda','Origen'],...rows.map(r=>[r.occurred_on,r.concept,r.area,r.amount,r.currency,sourceLabels[r.source]||r.source])];
+ const url=URL.createObjectURL(new Blob(['\uFEFF'+data.map(r=>r.map(csv).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));const link=el('a');link.href=url;link.download=(audit?'historial-':'movimientos-')+fund+'-'+(args.p_month||'historico')+'.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ });
  async function history(){
  if(!selected)return;
- const fund=selected,request=++historyRequest,body=$('treasury-history');
- body.replaceChildren(el('p','Consultando movimientos…','history-empty'));
+ const fund=selected,request=++historyRequest,body=$('treasury-history'),audit=historyKind==='audit';
+ body.replaceChildren(el('p',audit?'Consultando historial…':'Consultando movimientos…','history-empty'));
  $('history-prev').disabled=$('history-next').disabled=true;
  renderFundStatistics();
  try{
- const rows=await rpc('treasury_history_search',historyArgs(fund,offset));
+ const rows=await rpc(audit?'treasury_movement_history':'treasury_history_search',audit?auditArgs(fund,offset):historyArgs(fund,offset));
  if(request!==historyRequest||selected!==fund)return;
- body.replaceChildren();let lastDate,group;
+ body.replaceChildren();if(audit)body.append(el('p','Historial de registros, ediciones y eliminaciones · ordenado por fecha de operación','audit-history-note'));let lastDate,group;
  for(const r of rows.slice(0,100)){
- if(!group||r.occurred_on!==lastDate){lastDate=r.occurred_on;group=el('section','','history-day');group.append(el('h4',dateLabel(lastDate),'history-date'));body.append(group);}
- group.append(movementCard(r));
+ const day=audit?r.event_day:r.occurred_on;
+ if(!group||day!==lastDate){lastDate=day;group=el('section','','history-day');group.append(el('h4',dateLabel(lastDate),'history-date'));body.append(group);}
+ group.append(audit?auditCard(r):movementCard(r));
  }
- if(!rows.length)body.append(el('p','Sin movimientos para este filtro.','history-empty'));
+ if(!rows.length)body.append(el('p',audit?'Sin registros de historial para este filtro.':'Sin movimientos para este filtro.','history-empty'));
  $('history-prev').disabled=offset===0;$('history-next').disabled=rows.length<=100;
  }catch(e){if(request===historyRequest&&selected===fund){body.replaceChildren(el('p',e.message||'No se pudieron consultar los movimientos.','history-empty'));$('history-prev').disabled=offset===0;}}
  }
  function changeHistoryFilter(){offset=0;historyYear.disabled=historyMonth.value==='all';history();}
- for(const button of historyKinds)button.onclick=()=>{historyKind=button.dataset.kind;for(const item of historyKinds)item.setAttribute('aria-pressed',String(item===button));changeHistoryFilter();};
+ for(const button of historyKinds)button.onclick=()=>{
+ const next=button.dataset.kind;
+ if(next==='audit'&&historyKind!=='audit'){auditPreviousPeriod={month:historyMonth.value,year:historyYear.value};historyMonth.value='all';historyCurrency.value='all';$('history-search').value='';$('history-area').value='';}
+ if(next!=='audit'&&historyKind==='audit'&&auditPreviousPeriod){historyMonth.value=auditPreviousPeriod.month;historyYear.value=auditPreviousPeriod.year;auditPreviousPeriod=null;}
+ historyKind=next;historyMonth.setAttribute('aria-label',next==='audit'?'Mes de registro o corrección':'Mes de movimientos');for(const item of historyKinds)item.setAttribute('aria-pressed',String(item===button));changeHistoryFilter();
+ };
  historyMonth.onchange=historyYear.onchange=historyCurrency.onchange=changeHistoryFilter;
  resetHistoryFilters();
  const activityDialog=$('activity-dialog'),activityMonth=$('activity-month'),activityYear=$('activity-year');
