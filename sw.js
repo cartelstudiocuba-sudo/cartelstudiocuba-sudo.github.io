@@ -17,3 +17,23 @@ self.addEventListener('fetch', event => {
       .catch(() => fetch(request))
   );
 });
+
+self.addEventListener('push', event => {
+ let payload={};try{payload=event.data?.json()||{};}catch{}
+ const id=payload.id;
+ const safeId=typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id)?id:'';
+ event.waitUntil(self.registration.showNotification('Cartel Gestión',{
+  body:typeof payload.title==='string'&&typeof payload.body==='string'?(payload.title+' · '+payload.body).slice(0,180):'Tienes una nueva notificación. Abre Gestión para consultarla.',
+  icon:'/assets/cartel-minimal-any-192.png',badge:'/assets/cartel-minimal-any-192.png',
+  tag:safeId||'cartel-notice',data:{id:safeId}
+ }));
+});
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();
+ const id=event.notification.data?.id;
+ const url=new URL('/dashboard.html',self.location.origin);
+ if(typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id))url.searchParams.set('notice',id);
+ event.waitUntil((async()=>{
+  return self.clients.openWindow(url.href);
+ })());
+});

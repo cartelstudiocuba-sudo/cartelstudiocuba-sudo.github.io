@@ -106,6 +106,7 @@
   if(signingOut||leavingSession)return;
   signingOut=true;const button=document.getElementById('cartel-sign-out');if(button){button.disabled=true;button.querySelector('span').textContent='Cerrando sesión…';}
   try{
+   try{await root.CartelNotifications?.disable();}catch{}
    const {error}=await sessionClient.auth.signOut({scope:'local'});
    authFlights.delete(sessionClient.auth);
    const result=await sessionClient.auth.getSession();
