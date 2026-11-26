@@ -27,6 +27,7 @@ async function openNotice(item){
  try{
   await currentUser();const url=new URL(item.route,location.origin);if(url.origin!==location.origin||!allowed.has(url.pathname))throw Error('Destino no disponible');
   await rpc('management_notifications_read',{p_id:item.id});dialog.close();void refresh();
+  if(url.pathname==='/dashboard.html'){document.querySelector('[data-home]')?.click();return;}
   // The module verifies its own permissions and record access.
   const link=[...document.querySelectorAll('.nav a')].find(a=>new URL(a.href,location.origin).pathname===url.pathname);
   if(url.pathname==='/cuadre-nevera.html'&&window.cartelFridgeOperatorAccess===true){location.assign(url.href);return;}

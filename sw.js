@@ -34,6 +34,15 @@ self.addEventListener('notificationclick',event=>{
  const url=new URL('/dashboard.html',self.location.origin);
  if(typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id))url.searchParams.set('notice',id);
  event.waitUntil((async()=>{
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  for(const client of windows){
+   const current=new URL(client.url);
+   if(client.frameType==='nested'||current.origin!==url.origin||current.pathname!==url.pathname)continue;
+   try{
+    const navigated=await client.navigate(url.href);
+    if(navigated){await navigated.focus();return;}
+   }catch{}
+  }
   return self.clients.openWindow(url.href);
  })());
 });
