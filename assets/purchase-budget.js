@@ -45,7 +45,7 @@
   document.documentElement.classList.toggle('budget-manager-view',manager);
   if(manager){
    stats.hidden=true;$('budget-chief-summary').hidden=true;
-   window.CartelBudgetManager.render({container:$('budget-manager-summary'),requests,totals:requestTotals,selected:filter,selectFilter:key=>setFilter(filter===key?'all':key),onChange:()=>{limit=25;updateStats();renderList();}});
+   window.CartelBudgetManager.render({container:$('budget-manager-summary'),requests,totals:requestTotals,selected:filter,selectFilter:setFilter,onChange:()=>{limit=25;updateStats();renderList();}});
    return;
   }
   $('budget-chief-summary').hidden=!chief;stats.hidden=chief;
@@ -230,7 +230,7 @@
     const rejected=event.submitter===confirmReject&&!reason.hidden;
     if(!approved&&!rejected)return;
     if(rejected&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}
-    run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:''});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:rejected?note.value.trim():''});detailDialog.close();await load();report('Decisión guardada.');});
+    run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:''});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:rejected?note.value.trim():''});detailDialog.close();if(isManagerBudgetView())filter='pending';await load();report('Decisión guardada.');});
    };
    body.append(decision);
   }
@@ -436,7 +436,7 @@
   caps=await rpc('purchase_budget_capabilities');
   if(!Object.values(caps).some(Boolean)){report('Tu rol no tiene acceso a las solicitudes de presupuesto.');return;}
   if(isChiefBudgetView()||isManagerBudgetView())$('budget-count').after($('budget-refresh'));
-  if(isManagerBudgetView())document.querySelector('.budget>.hero small').textContent='EL CARTEL STUDIO · FINANZAS';
+  if(isManagerBudgetView()){filter='pending';document.querySelector('.budget>.hero small').textContent='EL CARTEL STUDIO · FINANZAS';}
   $('budget-new').hidden=!canSubmit();$('budget-list').hidden=false;await load();
   const requestedId=new URLSearchParams(location.search).get('request');
   const requested=requests.find(request=>request.id===requestedId);
