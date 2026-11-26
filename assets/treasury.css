@@ -148,3 +148,15 @@
 .fund-month-column.income .fund-month-track span{background:linear-gradient(to top,#299f65,#65df99)}
 .fund-month-column.expense .fund-month-track span{background:linear-gradient(to top,#be555d,#ff9292)}
 @media(max-width:460px){.fund-month-chart{gap:10px;padding:11px}.fund-month-column .combined-amount strong{font-size:16px}.fund-month-column{grid-template-rows:auto auto 60px}.fund-month-track{height:60px}}
+
+#treasury-detail .fund-main-banner{border:1px solid #b99d37;border-radius:15px;background:linear-gradient(120deg,#343021,#20231f 45%,#171b21 78%,#302919);padding:12px 16px}
+#treasury-detail .fund-main-banner .detail-top{margin:0 0 7px;gap:8px}
+#treasury-detail .fund-main-banner .detail-top h2{font-size:20px;color:#f3f5f7;line-height:1.2}
+#treasury-detail .fund-main-banner .close{background:#ffffff0b;border-color:#ffffff26;width:34px;height:34px;min-width:34px}
+#treasury-detail .fund-main-banner .fund-modal-balance{background:transparent;border:0;border-radius:0;padding:4px 0 12px}
+#treasury-detail .fund-main-banner .fund-period-nav{margin:0;padding-top:9px;border-top:1px solid #c7a84635}
+.fund-month-section{border:1px solid #414955;border-radius:12px;background:linear-gradient(135deg,#252a32,#191e25);padding:12px}
+#treasury-detail .fund-month-section .fund-period-heading{margin:0 0 9px;color:#ffda03}
+.fund-month-section .fund-month-chart{border:1px solid #38414b;background:#1b2028}
+.fund-month-section .fund-result{margin-top:8px}
+@media(max-width:460px){#treasury-detail .fund-main-banner{padding:10px 12px}.fund-month-section{padding:10px}}

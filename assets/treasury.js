@@ -108,7 +108,6 @@
  function monthIndex(date){return Number(date.slice(0,4))*12+Number(date.slice(5,7))-1;}
  function renderFundStatistics(){
  const target=$('fund-statistics'),month=histMonth(),label=$('fund-period-label');
- $('fund-period-heading').textContent=month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico';
  label.textContent=month?new Intl.DateTimeFormat('es-CU',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'T00:00:00Z')):'Todo el histórico';
  if(!summaryData||summaryFund!==selected){target.textContent='Consultando resumen…';return;}
  target.replaceChildren();
@@ -127,7 +126,7 @@
  fill.style.height=(inUsd(amount)||0)/max*100+'%';track.append(fill);
  column.append(title,combinedAmount(...amount),track);panel.append(column);
  }
- target.append(panel,netBlock('Resultado neto',income,expense));
+ const monthly=el('section','','fund-month-section');monthly.append(el('h3',month?'Ingresos y egresos del mes':'Ingresos y egresos del histórico','fund-period-heading'),panel,netBlock('Resultado neto',income,expense));target.append(monthly);
  const historical=el('section','','fund-average-card'),heading=el('div','','fund-average-header');heading.append(el('strong','Promedio mensual histórico'),el('small',months?months+' meses completos':'Sin meses completos'));historical.append(heading);
  const avgGrid=el('div','','fund-average-grid'),avgMax=Math.max(1,avgIn?inUsd(avgIn)||0:0,avgOut?inUsd(avgOut)||0:0);
  for(const [name,amount,kind] of [['Ingreso promedio',avgIn,'income'],['Gasto promedio',avgOut,'expense']]){const item=el('div','','fund-average-metric '+kind);item.append(el('small',name),amount?combinedAmount(...amount):el('strong','—'));if(amount&&rate>0){const track=el('div','','fund-stat-track'),fill=el('span');fill.style.width=inUsd(amount)/avgMax*100+'%';fill.style.background=kind==='income'?'#58e0a0':'#ff9292';track.append(fill);item.append(track);}avgGrid.append(item);}
