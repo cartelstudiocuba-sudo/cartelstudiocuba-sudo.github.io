@@ -160,3 +160,13 @@
 .fund-month-section .fund-month-chart{border:1px solid #38414b;background:#1b2028}
 .fund-month-section .fund-result{margin-top:8px}
 @media(max-width:460px){#treasury-detail .fund-main-banner{padding:10px 12px}.fund-month-section{padding:10px}}
+
+#treasury-detail .fund-movements-panel{margin-top:14px;padding:12px;border:1px solid #404650;border-radius:12px;background:linear-gradient(135deg,#252a32,#191e25)}
+#treasury-detail .fund-movements-panel .fund-history-controls{margin:0 0 12px}
+#treasury-detail .fund-movements-panel .fund-history-controls h3{color:#ffda03;margin:0 0 10px}
+#treasury-detail .fund-movements-panel .history-kinds{background:#1b2027;border-color:#3e454e}
+#treasury-detail .fund-movements-panel .history-kinds button:not([aria-pressed=true]){background:transparent;color:#dce1e6}
+#treasury-detail .fund-movements-panel :is(.history-filters,.fund-search) :is(select,input){background:#1b2027;border-color:#414852}
+#treasury-detail .fund-movements-panel .history-movement{background:#1b2027;border-color:#363c45}
+#treasury-detail .fund-movements-panel .treasury-actions{margin:8px 0 0}
+@media(max-width:460px){#treasury-detail .fund-movements-panel{padding:10px}}
