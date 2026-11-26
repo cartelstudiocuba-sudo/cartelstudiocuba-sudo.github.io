@@ -219,3 +219,18 @@
   .fund-wallet-footer { grid-template-columns: 1fr; gap: 2px; }
   #fund-wallet-rate { border-left: 0; border-top: 1px solid #a98d4255; padding: 5px 0; }
 }
+
+/* Distinct fund emblems, in the metallic gold of the approved wallet header. */
+.fund-wallet-art[data-fund]:not([data-fund="fixed"]) {
+  display: grid;
+  place-items: center;
+  background-image: radial-gradient(ellipse at 50% 60%, #b67c1b35, transparent 68%);
+  mask-image: none;
+}
+.fund-wallet-art[data-fund]:not([data-fund="fixed"]) svg {
+  width: clamp(38px, 75%, 92px);
+  height: auto;
+  color: #ffda69;
+  stroke-width: 2;
+  filter: drop-shadow(0 1px 0 #fff0b3) drop-shadow(1px 3px 0 #986118) drop-shadow(0 6px 7px #0009) drop-shadow(0 0 8px #e5aa3945);
+}

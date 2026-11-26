@@ -13,16 +13,16 @@
   stopMotion(root);
   if(motionPreference.matches||document.hidden)return;
   const counters=[...root.querySelectorAll('[data-treasury-counter]')].map(node=>({node,format:motionValues.get(node),final:node.textContent,label:node.getAttribute('aria-label')})).filter(v=>v.format);
-  const bars=[...root.querySelectorAll('.flow-bar,.distribution-track span')];
+  const bars=[...root.querySelectorAll('.flow-bar,.distribution-track span,.fund-month-track span,.fund-stat-track span')];
   const animations=[];
   for(const v of counters){v.node.setAttribute('aria-label',v.final);v.node.textContent=v.format(0);}
   function animate(node,frames,options){if(typeof node.animate==='function')animations.push(node.animate(frames,options));}
   bars.forEach((bar,index)=>{
-   const vertical=bar.classList.contains('flow-bar');
+   const vertical=bar.classList.contains('flow-bar')||bar.parentElement?.classList.contains('fund-month-track');
    animate(bar,[{transform:vertical?'scaleY(0)':'scaleX(0)',transformOrigin:vertical?'bottom':'left'},{transform:'scale(1)',transformOrigin:vertical?'bottom':'left'}],{duration:850,delay:Math.min(index*36,180),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'});
   });
   if(entrance){
-   [...root.querySelectorAll('.treasury-card,.treasury-summary')].forEach((node,index)=>animate(node,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:500,delay:Math.min(index*45,225),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'}));
+   [...root.querySelectorAll('.treasury-card,.treasury-summary,.fund-main-banner,.treasury-heading,.fund-month-section,.fund-average-card')].forEach((node,index)=>animate(node,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:500,delay:Math.min(index*45,225),easing:'cubic-bezier(.22,.7,.25,1)',fill:'backwards'}));
   }
   let frame=0,start=null;
   const finish=()=>{
@@ -88,10 +88,17 @@
  equivalent.title=rate>0?'Tasa del día · '+rateDate:'Tasa del día no disponible';
  const arrow=el('span','›','compact-fund-arrow');arrow.setAttribute('aria-hidden','true');
  b.append(icon,body,equivalent,arrow);
- b.onclick=()=>run(async()=>{selected=f.code;resetHistoryFilters();render();$('treasury-detail').showModal();await Promise.all([history(),loadFundStatistics(selected)]);});
+ b.onclick=()=>run(()=>openFundDetail(f.code));
  cards.append(b);
  }
  const f=funds.find(f=>f.code===selected);if(!workers)renderOverview(funds);if(!f)return;$('fund-title').textContent=f.label;renderFundBalance(f);$('fund-dispatch').hidden=f.code!=='profit'||state.owner;$('treasury-dispatches').hidden=f.code!=='profit';renderDispatches();}
+ async function openFundDetail(code){
+ selected=code;summaryData=null;lastSummaryRender=null;resetHistoryFilters();render();
+ const detail=$('treasury-detail');detail.showModal();
+ animateDashboard(detail.querySelector('.fund-main-banner'),{entrance:false});
+ if(!motionPreference.matches&&!document.hidden&&typeof detail.animate==='function')detail.animate([{opacity:0,transform:'translateY(10px) scale(.985)'},{opacity:1,transform:'none'}],{duration:340,easing:'cubic-bezier(.22,.7,.25,1)'});
+ await Promise.all([history(),loadFundStatistics(code)]);
+ }
  function renderDispatches(){const target=$('treasury-dispatches');target.replaceChildren();if(selected!=='profit')return;target.append(el('h3','Cuadres con el CEO'));for(const d of state.dispatches){const row=el('div','','treasury-dispatch');row.append(el('strong',money(d.cup,'CUP')+' + '+money(d.usd,'USD')),el('p',new Date(d.created_at).toLocaleString('es-CU')+' · '+(d.status==='pending'?'Pendiente de recibido':'Recibido confirmado')),el('p',d.note));if(state.owner&&d.status==='pending'){const b=el('button','Confirmar recibido','primary');b.onclick=()=>{open('Confirmar recibido del CEO',()=>rpc('treasury_confirm_dispatch',{p_id:d.id}),[el('p','Confirmas haber recibido '+money(d.cup,'CUP')+' y '+money(d.usd,'USD')+'.')]);};row.append(b);}if(d.status==='confirmed'){const b=el('button','Imprimir comprobante','secondary');b.onclick=()=>printDispatch(d);row.append(b);}target.append(row);}if(!state.dispatches.length)target.append(el('p','Todavía no hay cuadres.'));}
  function printDispatch(d){const w=window.open('','_blank');if(!w){$('treasury-message').textContent='Permite la ventana emergente para imprimir.';return;}const doc=w.document;doc.title='Comprobante de utilidad';const style=doc.createElement('style');style.textContent='@page{size:80mm auto;margin:4mm}body{font:12px Arial;width:72mm;margin:0}h2{text-align:center}p{overflow-wrap:anywhere}';doc.head.append(style);for(const t of ['EL CARTEL STUDIO','Comprobante de utilidad','Recibido confirmado',money(d.cup,'CUP'),money(d.usd,'USD'),new Date(d.confirmed_at).toLocaleString('es-CU'),d.note||'','Firma del CEO: __________________']){const p=doc.createElement('p');p.textContent=t;doc.body.append(p);}w.print();}
  const historyMonth=$('history-month'),historyYear=$('history-year'),historyCurrency=$('history-currency');
@@ -106,11 +113,12 @@
  function combinedAmount(cup,usd){
  const block=el('div','','combined-amount');
  const total=rate>0?usd+cup/rate:null;
- block.append(el('strong',total===null?'—':money(total,'USD')),el('small',rate>0?'('+money(cup+usd*rate,'CUP')+')':'CUP '+numberAmount(cup)+' · USD '+numberAmount(usd)));
+ block.append(total===null?el('strong','—'):amountCounter('strong',total,'USD'),rate>0?counter('small',p=>'('+money((cup+usd*rate)*p,'CUP')+')'):counter('small',p=>'CUP '+numberAmount(cup*p)+' · USD '+numberAmount(usd*p)));
  return block;
  }
  function renderFundBalance(f){
- const target=$('fund-balance');target.replaceChildren();
+ const target=$('fund-balance'),banner=target.closest('.fund-main-banner');stopMotion(banner);target.replaceChildren();
+ const art=banner.querySelector('.fund-wallet-art');art.dataset.fund=f.code;art.replaceChildren();if(f.code!=='fixed')art.append(fundGlyph(f.code));
  const body=el('div','','fund-balance-main'),amount=combinedAmount(Number(f.CUP),Number(f.USD));
  body.append(el('small','Saldo actual · equivalente USD'),amount);target.append(body);
  $('fund-wallet-rate').textContent=rate>0?'1 USD = '+rate+' CUP · '+rateDate:'Tasa de referencia no disponible';
@@ -147,15 +155,16 @@
  if(!global){const arrow=el('span',type==='income'?'↓':type==='expense'?'↑':type==='transfer'?'⇄':'·','history-direction');arrow.setAttribute('aria-hidden','true');row.append(arrow);}row.append(info,amounts);return row;
  }
  function dateLabel(date){return date?new Intl.DateTimeFormat('es-CU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z')):'Sin fecha';}
- let summaryData=null,summaryFund=null,summaryRequest=0;
+ let summaryData=null,summaryFund=null,summaryRequest=0,lastSummaryRender=null;
  const histMonth=()=>historyMonth.value==='all'?null:historyYear.value+'-'+historyMonth.value.padStart(2,'0')+'-01';
  function historyArgs(fund,page){return {p_fund:fund,p_offset:page,p_month:histMonth(),p_kind:historyKind,p_currency:historyCurrency.value,p_search:$('history-search').value.trim(),p_area:$('history-area').value};}
  function monthIndex(date){return Number(date.slice(0,4))*12+Number(date.slice(5,7))-1;}
  function renderFundStatistics(){
  const target=$('fund-statistics'),month=histMonth(),label=$('fund-period-label');
  label.textContent=month?new Intl.DateTimeFormat('es-CU',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'T00:00:00Z')):'Todo el histórico';
- if(!summaryData||summaryFund!==selected){target.textContent='Consultando resumen…';return;}
- target.replaceChildren();
+ if(!summaryData||summaryFund!==selected){stopMotion(target);lastSummaryRender=null;target.textContent='Consultando resumen…';return;}
+ if(lastSummaryRender?.data===summaryData&&lastSummaryRender.month===month&&lastSummaryRender.rate===rate&&lastSummaryRender.fund===selected)return;
+ stopMotion(target);lastSummaryRender={data:summaryData,month,rate,fund:selected};target.replaceChildren();
  const now=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit'}).formatToParts(new Date()),year=Number(now.find(p=>p.type==='year').value),m=Number(now.find(p=>p.type==='month').value),end=year*12+m-1;
  const historicalOutlier=selected==='fixed'&&summaryData.first_date&&summaryData.first_date<'2023-01-01';
  const first=historicalOutlier?'2023-01-06':summaryData.first_date,start=first?monthIndex(first)+(first.slice(8,10)==='01'?0:1):end,months=Math.max(0,end-start);
@@ -179,6 +188,7 @@
  historical.append(el('small','Equivalentes calculados a la tasa de referencia del día. El resumen incluye ambas monedas; los filtros inferiores se aplican al historial. Los promedios incluyen meses sin actividad y excluyen el actual y el inicial si es parcial.','chart-caption'));
  if(historicalOutlier)historical.append(el('small','Promedios desde febrero de 2023. Dos registros aislados de 2004 se mantienen en el historial y quedan fuera del promedio.','chart-caption'));
  if(summaryData.undated)historical.append(el('small','Movimientos sin fecha excluidos del resumen: '+summaryData.undated,'chart-caption'));
+ if($('treasury-detail').open)animateDashboard(target,{entrance:true});
  }
  async function loadFundStatistics(fund){
  const request=++summaryRequest;summaryData=null;summaryFund=fund;renderFundStatistics();
@@ -294,7 +304,7 @@
  $('chart-prev').onclick=()=>shiftPeriod(-1);$('chart-next').onclick=()=>shiftPeriod(1);$('chart-today').onclick=()=>{setPeriod(currentYear,currentMonth);loadFlow();};
  chartCurrency.onchange=()=>{if(state)renderOverview(state.funds.filter(f=>!f.worker));renderFlow();animateDashboard($('treasury-distribution'));animateDashboard($('treasury-flow'));};
  $('fund-close').onclick=()=>$('treasury-detail').close();
- $('treasury-detail').addEventListener('close',()=>{selected=null;offset=0;if(state)render();});
+ $('treasury-detail').addEventListener('close',()=>{stopDashboardMotion();lastSummaryRender=null;selected=null;offset=0;if(state)render();});
  function input(label,type,name,opts={}){const l=el('label',label),n=el('input');n.type=type;n.name=name;for(const [k,v] of Object.entries(opts))n.setAttribute(k,v);l.append(n);return l;}
  function open(title,fn,fields){$('treasury-dialog').removeAttribute('data-move');$('treasury-save').textContent='Confirmar';requestId=crypto.randomUUID();action=fn;$('treasury-form').reset();$('treasury-dialog-title').textContent=title;$('treasury-fields').replaceChildren(...fields);$('treasury-error').textContent='';$('treasury-dialog').showModal();}
  const movementTypes={
@@ -337,5 +347,5 @@
  }
  $('fund-in').onclick=()=>move(1);$('fund-out').onclick=()=>move(-1);$('fund-dispatch').onclick=()=>open('Preparar cuadre con el CEO',d=>rpc('treasury_dispatch',{p_id:requestId,p_cup:Number(d.get('cup')||0),p_usd:Number(d.get('usd')||0),p_note:d.get('note')}),[input('Importe CUP','number','cup',{min:'0',step:'0.01',value:'0'}),input('Importe USD','number','usd',{min:'0',step:'0.01',value:'0'}),input('Observación','text','note',{maxlength:'500'})]);
  $('treasury-form').onsubmit=e=>{e.preventDefault();run(async()=>{await action(new FormData(e.target));$('treasury-dialog').close();$('treasury-message').textContent='Movimiento registrado.';await refresh();});};$('treasury-close').onclick=$('treasury-cancel').onclick=()=>{if(!busy)$('treasury-dialog').close();};$('treasury-dialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('treasury-refresh').onclick=()=>run(refresh);$('history-next').onclick=()=>run(async()=>{offset+=100;await history();});$('history-prev').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await history();});
- run(async()=>{const {data}=await client.auth.getUser();if(!data.user){location.href='/';return;}await refresh();startActivityUpdates();if(workers){selected='workers';resetHistoryFilters();render();$('treasury-detail').showModal();await Promise.all([history(),loadFundStatistics(selected)]);}});
+ run(async()=>{const {data}=await client.auth.getUser();if(!data.user){location.href='/';return;}await refresh();startActivityUpdates();if(workers)await openFundDetail('workers');});
 })();
