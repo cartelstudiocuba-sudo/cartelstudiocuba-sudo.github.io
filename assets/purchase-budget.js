@@ -65,6 +65,15 @@
   }
  }
  function setFilter(next){filter=next;limit=25;updateStats();renderList();}
+ function approvalStages(request) {
+  const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
+  const manager=request.status==='manager_pending'&&caps.manager&&request.chief_by!==user.id;
+  return {chief,manager};
+ }
+ function canApprove(request) {
+  const {chief,manager}=approvalStages(request);
+  return request.requester!==user.id&&(chief||manager);
+ }
  function renderList() {
   const chief=isChiefBudgetView(),manager=isManagerBudgetView();
   const query=normalize($('budget-search').value);
@@ -76,10 +85,16 @@
    else if(order==='urgent')visible.sort((a,b)=>(['Urgente','Crítica'].includes(b.priority))-(['Urgente','Crítica'].includes(a.priority))||newest(a,b));
    else visible.sort(newest);
   }
+  const pending=(filter==='all'?requests:visible).filter(canApprove).length;
+  const pendingBadge=$('budget-pending-count');
+  pendingBadge.hidden=!pending;
+  pendingBadge.textContent=pending>99?'99+':String(pending);
+  pendingBadge.setAttribute('aria-label',pending+' pendientes de tu aprobación');
+  pendingBadge.title=pending+' pendientes de tu aprobación';
   $('budget-count').textContent=visible.length+(visible.length===1?' solicitud':' solicitudes');
   const target=$('budget-requests');target.replaceChildren();
   if(chief||manager){
-   document.querySelector('.list-heading h2').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'||filter==='pending'?'Por aprobar':statuses[filter].label);
+   $('budget-list-title').textContent=filter==='all'?'Todas las solicitudes':(filter==='chief_pending'||filter==='pending'?'Por aprobar':statuses[filter].label);
    target.append(...visible.slice(0,limit).map(renderRequest));
    if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
@@ -195,9 +210,8 @@
   const body=node('div','','request-body');
   if(isChiefBudgetView()||isManagerBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));
   detailSections(body,request,state);
-  const chief=request.status==='chief_pending'&&(request.area==='Audiovisual'?caps.audiovisual:caps.graphics);
-  const manager=request.status==='manager_pending'&&caps.manager&&request.chief_by!==user.id;
-  if(request.requester!==user.id&&(chief||manager)){
+  const {chief,manager}=approvalStages(request);
+  if(canApprove(request)){
    const decision=node('form','','decision'),note=node('textarea');decision.noValidate=true;note.rows=2;note.maxLength=1500;note.placeholder='Observación (obligatoria para rechazar)';note.setAttribute('aria-label','Observación de la decisión');
    const funding=manager?window.CartelBudgetTreasury.approval(request,requestTotals):null;
    if(funding){decision.append(funding.panel);funding.panel.addEventListener('treasury-balances',event=>funding.setBalances(event.detail));}

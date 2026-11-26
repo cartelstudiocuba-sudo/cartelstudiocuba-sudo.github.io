@@ -206,3 +206,8 @@ dialog{border:1px solid #696d72;max-width:min(760px,calc(100vw - 24px));width:10
 .treasury-budget-funding,.treasury-budget-delivery{display:grid;gap:12px}.treasury-budget-funding h3,.treasury-budget-delivery h3{margin:0}.treasury-signature{display:block;width:100%;max-height:200px;background:white;border:1px solid #758595;border-radius:10px;touch-action:none;margin-top:8px}
 
 .treasury-evidence img{display:block;max-width:100%;max-height:400px;object-fit:contain;background:white;border-radius:8px}
+
+/* Match the approval counter in the platform navigation. */
+.list-heading h2{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.budget-pending-count{display:inline-grid;place-items:center;flex:0 0 auto;box-sizing:border-box;min-width:24px;height:24px;padding:0 5px;border-radius:999px;background:#e44450;color:#fff;font:700 11px/1 system-ui;white-space:nowrap}
+.budget-pending-count[hidden]{display:none!important}
