@@ -67,8 +67,8 @@
  function renderFundBalance(f){
  const target=$('fund-balance');target.replaceChildren();
  const body=el('div','','fund-balance-main'),amount=combinedAmount(Number(f.CUP),Number(f.USD));
- body.append(el('small','Saldo actual · equivalente USD'),amount,el('small',rate>0?'Tasa de referencia · 1 USD = '+rate+' CUP · '+rateDate:'Tasa de referencia no disponible'));
- const icon=el('span','','fund-balance-glyph');icon.append(fundGlyph(f.code));icon.setAttribute('aria-hidden','true');target.append(body,icon);
+ body.append(el('small','Saldo actual · equivalente USD'),amount);target.append(body);
+ $('fund-wallet-rate').textContent=rate>0?'1 USD = '+rate+' CUP · '+rateDate:'Tasa de referencia no disponible';
  }
  const sourceLabels={excel:'Histórico Excel',bar:'Cuadre de nevera',manual:'Manual',budget:'Solicitud de presupuesto',ceo_dispatch:'Cuadre CEO',transfer:'Traspaso entre fondos'};
  function movementEquivalent(amount,currency){

@@ -170,3 +170,52 @@
 #treasury-detail .fund-movements-panel .history-movement{background:#1b2027;border-color:#363c45}
 #treasury-detail .fund-movements-panel .treasury-actions{margin:8px 0 0}
 @media(max-width:460px){#treasury-detail .fund-movements-panel{padding:10px}}
+
+/* Cabecera de billetera digital. */
+#treasury-detail .fund-main-banner {
+  position: relative;
+  padding: 14px;
+  border: 1px solid #414852;
+  border-radius: 17px;
+  background: radial-gradient(ellipse at 84% 42%, #77530c38, transparent 32%), linear-gradient(135deg, #22272e, #101417 55%, #121416);
+  box-shadow: inset 0 1px 0 #ffffff12, 0 5px 14px #0005;
+}
+.fund-wallet-layout {
+  display: grid;
+  grid-template-columns: clamp(74px, 15%, 140px) minmax(0, 1fr) clamp(92px, 27%, 215px);
+  align-items: center;
+  min-height: 132px;
+  gap: 16px;
+  padding: 0 30px 8px 0;
+}
+.fund-wallet-art, .fund-coin-art {
+  height: 132px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  mask-image: radial-gradient(ellipse closest-side, #000 76%, transparent 100%);
+}
+.fund-wallet-art { background-image: url('treasury-wallet.webp'); }
+.fund-coin-art { background-image: url('treasury-coin.webp'); }
+.fund-wallet-copy { min-width: 0; border-left: 1px solid #a8a8a86b; padding-left: 17px; }
+#treasury-detail .fund-wallet-copy h2 { margin: 0 0 5px; color: #f7f7f8; font-size: clamp(19px, 3vw, 30px); line-height: 1.15; }
+#treasury-detail .fund-wallet-copy .fund-modal-balance { padding: 0; }
+.fund-wallet-copy .fund-balance-main { gap: 3px; }
+.fund-wallet-copy .fund-balance-main .combined-amount strong { color: #ffda03; font-size: clamp(25px, 4vw, 43px); font-weight: 800; }
+.fund-wallet-copy .fund-balance-main .combined-amount small { color: #e0e2e5; font-size: clamp(12px, 1.8vw, 17px); }
+#treasury-detail .fund-main-banner .close { position: absolute; top: 8px; right: 8px; z-index: 1; color: #fff; background: transparent; border-color: transparent; }
+.fund-wallet-footer { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 8px; padding: 3px 8px; border: 1px solid #ae8e36; border-radius: 10px; background: linear-gradient(180deg, #25282a, #101416); }
+#treasury-detail .fund-wallet-footer .fund-period-nav { border: 0; padding: 0; margin: 0; justify-content: space-between; gap: 5px; }
+#treasury-detail .fund-wallet-footer .fund-period-nav button { border: 0; background: transparent; box-shadow: none; color: #fff; min-width: 34px; padding: 2px 9px; }
+#fund-wallet-rate { border-left: 1px solid #a98d42; padding-left: 8px; text-align: center; color: #e1e5ed; font-size: 12px; overflow-wrap: anywhere; }
+#treasury-detail .treasury-heading #fund-in { color: #131313; background: linear-gradient(180deg,#ffe131,#ffcb00); border-color: #ffda03; box-shadow: inset 0 1px #fff5; font-weight: 800; }
+#treasury-detail .treasury-heading #fund-out { color: #fff; background: linear-gradient(180deg,#181d20,#0d1113); border-color: #ffda03; font-weight: 800; }
+@media(max-width: 570px) {
+  .fund-wallet-layout { grid-template-columns: 54px minmax(0,1fr) 69px; gap: 8px; min-height: 108px; padding-right: 12px; }
+  .fund-wallet-art, .fund-coin-art { height: 90px; }
+  .fund-wallet-copy { padding-left: 9px; }
+  .fund-wallet-copy .fund-balance-main > small { font-size: 10px; }
+  .fund-wallet-copy .fund-balance-main .combined-amount strong { font-size: clamp(21px, 6vw, 29px); }
+  .fund-wallet-footer { grid-template-columns: 1fr; gap: 2px; }
+  #fund-wallet-rate { border-left: 0; border-top: 1px solid #a98d4255; padding: 5px 0; }
+}
