@@ -354,7 +354,13 @@
  $('fund-close').onclick=()=>$('treasury-detail').close();
  $('treasury-detail').addEventListener('close',()=>{stopDashboardMotion();lastSummaryRender=null;selected=null;offset=0;if(state)render();});
  function input(label,type,name,opts={}){const l=el('label',label),n=el('input');n.type=type;n.name=name;for(const [k,v] of Object.entries(opts))n.setAttribute(k,v);l.append(n);return l;}
- function open(title,fn,fields){$('treasury-dialog').removeAttribute('data-move');$('treasury-save').textContent='Confirmar';requestId=crypto.randomUUID();action=fn;$('treasury-form').reset();$('treasury-dialog-title').textContent=title;$('treasury-fields').replaceChildren(...fields);$('treasury-error').textContent='';$('treasury-dialog').showModal();}
+ function open(title,fn,fields,{movement,summary}={}){
+ const dialog=$('treasury-dialog'),footer=dialog.querySelector('.modal-footer');
+ dialog.removeAttribute('data-move');footer.querySelector('.move-balance')?.remove();$('treasury-save').textContent='Confirmar';
+ if(movement){dialog.dataset.move=movement;$('treasury-save').textContent=movement==='income'?'Confirmar ingreso':'Confirmar egreso';footer.prepend(summary);}
+ requestId=crypto.randomUUID();action=fn;$('treasury-form').reset();$('treasury-dialog-title').textContent=title;$('treasury-fields').replaceChildren(...fields);$('treasury-error').textContent='';dialog.showModal();
+ if(movement&&!motionPreference.matches&&!document.hidden&&typeof dialog.animate==='function')dialog.animate([{opacity:0,transform:'translateY(9px) scale(.985)'},{opacity:1,transform:'none'}],{duration:280,easing:'cubic-bezier(.22,.7,.25,1)'});
+ }
  const movementTypes={
  fixed:[['Aportes','Reposiciones','Otros ingresos'],['Salarios','Servicios','Alquileres','Mantenimiento','Otros gastos']],
  investment:[['Recuperación de capital','Aportes del CEO','Otros ingresos'],['Equipamiento','Infraestructura','Devolución al CEO','Otros gastos']],
@@ -368,30 +374,33 @@
  const field=el('label',label),select=el('select');select.name=name;select.required=true;
  for(const [value,title] of choices){const option=el('option',title);option.value=value;select.append(option);}field.append(select);return field;
  }
- function moveBlock(number,title){const block=el('section','','move-block'),head=el('h3','','move-block-title');head.append(el('span',number),el('strong',title));block.append(head);return block;}
  function readReceipt(file){return new Promise((resolve,reject)=>{if(!file||!file.size){resolve(null);return;}if(file.size>2000000||!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)){reject(Error('Selecciona una imagen o PDF de hasta 2 MB.'));return;}const reader=new FileReader();reader.onload=()=>resolve({name:file.name,mime:file.type,content:String(reader.result).split(',')[1]});reader.onerror=()=>reject(Error('No se pudo leer el comprobante.'));reader.readAsDataURL(file);});}
  function move(direction){
  const f=selected,fund=state.funds.find(x=>x.code===f),income=direction>0;
- const details=moveBlock('1','Detalles del movimiento'),grid=el('div','','move-grid');
+ const details=el('section','','move-details'),grid=el('div','','move-details-fields'),conceptPanel=el('div','','move-concept-panel');
  const date=input('Fecha','date','date',{required:''});date.querySelector('input').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const area=selectField('Área','area',[['','Seleccionar área'],...['AUDIOVISUALES','DISEÑO','GRAFICA','OFICINA','GENERAL'].map(x=>[x,x])]);
  const category=selectField('Tipo de movimiento','category',[['','Seleccionar tipo'],...(movementTypes[f]||movementTypes.fixed)[income?0:1].map(x=>[x,x])]);
  const concept=input('Concepto','text','concept',{required:'',maxlength:'500',placeholder:'Describe el movimiento'});
- grid.append(date,area,category,concept);details.append(grid);
+ grid.append(date,area,category);conceptPanel.append(concept);details.append(grid,conceptPanel);
  let kind,destination;
- if(!income&&!workers){kind=selectField('Destino del retiro','kind',[['expense','Gasto / retiro'],['transfer','Traspaso a otro fondo']]);destination=selectField('Fondo de destino','destination',state.funds.filter(x=>!x.worker&&x.code!==f).map(x=>[x.code,x.label]));destination.hidden=true;destination.querySelector('select').disabled=true;details.append(kind,destination);kind.querySelector('select').onchange=()=>{const transfer=kind.querySelector('select').value==='transfer';destination.hidden=!transfer;destination.querySelector('select').disabled=!transfer;category.hidden=transfer;category.querySelector('select').disabled=transfer;};}
- const conversion=moveBlock('2','Conversión de moneda'),visual=el('div','','move-conversion'),original=el('strong','CUP 0.00'),result=el('strong','USD 0.00');visual.append(original,el('span','→'),result);conversion.append(visual);
- const fields=el('div','','move-grid'),currency=el('fieldset','','move-currencies');currency.append(el('legend','Moneda del monto original'));
+ if(!income&&!workers){kind=selectField('Destino del retiro','kind',[['expense','Gasto / retiro'],['transfer','Traspaso a otro fondo']]);destination=selectField('Fondo de destino','destination',state.funds.filter(x=>!x.worker&&x.code!==f).map(x=>[x.code,x.label]));destination.hidden=true;destination.querySelector('select').disabled=true;grid.append(kind,destination);kind.querySelector('select').onchange=()=>{const transfer=kind.querySelector('select').value==='transfer';destination.hidden=!transfer;destination.querySelector('select').disabled=!transfer;category.hidden=transfer;category.querySelector('select').disabled=transfer;};}
+ const conversion=el('section','','move-wallet-hero'),visual=el('div','','move-conversion'),original=el('strong','CUP 0.00'),result=el('strong','USD 0.00');visual.setAttribute('aria-label','Conversión de moneda');visual.append(original,el('span','→'),result);
+ const fields=el('div','','move-wallet-fields'),currency=el('fieldset','','move-currencies');currency.append(el('legend','Moneda original'));
  for(const c of ['CUP','USD']){const label=el('label',c),radio=el('input');radio.type='radio';radio.name='currency';radio.value=c;radio.checked=c==='CUP';label.prepend(radio);currency.append(label);}
- const amount=input('Monto original','number','amount',{required:'',min:'0.01',step:'0.01',inputmode:'decimal'}),exchange=input('Tasa de cambio · CUP / USD','number','rate',{min:'0.01',max:'1000000',step:'any',inputmode:'decimal'});if(rate>0)exchange.querySelector('input').value=rate;
- fields.append(currency,amount,exchange);conversion.append(fields);
- const note=el('small','Equivalencia de referencia. El movimiento se registra en la moneda seleccionada.','move-note');conversion.append(note);
- const proof=moveBlock('3','Comprobante (opcional)'),file=input('Adjuntar comprobante · imagen o PDF, hasta 2 MB','file','receipt',{accept:'image/jpeg,image/png,image/webp,application/pdf'});proof.append(file);
+ const amount=input('Monto original','number','amount',{required:'',min:'0.01',step:'0.01',inputmode:'decimal',placeholder:'0.00'}),exchange=input('Tasa de cambio · CUP / USD','number','rate',{min:'0.01',max:'1000000',step:'any',inputmode:'decimal'});if(rate>0)exchange.querySelector('input').value=rate;
+ amount.classList.add('move-amount-field');exchange.classList.add('move-rate-field');fields.append(amount,currency,exchange);conversion.append(fields,visual);
+ const note=el('small','Equivalencia de referencia. El movimiento se registra en la moneda seleccionada.','move-note');conceptPanel.append(note);
+ const proof=el('section','','move-proof'),proofIcon=el('span','↥','move-proof-icon'),proofText=el('div','','move-proof-text');
+ proofIcon.setAttribute('aria-hidden','true');proofText.append(el('strong','Comprobante opcional'),el('small','Adjuntar imagen o PDF, hasta 2 MB'));
+ const file=el('label','','move-proof-control'),fileInput=el('input'),fileLabel=el('span','Adjuntar archivo','move-proof-button'),fileName=el('small','','move-proof-name');
+ fileInput.type='file';fileInput.name='receipt';fileInput.accept='image/jpeg,image/png,image/webp,application/pdf';fileInput.setAttribute('aria-label','Adjuntar comprobante opcional');
+ fileInput.addEventListener('change',()=>{fileName.textContent=fileInput.files[0]?.name||'';});file.append(fileInput,fileLabel,fileName);proof.append(proofIcon,proofText,file);
  const summary=el('div','','move-balance'),before=el('strong'),after=el('strong');const one=el('div'),two=el('div');one.append(el('small','Saldo actual'),before);two.append(el('small','Saldo resultante'),after);summary.append(one,two);
  const update=()=>{const c=currency.querySelector('input:checked').value,n=Number(amount.querySelector('input').value)||0,r=Number(exchange.querySelector('input').value),balance=Number(fund[c]);exchange.querySelector('input').required=c==='CUP';original.textContent=money(n,c);result.textContent=r>0?money(c==='CUP'?n/r:n*r,c==='CUP'?'USD':'CUP'):'—';before.textContent=money(balance,c);after.textContent=money(balance+direction*n,c);};
  conversion.addEventListener('input',update);
- open(income?'Registrar ingreso':'Registrar egreso',async data=>rpc('treasury_register_movement',{p_id:requestId,p_fund:f,p_currency:data.get('currency'),p_amount:direction*Number(data.get('amount')),p_concept:data.get('concept'),p_date:data.get('date'),p_area:data.get('area'),p_category:data.get('kind')==='transfer'?'Traspaso entre fondos':data.get('category'),p_rate:Number(data.get('rate'))||null,p_destination:data.get('kind')==='transfer'?data.get('destination'):null,p_receipt:await readReceipt(data.get('receipt'))}),[el('p',fund.label,'move-fund-name'),details,conversion,proof,summary]);
- $('treasury-dialog').dataset.move=income?'income':'expense';$('treasury-save').textContent=income?'Confirmar ingreso':'Confirmar egreso';update();
+ open((income?'Registrar ingreso':'Registrar egreso')+' · '+fund.label,async data=>rpc('treasury_register_movement',{p_id:requestId,p_fund:f,p_currency:data.get('currency'),p_amount:direction*Number(data.get('amount')),p_concept:data.get('concept'),p_date:data.get('date'),p_area:data.get('area'),p_category:data.get('kind')==='transfer'?'Traspaso entre fondos':data.get('category'),p_rate:Number(data.get('rate'))||null,p_destination:data.get('kind')==='transfer'?data.get('destination'):null,p_receipt:await readReceipt(data.get('receipt'))}),[conversion,details,proof],{movement:income?'income':'expense',summary});
+ update();
  }
  $('fund-in').onclick=()=>move(1);$('fund-out').onclick=()=>move(-1);$('fund-dispatch').onclick=()=>open('Preparar cuadre con el CEO',d=>rpc('treasury_dispatch',{p_id:requestId,p_cup:Number(d.get('cup')||0),p_usd:Number(d.get('usd')||0),p_note:d.get('note')}),[input('Importe CUP','number','cup',{min:'0',step:'0.01',value:'0'}),input('Importe USD','number','usd',{min:'0',step:'0.01',value:'0'}),input('Observación','text','note',{maxlength:'500'})]);
  $('treasury-form').onsubmit=e=>{e.preventDefault();run(async()=>{await action(new FormData(e.target));$('treasury-dialog').close();$('treasury-message').textContent='Movimiento registrado.';await refresh();});};$('treasury-close').onclick=$('treasury-cancel').onclick=()=>{if(!busy)$('treasury-dialog').close();};$('treasury-dialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('treasury-refresh').onclick=()=>run(refresh);$('history-next').onclick=()=>run(async()=>{offset+=100;await history();});$('history-prev').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await history();});

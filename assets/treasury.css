@@ -383,3 +383,120 @@
   .fund-proportion-rail { height:27px; }
   #treasury-detail .fund-month-net { flex-wrap:wrap; padding:8px; }
 }
+
+/* Wallet-style income and withdrawal forms. */
+#treasury-dialog[data-move] {
+  width:min(760px,calc(100vw - 22px));
+  background:linear-gradient(145deg,#191d21,#111518);
+  border:1px solid #626b72;
+  border-radius:18px;
+  --move-color:#43e383;
+  --move-deep:#044426;
+  --move-dark:#051c14;
+  --move-glow:#15984b;
+}
+#treasury-dialog[data-move=expense] {
+  --move-color:#ff8585;
+  --move-deep:#57252c;
+  --move-dark:#241217;
+  --move-glow:#a83c46;
+}
+#treasury-dialog[data-move] .modal-hero {
+  padding:14px 18px 8px; border:0; background:transparent; box-shadow:none; gap:8px;
+}
+#treasury-dialog[data-move] #treasury-dialog-title {
+  display:grid; gap:4px; font-size:clamp(17px,3vw,23px); color:#f6f6f6; margin:0;
+}
+#treasury-dialog[data-move] #treasury-dialog-title::before {
+  content:"El Cartel Studio — Tesorería"; color:#ffda03; font-size:12px; font-weight:650;
+}
+#treasury-dialog[data-move] .treasury-fields { padding:8px 16px 12px; gap:10px; }
+.move-wallet-hero {
+  position:relative; isolation:isolate; overflow:hidden;
+  display:grid; gap:12px; padding:14px;
+  border:1px solid color-mix(in srgb,var(--move-color) 65%,#142321);
+  border-radius:15px;
+  background:radial-gradient(ellipse at 0 0,var(--move-glow),transparent 29%),linear-gradient(125deg,var(--move-deep),var(--move-dark) 55%,#10191a);
+  box-shadow:inset 0 1px 0 #ffffff20,0 6px 16px #0004;
+}
+.move-wallet-hero::after {
+  content:""; position:absolute; z-index:-1; right:-12%; bottom:-90%; width:56%; height:220%;
+  border-radius:50%; border:30px solid color-mix(in srgb,var(--move-glow) 56%,transparent);
+  transform:rotate(25deg); pointer-events:none;
+}
+.move-wallet-fields { display:grid; grid-template-columns:1.1fr 1fr 1fr; align-items:start; gap:12px; }
+.move-wallet-fields > * { min-width:0; }
+#treasury-dialog[data-move] .move-wallet-fields label,
+#treasury-dialog[data-move] .move-wallet-fields legend { color:#e6f1e9; font-size:12px; margin:0; font-weight:650; }
+#treasury-dialog[data-move] :is(.move-amount-field,.move-rate-field) input {
+  display:block; width:100%; min-width:0; margin:5px 0 0; border:1px solid #ffffff30; border-radius:9px;
+  background:#020b09a8; color:#fff; font-variant-numeric:tabular-nums; font-weight:800; padding:6px 8px;
+}
+#treasury-dialog[data-move] .move-amount-field input { font-size:clamp(24px,4vw,36px); line-height:1; }
+#treasury-dialog[data-move] .move-rate-field { border-left:1px solid #d1e4d34a; padding-left:12px; }
+#treasury-dialog[data-move] .move-rate-field input { font-size:clamp(17px,3vw,24px); text-align:center; }
+#treasury-dialog[data-move] .move-currencies { gap:0; align-items:center; margin-top:0; padding:0; }
+#treasury-dialog[data-move] .move-currencies legend { margin-bottom:8px; }
+#treasury-dialog[data-move] .move-currencies label {
+  min-height:40px; border-radius:0; background:linear-gradient(#303b3b,#1a2527); border-color:#697474; color:#fff;
+}
+#treasury-dialog[data-move] .move-currencies label:first-of-type { border-radius:22px 0 0 22px; }
+#treasury-dialog[data-move] .move-currencies label:last-of-type { border-radius:0 22px 22px 0; }
+#treasury-dialog[data-move] .move-currencies label:has(input:checked) { background:linear-gradient(#ffe55a,#ffcb00); color:#101416; border-color:#ffda03; }
+#treasury-dialog[data-move] .move-conversion {
+  display:flex; justify-content:center; align-items:center; gap:12px; padding:8px;
+  background:color-mix(in srgb,var(--move-deep) 85%,transparent); border:1px solid #ffffff18; border-radius:11px;
+}
+#treasury-dialog[data-move] .move-conversion strong { padding:0; border:0; background:none; color:#fff; font-size:clamp(16px,3.5vw,23px); }
+#treasury-dialog[data-move] .move-conversion>span { color:var(--move-color); font-size:23px; }
+.move-details {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:12px;
+  border:1px solid #424b52; border-radius:12px; background:linear-gradient(145deg,#252a2e,#181d21);
+}
+.move-details-fields,.move-concept-panel { display:grid; align-content:start; gap:10px; min-width:0; }
+.move-concept-panel { border-left:1px solid #525c64; padding-left:14px; }
+#treasury-dialog[data-move] .move-details-fields label { display:grid; grid-template-columns:minmax(80px,.75fr) minmax(0,1.25fr); align-items:center; gap:8px; }
+#treasury-dialog[data-move] .move-details-fields label[hidden] { display:none; }
+#treasury-dialog[data-move] :is(.move-details-fields,.move-concept-panel) label { color:#e4e8eb; font-size:12px; font-weight:650; }
+#treasury-dialog[data-move] :is(.move-details-fields,.move-concept-panel) :is(input,select) { width:100%; min-width:0; margin:0; background:#202529; border-color:#535c62; border-radius:8px; padding:8px; font-size:13px; }
+#treasury-dialog[data-move] .move-concept-panel input { margin-top:5px; min-height:45px; }
+#treasury-dialog[data-move] .move-note { color:#b9c4cd; line-height:1.4; }
+.move-proof { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #465058; border-radius:12px; background:linear-gradient(140deg,#282e32,#1b2024); }
+.move-proof-icon { color:#ffda03; font-size:25px; flex:none; }
+.move-proof-text { display:grid; gap:3px; min-width:0; flex:1; }
+.move-proof-text strong { font-size:13px; color:#f5f5f5; }
+.move-proof-text small,.move-proof-name { font-size:11px; color:#c2cbd2; overflow-wrap:anywhere; }
+.move-proof-control { position:relative; display:grid; justify-items:center; gap:4px; min-width:0; max-width:45%; cursor:pointer; }
+.move-proof-control input { position:absolute; width:1px; height:1px; opacity:0; }
+.move-proof-button { display:block; padding:9px 12px; border:1px solid #667078; border-radius:9px; background:linear-gradient(#42494e,#272e33); color:#fff; font-size:12px; font-weight:700; text-align:center; }
+.move-proof-control:focus-within .move-proof-button { outline:2px solid #ffda03; outline-offset:2px; }
+#treasury-dialog[data-move] .modal-footer {
+  display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:9px; align-items:center; padding:10px 16px;
+  background:linear-gradient(135deg,#292e32,#171c20); border-top:1px solid #434b50;
+}
+#treasury-dialog[data-move] .move-balance { padding:0; gap:8px; border:0; border-radius:0; background:none; }
+#treasury-dialog[data-move] .move-balance strong { color:#ffda03; font-size:clamp(12px,1.8vw,16px); }
+#treasury-dialog[data-move] .move-balance small { color:#d4dbe0; font-size:11px; }
+#treasury-dialog[data-move] .move-balance>div+div { padding-left:8px; }
+#treasury-dialog[data-move] #treasury-save { background:linear-gradient(var(--move-color),var(--move-glow)); color:#101713; border-color:var(--move-color); font-weight:800; box-shadow:inset 0 1px #ffffff44,0 3px 8px #0004; }
+#treasury-dialog[data-move] #treasury-cancel { background:linear-gradient(#41484d,#252c31); border-color:#626b72; }
+#treasury-dialog[data-move] #treasury-error:empty { display:none; }
+@media(max-width:620px) {
+  #treasury-dialog[data-move] .modal-footer { grid-template-columns:1fr 1fr; }
+  #treasury-dialog[data-move] .move-balance { grid-column:1/-1; padding:0 0 7px; }
+  .move-details { gap:10px; padding:10px; }
+  #treasury-dialog[data-move] .move-details-fields label { grid-template-columns:1fr; gap:4px; }
+}
+@media(max-width:430px) {
+  #treasury-dialog[data-move] .treasury-fields { padding:6px 10px 10px; }
+  .move-wallet-hero { padding:10px; gap:8px; }
+  .move-wallet-fields { grid-template-columns:1fr 1fr; gap:8px; }
+  #treasury-dialog[data-move] .move-rate-field { grid-column:1/-1; display:flex; align-items:center; gap:10px; border:0; padding:0; }
+  #treasury-dialog[data-move] .move-rate-field input { margin:0; max-width:110px; }
+  .move-details { grid-template-columns:1fr; }
+  .move-concept-panel { border-left:0; border-top:1px solid #525c64; padding:10px 0 0; }
+  #treasury-dialog[data-move] .move-details-fields label { grid-template-columns:minmax(88px,.75fr) minmax(0,1.25fr); }
+  #treasury-dialog[data-move] .modal-footer { padding:9px 10px; }
+}
+#treasury-dialog[data-move] .move-amount-field input::placeholder { color:#d4e8dd; opacity:.9; }
+#treasury-dialog[data-move] .move-proof-control input { min-height:0; padding:0; margin:0; }
