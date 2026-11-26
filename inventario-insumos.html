@@ -307,6 +307,7 @@ function inventoryPhotoStatus(previewId,message,state='busy',fraction=null){
 }
 const inventoryPhotoAiEndpoint='https://jhumvctocphyiwhszeaz.supabase.co/functions/v1/inventory-photo-clean';
 let inventoryPhotoAiAvailability=null;
+const inventoryPhotoJobs=new WeakMap();
 async function inventoryPhotoAiInput(file){
  const url=URL.createObjectURL(file),img=new Image();
  try{
@@ -346,18 +347,22 @@ async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
   }
   if(!inventoryPhotoAiAvailability.available)throw Error('Limpieza no disponible');
   onStage('Preparando foto para limpiar el fondo…');
-  const input=await inventoryPhotoAiInput(file),requestId=crypto.randomUUID();
-  if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-  const job=await inventoryPhotoUpload(input,requestId,onStage,isCurrent);
-  if(job.job_id!==requestId)throw Error('Solicitud no válida');
+  let requestId=inventoryPhotoJobs.get(file);
+  if(!requestId){
+   const input=await inventoryPhotoAiInput(file);requestId=crypto.randomUUID();
+   if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
+   const job=await inventoryPhotoUpload(input,requestId,onStage,isCurrent);
+   if(job.job_id!==requestId)throw Error('Solicitud no válida');
+   inventoryPhotoJobs.set(file,requestId);
+  }else onStage('Consultando la limpieza de la foto ya enviada…');
   const deadline=Date.now()+180000;
   while(Date.now()<deadline){
    if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
    const headers=await inventoryPhotoAuthHeaders();
    const response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});
-   if(!response.ok)throw Error('No se pudo consultar la foto');
+   if(!response.ok){if(response.status===404){inventoryPhotoJobs.delete(file);throw Error('No se encontró la foto');}if(response.status===429||response.status>=500){await new Promise(resolve=>setTimeout(resolve,3000));continue;}throw Error('No se pudo consultar la foto');}
    const state=await response.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-   if(state.state==='failed')throw Error('No se pudo limpiar el fondo');
+   if(state.state==='failed'){inventoryPhotoJobs.delete(file);throw Error('No se pudo limpiar el fondo');}
    if(state.state==='complete'){
     onStage('Descargando fotografía con el fondo limpio…');
     const result=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId)+'&result=1',{headers,cache:'no-store',signal:AbortSignal.timeout(25000)});
@@ -368,7 +373,7 @@ async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
    await new Promise(resolve=>setTimeout(resolve,3000));
   }
   if(!cleaned)throw Error('La limpieza tardó demasiado');
- }catch(error){if(!isCurrent())throw error;notice='No se pudo limpiar el fondo. Se conserva la foto original optimizada.';source=file;cleaned=false;}
+ }catch(error){if(!isCurrent())throw error;notice=inventoryPhotoJobs.has(file)?'Limpieza pendiente. Reintentar consulta la misma foto; puedes guardar la original optimizada.':'No se pudo limpiar el fondo. Se conserva la foto original optimizada.';source=file;cleaned=false;}
  if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
  const blob=await shrinkPhoto(source,onStage);
  return {blob,cleaned,notice};
