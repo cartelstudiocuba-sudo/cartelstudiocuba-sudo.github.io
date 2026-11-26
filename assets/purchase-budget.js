@@ -41,6 +41,8 @@
  function updateStats() {
   const stats=$('budget-stats'),filters=$('budget-filters');stats.replaceChildren();filters.replaceChildren();
   const chief=isChiefBudgetView(),manager=isManagerBudgetView();
+  const technical=caps.request_role_title==='Gestor Técnico'&&!chief&&!manager;
+  document.documentElement.classList.toggle('budget-technical-view',technical);
   $('budget-manager-summary').hidden=!manager;
   document.documentElement.classList.toggle('budget-manager-view',manager);
   if(manager){
@@ -55,13 +57,16 @@
    return;
   }
 
-  const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);
+  if(technical){
+   const all=button('','stat',()=>setFilter('all'));all.style.setProperty('--state','#ffda03');all.setAttribute('aria-pressed',String(filter==='all'));const icon=node('span','▤','stat-icon');icon.setAttribute('aria-hidden','true');const caption=node('span','Todas');caption.append(node('strong',String(requests.length)));all.append(icon,caption);stats.append(all);
+   const heading=$('budget-list-title').closest('.list-heading');const search=$('budget-search').closest('.budget-search-row');heading.parentElement.insertBefore(heading,search);heading.append($('budget-refresh'));
+  }else{const all=button('Todas','',()=>setFilter('all'));all.setAttribute('aria-pressed',String(filter==='all'));filters.append(all);}
   for(const [key,value] of Object.entries(statuses)){
    const count=requests.filter(request=>request.status===key).length;
    const tile=button('','stat',()=>setFilter(key));tile.style.setProperty('--state',value.color);tile.setAttribute('aria-pressed',String(filter===key));
    const icon=node('span',value.icon,'stat-icon');icon.setAttribute('aria-hidden','true');
    const caption=node('span',value.label);caption.append(node('strong',String(count)));tile.append(icon,caption);stats.append(tile);
-   const tab=button(value.label,'',()=>setFilter(key));tab.setAttribute('aria-pressed',String(filter===key));filters.append(tab);
+   if(!technical){const tab=button(value.label,'',()=>setFilter(key));tab.setAttribute('aria-pressed',String(filter===key));filters.append(tab);}
   }
  }
  function setFilter(next){filter=next;limit=25;updateStats();renderList();}
@@ -99,6 +104,9 @@
    if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':filter==='all'?'No hay solicitudes registradas.':'No hay solicitudes en este estado.','empty'));
    $('budget-more').hidden=visible.length<=limit;
    return;
+  }
+  if(caps.request_role_title==='Gestor Técnico'){
+   $('budget-list-title').textContent='Solicitudes de presupuesto';target.append(...visible.slice(0,limit).map(renderRequest));if(!visible.length)target.append(node('p',query?'No se encontraron solicitudes.':'No hay solicitudes en esta selección.','empty'));$('budget-more').hidden=visible.length<=limit;return;
   }
   const own=visible.filter(request=>request.requester===user.id),incoming=visible.filter(request=>request.requester!==user.id);
   const groups=[];
