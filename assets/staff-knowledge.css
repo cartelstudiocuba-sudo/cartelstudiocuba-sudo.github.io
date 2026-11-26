@@ -23,3 +23,5 @@
  @keyframes assistant-mobile-label{0%,72%,100%{max-width:0;margin-left:0;opacity:0}78%,92%{max-width:110px;margin-left:8px;opacity:1}}
 }
 @media(prefers-reduced-motion:reduce){.cartel-assistant-launch,.cartel-assistant-launch .assistant-launch-label,.cartel-assistant-launch .assistant-star{animation:none}}
+
+@media(min-width:901px){.knowledge-page #knowledge-main{width:100%;max-width:none;margin:0;padding:24px 24px 85px}.knowledge-visual-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}.knowledge-art{max-height:240px}}
