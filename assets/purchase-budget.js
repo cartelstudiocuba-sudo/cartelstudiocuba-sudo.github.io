@@ -211,18 +211,31 @@
   if(isChiefBudgetView()||isManagerBudgetView())body.append(window.CartelBudgetSummary.renderTimeline(request));
   detailSections(body,request,state);
   const {chief,manager}=approvalStages(request);
+  let resetRejection=()=>{};
   if(canApprove(request)){
-   const decision=node('form','','decision'),note=node('textarea');decision.noValidate=true;note.rows=2;note.maxLength=1500;note.placeholder='Observación (obligatoria para rechazar)';note.setAttribute('aria-label','Observación de la decisión');
+   const decision=node('form','','decision'),note=node('textarea');decision.noValidate=true;note.rows=2;note.maxLength=1500;note.placeholder='Escribe el motivo del rechazo';note.setAttribute('aria-label','Motivo del rechazo');
+   const reason=node('label','Motivo del rechazo (obligatorio)','budget-rejection-reason');reason.append(note);reason.hidden=true;
    const funding=manager?window.CartelBudgetTreasury.approval(request,requestTotals):null;
    if(funding){decision.append(funding.panel);funding.panel.addEventListener('treasury-balances',event=>funding.setBalances(event.detail));}
    const actions=node('div','','decision-actions');
    const approve=node('button',chief?'Aprobar y pasar al Manager General':'Aprobar presupuesto','success'),reject=node('button','Rechazar','secondary');
-   actions.append(reject,approve);decision.append(note,actions);
-   decision.onsubmit=event=>{event.preventDefault();const approved=event.submitter!==reject;if(!approved&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:note.value});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:note.value});detailDialog.close();await load();report('Decisión guardada.');});};
+   const cancelReject=button('Cancelar','secondary',()=>{resetRejection();report('');}),confirmReject=node('button','Confirmar rechazo','danger');
+   approve.type=confirmReject.type='submit';reject.type='button';cancelReject.hidden=confirmReject.hidden=true;
+   resetRejection=()=>{reason.hidden=true;note.value='';note.required=false;reject.hidden=approve.hidden=false;cancelReject.hidden=confirmReject.hidden=true;};
+   reject.onclick=()=>{reason.hidden=false;note.required=true;reject.hidden=approve.hidden=true;cancelReject.hidden=confirmReject.hidden=false;note.focus();};
+   actions.append(reject,approve,cancelReject,confirmReject);decision.append(reason,actions);
+   decision.onsubmit=event=>{
+    event.preventDefault();
+    const approved=event.submitter===approve&&reason.hidden;
+    const rejected=event.submitter===confirmReject&&!reason.hidden;
+    if(!approved&&!rejected)return;
+    if(rejected&&!note.value.trim()){note.focus();report('Escribe el motivo del rechazo.');return;}
+    run(async()=>{if(approved&&manager)await rpc('treasury_approve_budget',{p_id:request.id,...funding.values(),p_note:''});else await rpc('purchase_budget_decide',{p_id:request.id,p_stage:request.status,p_approve:approved,p_note:rejected?note.value.trim():''});detailDialog.close();await load();report('Decisión guardada.');});
+   };
    body.append(decision);
   }
   card.dataset.requestId=request.id;
-  header.onclick=()=>{ $('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal();
+  header.onclick=()=>{ resetRejection();$('budget-detail-title').textContent=request.product;$('budget-detail-body').replaceChildren(body);$('budget-detail-message').textContent='';detailDialog.showModal();
    if(request.status==='manager_pending'&&caps.manager){void rpc('treasury_state').then(data=>{if(detailDialog.open&&body.isConnected){const list=body.querySelector('.treasury-budget-funding');if(list){const event=new CustomEvent('treasury-balances',{detail:data.funds});list.dispatchEvent(event);}}}).catch(e=>report(e.message));}
    if(request.status==='approved'&&(caps.manager||caps.owner||request.requester===user.id))void rpc('treasury_budget_reservation',{p_id:request.id}).then(reservation=>{if(reservation&&detailDialog.open&&body.isConnected)body.append(window.CartelBudgetTreasury.delivery({request:{...request,canReceive:request.requester===user.id},reservation,rpc,run,refresh:async()=>{detailDialog.close();await load();report('Recibido confirmado.');}}));}).catch(e=>report(e.message));
   };return card;
