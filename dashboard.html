@@ -361,6 +361,7 @@ async function configurePersonalNavigation(user,data){
      if(!workerHome)suggestions.forEach(title=>{const button=document.createElement('button');button.type='button';button.disabled=true;button.className='operational-shortcut';button.innerHTML='<span class="operational-shortcut-icon" aria-hidden="true">◷</span><span><strong></strong><span class="operational-coming">Próximamente</span></span>';button.querySelector('strong').textContent=title;grid.append(button);});
     }
     if(workerHome)window.CartelWorkerHome?.mount(home,client,user,homeRole==='gestor_tecnico');
+    if(homeRole==='gestor_tecnico'){rate.remove();document.getElementById('exchange-rate-trigger')?.remove();}
 
    }
   }
@@ -515,21 +516,23 @@ function prepareSelectionFrame(){
 (function(){
   const trigger=document.getElementById('exchange-rate-trigger'),dialog=document.getElementById('exchange-dialog');
  const mobile=document.getElementById('exchange-mobile-trigger');if(mobile)mobile.addEventListener('click',openRates);
+ const mobileUsd=document.getElementById('exchange-mobile-usd'),mobileDate=document.getElementById('exchange-mobile-date');
  const date=document.getElementById('exchange-date'),usd=document.getElementById('exchange-usd'),list=document.getElementById('exchange-rates-list'),modalDate=document.getElementById('exchange-modal-date');
  const names={USD:'Dólar estadounidense',EUR:'Euro',MLC:'Moneda libremente convertible',CAD:'Dólar canadiense',MXN:'Peso mexicano',ZELLE:'Zelle',CLA:'Clásica',USDT_TRC20:'USDT · red TRC20',USDT_ERC20:'USDT · red ERC20',USDT:'Tether (USDT)',BTC:'Bitcoin'};
  const fmt=n=>new Intl.NumberFormat('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
  function openRates(){dialog.showModal();void load(true);}
- trigger.addEventListener('click',openRates);document.getElementById('exchange-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+ trigger?.addEventListener('click',openRates);document.getElementById('exchange-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  async function load(force=false){
+  if(document.querySelector('.technical-home'))return;
   try{
    const result=await CartelExchangeRates.read(sb,{force});
-   usd.textContent=fmt(result.rates.USD)+' CUP';document.getElementById('exchange-mobile-usd').textContent=fmt(result.rates.USD)+' CUP / USD';
+   if(usd)usd.textContent=fmt(result.rates.USD)+' CUP';if(mobileUsd)mobileUsd.textContent=fmt(result.rates.USD)+' CUP / USD';
    const stamp=result.fetched_at?new Date(result.fetched_at).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Havana'}):'Sin fecha';
-   date.textContent=(result.stale?'Datos anteriores · ':'Consultado · ')+stamp;document.getElementById('exchange-mobile-date').textContent=date.textContent;
+   const dateText=(result.stale?'Datos anteriores · ':'Consultado · ')+stamp;if(date)date.textContent=dateText;if(mobileDate)mobileDate.textContent=dateText;
    modalDate.textContent='Última consulta: '+stamp+(result.stale?' · Información desactualizada':' · API oficial de elTOQUE');
    list.replaceChildren();
    Object.entries(result.rates).forEach(([code,rate])=>{const name=names[code]||code.replaceAll('_',' · ');const n=Number(rate);if(!Number.isFinite(n)||n<=0)return;const row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;background:#252525;border-radius:11px';const left=document.createElement('span');const strong=document.createElement('strong');strong.textContent=code;left.append(strong,document.createElement('br'));const small=document.createElement('small');small.style.color='#aaa';small.textContent=name;left.append(small);const value=document.createElement('strong');value.style.color='#ffda03';value.textContent=fmt(n)+' CUP';row.append(left,value);list.append(row)});
-  }catch(e){date.textContent='Tasa no disponible · Ver fuente';document.getElementById('exchange-mobile-date').textContent=date.textContent;list.textContent='No fue posible obtener tasas verificadas. Consulta elTOQUE mediante el enlace inferior.';modalDate.textContent='Sin actualización confirmada'}
+  }catch(e){if(date)date.textContent='Tasa no disponible · Ver fuente';if(mobileDate)mobileDate.textContent='Tasa no disponible · Ver fuente';list.textContent='No fue posible obtener tasas verificadas. Consulta elTOQUE mediante el enlace inferior.';modalDate.textContent='Sin actualización confirmada'}
  }
  window.addEventListener('load',()=>void load(),{once:true});
  setInterval(()=>{if(!document.hidden)void load();},900000);
