@@ -54,7 +54,7 @@
  let state,selected=null,rate=null,rateDate=null,offset=0,busy=false,action=null,requestId=null;
  const workers=new URLSearchParams(location.search).get('tab')==='workers';
  if(workers)$('treasury-title').textContent='Pagos a trabajadores';
- const colors={fixed:'#ffda03',investment:'#ff9e83',supplies:'#4fc4ff',stimulus:'#bba3ff',profit:'#58e0a0',surplus:'#68d9d5',workers:'#ffda03'};
+ const colors={fixed:'#ffda03',investment:'#ff9e83',supplies:'#4fc4ff',stimulus:'#bba3ff',profit:'#58e0a0',surplus:'#68d9d5',advertising:'#f0a4d4',workers:'#ffda03'};
  const chartMonth=$('chart-month'),chartYear=$('chart-year'),chartCurrency=$('chart-currency');
  const todayParts=new Intl.DateTimeFormat('en',{timeZone:'America/Havana',year:'numeric',month:'numeric'}).formatToParts(new Date());
  const currentYear=Number(todayParts.find(p=>p.type==='year').value),currentMonth=Number(todayParts.find(p=>p.type==='month').value);
@@ -64,12 +64,12 @@
  function setPeriod(year,month){chartYear.value=String(year);chartMonth.value=String(month);$('chart-prev').disabled=year===1900&&month===1;$('chart-next').disabled=year===currentYear+1&&month===12;}
  setPeriod(currentYear,currentMonth);
  $('treasury-overview').hidden=workers;
- const icons={fixed:'▤',investment:'↗',supplies:'◇',stimulus:'★',profit:'$',surplus:'＋',workers:'♙'};
+ const icons={fixed:'▤',investment:'↗',supplies:'◇',stimulus:'★',profit:'$',surplus:'＋',advertising:'◁',workers:'♙'};
  async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
  async function run(fn){if(busy)return;busy=true;$('treasury-save').disabled=true;try{await fn();}catch(e){$( $('treasury-dialog').open?'treasury-error':'treasury-message').textContent=e.message||'No se pudo completar';}finally{busy=false;$('treasury-save').disabled=false;}}
  function fundGlyph(code){
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
- const paths={fixed:'M3 6c0-2 4-3 9-3s9 1 9 3-4 3-9 3-9-1-9-3Zm0 0v5c0 2 4 3 9 3s9-1 9-3V6M3 11v5c0 2 4 3 9 3s9-1 9-3v-5',investment:'M4 20v-6m5 6V9m5 11V5m5 15V2',profit:'m3 17 6-6 4 4 8-10m-6 0h6v6',stimulus:'M3 10h18v11H3zM2 6h20v4H2zM12 6v15M12 6C6 6 5 2 8 2c2 0 4 4 4 4Zm0 0c6 0 7-4 4-4-2 0-4 4-4 4Z',supplies:'m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 10v10M3 7l9 5 9-5',surplus:'m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5',workers:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-3a8 8 0 0 1 16 0v3'};
+ const paths={fixed:'M3 6c0-2 4-3 9-3s9 1 9 3-4 3-9 3-9-1-9-3Zm0 0v5c0 2 4 3 9 3s9-1 9-3V6M3 11v5c0 2 4 3 9 3s9-1 9-3v-5',investment:'M4 20v-6m5 6V9m5 11V5m5 15V2',profit:'m3 17 6-6 4 4 8-10m-6 0h6v6',stimulus:'M3 10h18v11H3zM2 6h20v4H2zM12 6v15M12 6C6 6 5 2 8 2c2 0 4 4 4 4Zm0 0c6 0 7-4 4-4-2 0-4 4-4 4Z',supplies:'m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 10v10M3 7l9 5 9-5',surplus:'m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5',advertising:'M3 9h5l12-5v16L8 15H3zM8 15l2 6h4l-2-5M22 10v4',workers:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-3a8 8 0 0 1 16 0v3'};
  const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',paths[code]||paths.fixed);svg.append(path);return svg;
  }
  function render(){
