@@ -1,7 +1,7 @@
 (()=>{'use strict';
  const el=(tag,t='',cls='')=>{const n=document.createElement(tag);n.textContent=t;if(cls)n.className=cls;return n;};
  const money=(v,c)=>new Intl.NumberFormat('es-CU',{style:'currency',currency:c,currencyDisplay:'code'}).format(Number(v));
- const names={fixed:'Gastos fijos',investment:'Inversiones',supplies:'Insumos',stimulus:'Estímulo',profit:'Utilidad',surplus:'Remanentes'};
+ const names={fixed:'Gastos fijos',investment:'Inversiones',supplies:'Insumos',stimulus:'Estímulo',profit:'Utilidad',surplus:'Remanentes',advertising:'Publicidad'};
  function field(label,input){const l=el('label',label);l.append(input);return l;}
  function options(items){const s=el('select');for(const [v,t] of items){const o=el('option',t);o.value=v;s.append(o);}return s;}
  function approval(request,totals){
