@@ -331,53 +331,67 @@ async function inventoryPhotoUpload(input,requestId,onStage,isCurrent){
   const xhr=new XMLHttpRequest();xhr.open('POST',inventoryPhotoAiEndpoint);xhr.timeout=40000;
   Object.entries({...headers,'Content-Type':'image/jpeg','x-photo-request-id':requestId}).forEach(([k,v])=>xhr.setRequestHeader(k,v));
   xhr.upload.onprogress=e=>{if(!isCurrent()){xhr.abort();return}onStage(e.lengthComputable?'Subiendo foto… '+Math.round(e.loaded/e.total*100)+'%':'Subiendo foto…',e.lengthComputable?e.loaded/e.total:null)};
-  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(Error('No se pudo enviar la foto'));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(Error('Respuesta no válida'))}};
+  xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){let detail={};try{detail=JSON.parse(xhr.responseText)}catch{}const error=Error(detail.error||'No se pudo enviar la foto');error.status=xhr.status;if(xhr.status===429)error.retryAfterMs=Math.min(30000,Math.max(1000,Number(detail.retry_after_seconds||15)*1000));reject(error);return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(Error('Respuesta no válida'))}};
   xhr.onerror=xhr.ontimeout=()=>reject(Error('No se pudo confirmar la carga'));xhr.onabort=()=>reject(new DOMException('Selección sustituida','AbortError'));xhr.send(input);
  });
 }
 async function prepareInventoryCatalogPhoto(file,onStage,isCurrent=()=>true){
- let source=file,cleaned=false,notice='';
+ let source=file,cleaned=false,notice='',attempt=inventoryPhotoJobs.get(file);
+ const stop=()=>{if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');};
+ const wait=async ms=>{await new Promise(resolve=>setTimeout(resolve,ms));stop();};
  try{
-  onStage('Comprobando limpieza automática del fondo…');
-  const headers=await inventoryPhotoAuthHeaders();
-  if(!inventoryPhotoJobs.has(file)&&(!inventoryPhotoAiAvailability||Date.now()-inventoryPhotoAiAvailability.at>20000)){
-   const status=await fetch(inventoryPhotoAiEndpoint,{headers,cache:'no-store',signal:AbortSignal.timeout(15000)});
-   if(!status.ok)throw Error('Servicio no disponible');
-   const result=await status.json();inventoryPhotoAiAvailability={at:Date.now(),available:result.available===true};
-  }
-  if(!inventoryPhotoJobs.has(file)&&!inventoryPhotoAiAvailability?.available)throw Error('Limpieza no disponible');
-  onStage('Preparando foto para limpiar el fondo…');
-  let requestId=inventoryPhotoJobs.get(file);
-  if(!requestId){
-   const input=await inventoryPhotoAiInput(file);requestId=crypto.randomUUID();
-   if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-   const job=await inventoryPhotoUpload(input,requestId,onStage,isCurrent);
-   if(job.job_id!==requestId)throw Error('Solicitud no válida');
-   inventoryPhotoJobs.set(file,requestId);
-  }else onStage('Consultando la limpieza de la foto ya enviada…');
   const deadline=Date.now()+180000;
+  let retriedFailure=false;
   while(Date.now()<deadline){
-   if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
+   stop();
+   if(!attempt){
+    onStage('Preparando foto para limpiar el fondo…');
+    const input=await inventoryPhotoAiInput(file);stop();
+    attempt={id:crypto.randomUUID(),input,accepted:false};inventoryPhotoJobs.set(file,attempt);
+   }
+   try{
+    if(!attempt.accepted){
+     onStage('Enviando fotografía…');
+     const job=await inventoryPhotoUpload(attempt.input,attempt.id,onStage,isCurrent);
+     if(job.job_id!==attempt.id)throw Error('Solicitud no válida');
+     attempt.accepted=true;
+    }
+   }catch(error){
+    stop();
+    if(error.status===401||error.status===403||error.status===413||error.status===415)throw error;
+    // A lost upload response may still mean the request was accepted. Query the same ID.
+    const check=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(attempt.id),{headers:await inventoryPhotoAuthHeaders(),cache:'no-store',signal:AbortSignal.timeout(15000)}).catch(()=>null);
+    if(check?.ok)attempt.accepted=true;
+    else{onStage('Reconectando con el servicio de fotografías…');await wait(error.retryAfterMs||5000);continue;}
+   }
+   stop();
    const headers=await inventoryPhotoAuthHeaders();
-   let response;
-   try{response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});}catch(error){if(!isCurrent())throw error;await new Promise(resolve=>setTimeout(resolve,3000));continue;}
-   if(!response.ok){if(response.status===404){inventoryPhotoJobs.delete(file);throw Error('No se encontró la foto');}if(response.status===429||response.status>=500){await new Promise(resolve=>setTimeout(resolve,3000));continue;}throw Error('No se pudo consultar la foto');}
-   const state=await response.json();if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
-   if(state.state==='failed'){inventoryPhotoJobs.delete(file);throw Error('No se pudo limpiar el fondo');}
+   let response;try{response=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(attempt.id),{headers,cache:'no-store',signal:AbortSignal.timeout(20000)});}catch{await wait(3000);continue;}
+   if(!response.ok){
+    if(response.status===404){attempt.accepted=false;await wait(3000);continue;}
+    if(response.status===429||response.status>=500){await wait(3000);continue;}
+    throw Error('No se pudo consultar la foto');
+   }
+   const state=await response.json();stop();
+   if(state.state==='failed'){
+    inventoryPhotoJobs.delete(file);attempt=null;
+    if(retriedFailure)throw Error('La limpieza falló después de un segundo intento');
+    retriedFailure=true;onStage('La edición falló. Reintentando automáticamente…');await wait(15000);continue;
+   }
    if(state.state==='complete'){
     onStage('Descargando fotografía con el fondo limpio…');
-    const result=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(requestId)+'&result=1',{headers,cache:'no-store',signal:AbortSignal.timeout(25000)});
-    if(!result.ok||!result.headers.get('content-type')?.startsWith('image/jpeg'))throw Error('Resultado no válido');
-    source=await result.blob();if(!source.size||source.size>200*1024)throw Error('Imagen no válida');cleaned=true;break;
+    try{const result=await fetch(inventoryPhotoAiEndpoint+'?job_id='+encodeURIComponent(attempt.id)+'&result=1',{headers,cache:'no-store',signal:AbortSignal.timeout(25000)});
+     if(!result.ok||!result.headers.get('content-type')?.startsWith('image/jpeg'))throw Error('Resultado temporalmente no disponible');
+     const received=await result.blob();if(!received.size||received.size>200*1024)throw Error('Imagen no válida');
+     source=received;cleaned=true;break;
+    }catch{await wait(3000);continue;}
    }
    onStage(state.state==='processing'?'Limpiando fondo con ChatGPT… Puedes completar los demás campos.':'Foto enviada · esperando a ChatGPT… Puedes completar los demás campos.');
-   await new Promise(resolve=>setTimeout(resolve,3000));
+   await wait(3000);
   }
-  if(!cleaned)throw Error('La limpieza tardó demasiado');
- }catch(error){if(!isCurrent())throw error;notice=inventoryPhotoJobs.has(file)?'Limpieza pendiente. Reintentar consulta la misma foto; puedes guardar la original optimizada.':'No se pudo limpiar el fondo. Se conserva la foto original optimizada.';source=file;cleaned=false;}
- if(!isCurrent())throw new DOMException('Selección sustituida','AbortError');
- const blob=await shrinkPhoto(source,onStage);
- return {blob,cleaned,notice};
+  if(!cleaned)throw Error('La limpieza sigue pendiente');
+ }catch(error){stop();notice=inventoryPhotoJobs.has(file)?'Limpieza pendiente. Reintentar consulta la misma foto; puedes guardar la original optimizada.':'No se pudo limpiar el fondo. Se conserva la foto original optimizada.';source=file;cleaned=false;}
+ stop();const blob=await shrinkPhoto(source,onStage);return {blob,cleaned,notice};
 }
 async function shrinkPhoto(file,onStage=()=>{}){
  const url=URL.createObjectURL(file),img=new Image();
