@@ -21,7 +21,7 @@
 .management-notice-tabs button{height:39px;border-radius:8px;font-size:14px;font-weight:650;color:#bfc1c8}
 .management-notice-tabs button[aria-pressed=true]{background:#ffda03;color:#151515;box-shadow:0 2px 7px #0003}
 .management-notice-read{align-self:flex-end;font-size:12px!important;color:#d3d5db!important;padding:5px 0}
-.management-notice-scroll{overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;flex:1}
+.management-notice-scroll{overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;flex:0 1 auto;max-height: min(48vh,480px);max-height:min(48dvh,480px)}
 .management-notice-day{font-size:13px;font-weight:700;color:#e5e6e9;padding:9px 0;border-bottom:1px solid #34363c}
 .management-notice-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #303238;padding:12px 0;animation:management-notice-enter .22s ease-out}
 .management-notice-open{display:flex;align-items:center;gap:11px;flex:1;text-align:left;padding:0}
@@ -55,3 +55,6 @@
 @keyframes management-notice-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:380px){.management-notice-dialog{padding:12px}.management-notice-heading h2{font-size:18px}.management-notice-icon{width:34px;height:34px;flex-basis:34px}.management-notice-device-state{display:none}}
 @media(prefers-reduced-motion:reduce){.management-notice-dialog[open],.management-notice-row{animation:none}.management-notice-enable::after{transition:none}}
+
+.management-notice-dialog[open]>header,.management-notice-tabs,.management-notice-read,.management-notice-footer,.management-notice-status{flex-shrink:0}
+.management-notice-list{display:block;min-height:1px}
