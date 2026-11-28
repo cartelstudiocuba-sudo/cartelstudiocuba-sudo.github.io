@@ -39,7 +39,7 @@ function render(){
   if(!item.read_at){const read=el('button','','management-notice-check');read.type='button';read.setAttribute('aria-label','Marcar como leída: '+item.title);read.append(icon('check'));read.onclick=()=>void markRead(item.id,read);actions.append(read);}else actions.append(icon('check','management-notice-read-icon'));
   row.append(open,actions);list.append(row);
  }
- if(!records.length){const empty=el('div','','management-notice-empty');empty.append(icon(tab==='new'?'check':'bell'),el('strong',tab==='new'?'Estás al día':'Sin notificaciones leídas'),el('span',tab==='new'?'Los nuevos avisos aparecerán aquí.':'Aquí encontrarás los avisos que hayas consultado.'));list.append(empty);}
+ if(!records.length){const empty=el('div','','management-notice-empty');empty.append(icon(tab==='new'?'check':'bell'),el('strong',tab==='new'?(unread?'Consultando avisos…':'Estás al día'):'Sin notificaciones leídas'),el('span',tab==='new'?'Los nuevos avisos aparecerán aquí.':'Aquí encontrarás los avisos que hayas consultado.'));list.append(empty);}
  more.hidden=!hasMore;
 }
 function selectTab(value){if(tab!==value){tab=value;historyPage=0;records=[];hasMore=false;}render();status.textContent='Consultando avisos…';void refresh();}
@@ -56,7 +56,7 @@ async function refresh(){
   // The device badge is independent of rendering the in-app list.
   if(navigator.setAppBadge){try{Promise.resolve(navigator.setAppBadge(unread)).catch(()=>{});}catch{}}
   if(tab===requestedTab&&historyPage===requestedPage){hasMore=result.data.length>(requestedPage+1)*50;records=result.data.slice(0,(requestedPage+1)*50);render();if(status.textContent==='Consultando avisos…'||status.textContent.startsWith('No se pudieron consultar'))status.textContent='';}
- }catch{if(dialog?.open)status.textContent='No se pudieron consultar los avisos. Reintenta en unos segundos.';}
+ }catch{status.textContent='No se pudieron consultar los avisos. Reintenta en unos segundos.';}
  finally{loading=false;if(refreshAgain){refreshAgain=false;void refresh();}}
 }
 async function markRead(id,control){

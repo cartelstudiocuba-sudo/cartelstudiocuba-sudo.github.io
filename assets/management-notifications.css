@@ -1,8 +1,8 @@
 .management-notice-bell{position:fixed;z-index:1000;top:max(12px,env(safe-area-inset-top));right:16px;width:46px;height:46px;border:1px solid #6d5c26;border-radius:14px;background:linear-gradient(#30363d,#1a2027);color:#ffda03;box-shadow:0 4px 12px #0005;cursor:pointer;display:grid;place-items:center}
 .management-notice-bell svg,.management-notice-dialog svg{width:24px;height:24px;display:block}
 .management-notice-count{position:absolute;top:-5px;right:-5px;min-width:21px;padding:3px;border-radius:20px;background:#d84754;color:white;font-size:11px;font-weight:800}
-.management-notice-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height: min(84dvh,740px);padding:18px;border:1px solid #44474e;border-radius:18px;background:linear-gradient(145deg,#17191e,#101114);color:#f5f5f7;box-shadow:0 24px 80px #000b;overflow:hidden}
-.management-notice-dialog[open]{display:flex;flex-direction:column;gap:12px;animation:management-notice-enter .22s ease-out}
+.management-notice-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));height:min(84vh,740px);height:min(84dvh,740px);max-height:calc(100% - 24px);padding:18px;border:1px solid #44474e;border-radius:18px;background:linear-gradient(145deg,#17191e,#101114);color:#f5f5f7;box-shadow:0 24px 80px #000b;overflow:hidden}
+.management-notice-dialog[open]{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:12px;animation:management-notice-enter .22s ease-out}
 .management-notice-dialog::backdrop{background:#0009;backdrop-filter:blur(3px)}
 .management-notice-dialog *{box-sizing:border-box}
 .management-notice-dialog [hidden]{display:none!important}
@@ -21,7 +21,7 @@
 .management-notice-tabs button{height:39px;border-radius:8px;font-size:14px;font-weight:650;color:#bfc1c8}
 .management-notice-tabs button[aria-pressed=true]{background:#ffda03;color:#151515;box-shadow:0 2px 7px #0003}
 .management-notice-read{align-self:flex-end;font-size:12px!important;color:#d3d5db!important;padding:5px 0}
-.management-notice-scroll{overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;flex:0 1 auto;max-height: min(48vh,480px);max-height:min(48dvh,480px)}
+.management-notice-scroll{overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;height:100%;max-height:100%;grid-row:4}
 .management-notice-day{font-size:13px;font-weight:700;color:#e5e6e9;padding:9px 0;border-bottom:1px solid #34363c}
 .management-notice-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #303238;padding:12px 0;animation:management-notice-enter .22s ease-out}
 .management-notice-open{display:flex;align-items:center;gap:11px;flex:1;text-align:left;padding:0}
@@ -58,3 +58,8 @@
 
 .management-notice-dialog[open]>header,.management-notice-tabs,.management-notice-read,.management-notice-footer,.management-notice-status{flex-shrink:0}
 .management-notice-list{display:block;min-height:1px}
+.management-notice-read{grid-row:3;justify-self:end}
+.management-notice-footer{grid-row:5}
+.management-notice-status{grid-row:6}
+.management-notice-dialog[open]>header{grid-row:1}
+.management-notice-tabs{grid-row:2}
