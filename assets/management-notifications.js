@@ -28,21 +28,21 @@ function render(){
  list.replaceChildren();
  let previous='';
  for(const item of records){
-  const date=new Date(item.created_at),day=dayFormat.format(date);
+  const date=new Date(item.created_at),validDate=Number.isFinite(date.getTime()),day=validDate?dayFormat.format(date):'Fecha no disponible';
   if(day!==previous){const today=dayFormat.format(new Date()),yesterday=dayFormat.format(new Date(Date.now()-86400000));list.append(el('div',day===today?'Hoy':day===yesterday?'Ayer':day,'management-notice-day'));previous=day;}
   const row=el('div','','management-notice-row '+(item.read_at?'read':'unread'));
   const open=el('button','','management-notice-open');open.type='button';
   const kind=category(item),content=el('span','','management-notice-content'),title=el('strong',item.title);
   content.append(title,el('span',item.body,'management-notice-body'));
   open.append(icon(kind,'management-notice-icon '+kind),content);open.onclick=()=>void openNotice(item);
-  const actions=el('div','','management-notice-actions');actions.append(el('time',timeFormat.format(date)));
+  const actions=el('div','','management-notice-actions');actions.append(el('time',validDate?timeFormat.format(date):'—'));
   if(!item.read_at){const read=el('button','','management-notice-check');read.type='button';read.setAttribute('aria-label','Marcar como leída: '+item.title);read.append(icon('check'));read.onclick=()=>void markRead(item.id,read);actions.append(read);}else actions.append(icon('check','management-notice-read-icon'));
   row.append(open,actions);list.append(row);
  }
  if(!records.length){const empty=el('div','','management-notice-empty');empty.append(icon(tab==='new'?'check':'bell'),el('strong',tab==='new'?'Estás al día':'Sin notificaciones leídas'),el('span',tab==='new'?'Los nuevos avisos aparecerán aquí.':'Aquí encontrarás los avisos que hayas consultado.'));list.append(empty);}
  more.hidden=!hasMore;
 }
-function selectTab(value){tab=value;historyPage=0;records=[];hasMore=false;render();void refresh();}
+function selectTab(value){if(tab!==value){tab=value;historyPage=0;records=[];hasMore=false;}render();status.textContent='Consultando avisos…';void refresh();}
 async function refresh(){
  if(!ready||document.hidden)return;if(loading){refreshAgain=true;return;}loading=true;
  const requestedTab=tab,requestedPage=historyPage;
@@ -53,8 +53,9 @@ async function refresh(){
   const [result,count]=await Promise.all([query.range(0,(requestedPage+1)*50),sb.from('management_notifications').select('id',{count:'exact',head:true}).is('read_at',null)]);
   if(result.error||count.error)throw result.error||count.error;
   unread=count.count||0;badge.textContent=unread>99?'99+':String(unread);badge.hidden=!unread;button.setAttribute('aria-label','Notificaciones: '+unread+' sin leer');
-  if(navigator.setAppBadge){try{await navigator.setAppBadge(unread);}catch{}}
-  if(tab===requestedTab&&historyPage===requestedPage){hasMore=result.data.length>(requestedPage+1)*50;records=result.data.slice(0,(requestedPage+1)*50);render();}
+  // The device badge is independent of rendering the in-app list.
+  if(navigator.setAppBadge){try{Promise.resolve(navigator.setAppBadge(unread)).catch(()=>{});}catch{}}
+  if(tab===requestedTab&&historyPage===requestedPage){hasMore=result.data.length>(requestedPage+1)*50;records=result.data.slice(0,(requestedPage+1)*50);render();if(status.textContent==='Consultando avisos…'||status.textContent.startsWith('No se pudieron consultar'))status.textContent='';}
  }catch{if(dialog?.open)status.textContent='No se pudieron consultar los avisos. Reintenta en unos segundos.';}
  finally{loading=false;if(refreshAgain){refreshAgain=false;void refresh();}}
 }
